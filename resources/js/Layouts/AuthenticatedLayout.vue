@@ -1,3 +1,15 @@
+<script>
+/**
+ * Where the nav pill sat on the page we came from.
+ *
+ * This lives in a plain <script> on purpose: <script setup> is the component's
+ * setup function and runs afresh for every instance, so a variable declared
+ * there would reset on each navigation — the exact thing this has to outlive.
+ * A normal <script> block is evaluated once, when the module loads.
+ */
+let lastPill = null;
+</script>
+
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import AmbientBackdrop from '@/Components/AmbientBackdrop.vue';
@@ -39,6 +51,15 @@ const links = [
  * Measured from the DOM rather than computed from the links, because the pill
  * has to track the rendered label — which changes width with the locale and the
  * font, neither of which we can know up front.
+ *
+ * Module scope, deliberately: every page wraps this layout in its own template,
+ * so Inertia tears the nav down and rebuilds it on each visit. A ref would reset
+ * and the pill would simply appear at the new tab. Holding the last position
+ * outside the component lets the fresh nav start where the old one ended and
+ * animate from there — the slide survives the remount.
+ *
+ * If the layout is ever made persistent (defineOptions({ layout })), this keeps
+ * working; it just stops being load-bearing.
  */
 const navRef = ref(null);
 const pill = ref({ left: 0, width: 0 });
@@ -54,21 +75,48 @@ const pillStyle = computed(() => ({
     opacity: pill.value.width > 0 ? 1 : 0,
 }));
 
-function measurePill() {
+function activePillBox() {
     const active = navRef.value?.querySelector('[aria-current="page"]');
 
-    pill.value = active
+    // Width 0 = no tab matches this route (Settings, say). Keep the last left so
+    // the pill fades out in place rather than sliding to the first tab first.
+    return active
         ? { left: active.offsetLeft, width: active.offsetWidth }
-        : { ...pill.value, width: 0 };
+        : { left: pill.value.left, width: 0 };
+}
+
+function measurePill() {
+    pill.value = activePillBox();
+    lastPill = pill.value;
 }
 
 let observer;
 
 onMounted(() => {
-    measurePill();
-    // Next frame, not this one: enabling the transition in the same paint as
-    // the first position would animate it in from translateX(0).
-    requestAnimationFrame(() => (pillAnimates.value = true));
+    const target = activePillBox();
+    const moved = lastPill && lastPill.left !== target.left;
+
+    if (moved && target.width > 0) {
+        // Start where the previous page's nav left off, unanimated...
+        pillAnimates.value = false;
+        pill.value = lastPill;
+
+        // ...let that paint, then turn the transition on and move. Two frames:
+        // enabling the transition and setting the target in one go would let the
+        // browser collapse both into a single style resolution and skip the
+        // animation entirely — which is exactly what a teleport looks like.
+        requestAnimationFrame(() => {
+            pillAnimates.value = true;
+            requestAnimationFrame(() => {
+                pill.value = target;
+            });
+        });
+    } else {
+        pill.value = target;
+        requestAnimationFrame(() => (pillAnimates.value = true));
+    }
+
+    lastPill = target;
 
     // Catches everything a resize listener would, plus label widths changing
     // when the locale switches or the webfont finishes loading.
