@@ -86,10 +86,10 @@ function destroy(category) {
         <template #header>
             <div class="flex items-center justify-between gap-4">
                 <h2 class="text-xl font-semibold leading-tight text-gray-800">
-                    Categories
+                    {{ __('Categories') }}
                 </h2>
                 <Button v-if="can.manage" size="sm" @click="openCreate">
-                    Add category
+                    {{ __('Add category') }}
                 </Button>
             </div>
         </template>
@@ -100,10 +100,10 @@ function destroy(category) {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Name</TableHead>
-                                <TableHead class="text-right">Expenses</TableHead>
+                                <TableHead>{{ __('Name') }}</TableHead>
+                                <TableHead class="text-right">{{ __('Expenses') }}</TableHead>
                                 <TableHead v-if="can.manage" class="w-32 text-right">
-                                    Actions
+                                    {{ __('Actions') }}
                                 </TableHead>
                             </TableRow>
                         </TableHeader>
@@ -113,7 +113,7 @@ function destroy(category) {
                                     :colspan="can.manage ? 3 : 2"
                                     class="py-10 text-center text-sm text-gray-500"
                                 >
-                                    No categories yet.
+                                    {{ __('No categories yet.') }}
                                 </TableCell>
                             </TableRow>
                             <TableRow v-for="category in categories" :key="category.uuid">
@@ -134,7 +134,7 @@ function destroy(category) {
                                             size="sm"
                                             @click="openEdit(category)"
                                         >
-                                            Edit
+                                            {{ __('Edit') }}
                                         </Button>
                                         <Button
                                             variant="ghost"
@@ -143,7 +143,7 @@ function destroy(category) {
                                             :disabled="deleting === category.uuid"
                                             @click="destroy(category)"
                                         >
-                                            Delete
+                                            {{ __('Delete') }}
                                         </Button>
                                     </div>
                                 </TableCell>
@@ -159,16 +159,16 @@ function destroy(category) {
                 <form @submit.prevent="submit">
                     <DialogHeader>
                         <DialogTitle>
-                            {{ editing ? 'Edit category' : 'New category' }}
+                            {{ editing ? __('Edit category') : __('New category') }}
                         </DialogTitle>
                         <DialogDescription>
-                            Categories are shared by everyone logging expenses.
+                            {{ __('Categories are shared by everyone logging expenses.') }}
                         </DialogDescription>
                     </DialogHeader>
 
                     <div class="grid gap-4 py-4">
                         <div>
-                            <Label for="name">Name</Label>
+                            <Label for="name">{{ __('Name') }}</Label>
                             <Input
                                 id="name"
                                 v-model="form.name"
@@ -190,10 +190,10 @@ function destroy(category) {
                             variant="outline"
                             @click="showDialog = false"
                         >
-                            Cancel
+                            {{ __('Cancel') }}
                         </Button>
                         <Button type="submit" :disabled="form.processing">
-                            {{ editing ? 'Save' : 'Create' }}
+                            {{ editing ? __('Save') : __('Create') }}
                         </Button>
                     </DialogFooter>
                 </form>

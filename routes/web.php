@@ -4,6 +4,7 @@ use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -12,6 +13,9 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return redirect()->route(Auth::check() ? 'dashboard' : 'login');
 })->name('home');
+
+// Outside the auth group so the language can be switched from the login screen.
+Route::post('/locale', [LocaleController::class, 'update'])->name('locale.update');
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])

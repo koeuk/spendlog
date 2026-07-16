@@ -231,6 +231,8 @@ class BudgetTest extends TestCase
 
         $response = $this->getJson('/api/v1/budgets/summary?month=2026-07')->assertOk();
 
-        $this->assertSame(10.0, $response->json('data.overall.spent'));
+        // String money here too, matching every other endpoint — the shared
+        // BudgetSummary service hands back floats, so the resource normalises.
+        $this->assertSame('10.00', $response->json('data.overall.spent'));
     }
 }

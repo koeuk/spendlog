@@ -5,20 +5,25 @@ import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
+import LocaleSwitcher from '@/Components/LocaleSwitcher.vue';
+import ThemeToggle from '@/Components/ThemeToggle.vue';
 import { Toaster } from '@/Components/ui/sonner';
 import { useFlashToasts } from '@/composables/useFlashToasts';
+import { useTheme } from '@/composables/useTheme';
 import { Link } from '@inertiajs/vue3';
 
 const showingNavigationDropdown = ref(false);
+
+const { isDark } = useTheme();
 
 useFlashToasts();
 </script>
 
 <template>
     <div>
-        <div class="min-h-screen bg-gray-100">
+        <div class="min-h-screen bg-gray-100 dark:bg-neutral-950">
             <nav
-                class="border-b border-gray-100 bg-white"
+                class="border-b border-gray-100 bg-white dark:border-neutral-800 dark:bg-neutral-900"
             >
                 <!-- Primary Navigation Menu -->
                 <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -28,7 +33,7 @@ useFlashToasts();
                             <div class="flex shrink-0 items-center">
                                 <Link :href="route('dashboard')">
                                     <ApplicationLogo
-                                        class="block h-9 w-auto fill-current text-gray-800"
+                                        class="block h-9 w-auto fill-current text-gray-800 dark:text-neutral-100"
                                     />
                                 </Link>
                             </div>
@@ -41,30 +46,34 @@ useFlashToasts();
                                     :href="route('dashboard')"
                                     :active="route().current('dashboard')"
                                 >
-                                    Dashboard
+                                    {{ __('Dashboard') }}
                                 </NavLink>
                                 <NavLink
                                     :href="route('expenses.index')"
                                     :active="route().current('expenses.*')"
                                 >
-                                    Expenses
+                                    {{ __('Expenses') }}
                                 </NavLink>
                                 <NavLink
                                     :href="route('budgets.index')"
                                     :active="route().current('budgets.*')"
                                 >
-                                    Budgets
+                                    {{ __('Budgets') }}
                                 </NavLink>
                                 <NavLink
                                     :href="route('categories.index')"
                                     :active="route().current('categories.*')"
                                 >
-                                    Categories
+                                    {{ __('Categories') }}
                                 </NavLink>
                             </div>
                         </div>
 
                         <div class="hidden sm:ms-6 sm:flex sm:items-center">
+                            <LocaleSwitcher />
+
+                            <ThemeToggle />
+
                             <!-- Settings Dropdown -->
                             <div class="relative ms-3">
                                 <Dropdown align="right" width="48">
@@ -72,15 +81,15 @@ useFlashToasts();
                                         <span class="inline-flex rounded-md">
                                             <button
                                                 type="button"
-                                                class="inline-flex items-center rounded-md border border-transparent bg-white px-3 py-2 text-sm font-medium leading-4 text-gray-500 transition duration-150 ease-in-out hover:text-gray-700 focus:outline-none"
+                                                class="inline-flex items-center rounded-md border border-transparent bg-white px-3 py-2 text-sm font-medium leading-4 text-gray-500 transition duration-150 ease-in-out hover:text-gray-700 focus:outline-none dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200"
                                             >
                                                 {{ $page.props.auth.user.name }}
 
                                                 <span
                                                     v-if="$page.props.auth.is_admin"
-                                                    class="ms-2 rounded-full bg-gray-900 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white"
+                                                    class="ms-2 rounded-full bg-gray-900 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white dark:bg-neutral-100 dark:text-neutral-900"
                                                 >
-                                                    Admin
+                                                    {{ __('Admin') }}
                                                 </span>
 
                                                 <svg
@@ -103,14 +112,14 @@ useFlashToasts();
                                         <DropdownLink
                                             :href="route('profile.edit')"
                                         >
-                                            Profile
+                                            {{ __('Profile') }}
                                         </DropdownLink>
                                         <DropdownLink
                                             :href="route('logout')"
                                             method="post"
                                             as="button"
                                         >
-                                            Log Out
+                                            {{ __('Log Out') }}
                                         </DropdownLink>
                                     </template>
                                 </Dropdown>
@@ -124,7 +133,7 @@ useFlashToasts();
                                     showingNavigationDropdown =
                                         !showingNavigationDropdown
                                 "
-                                class="inline-flex items-center justify-center rounded-md p-2 text-gray-400 transition duration-150 ease-in-out hover:bg-gray-100 hover:text-gray-500 focus:bg-gray-100 focus:text-gray-500 focus:outline-none"
+                                class="inline-flex items-center justify-center rounded-md p-2 text-gray-400 transition duration-150 ease-in-out hover:bg-gray-100 hover:text-gray-500 focus:bg-gray-100 focus:text-gray-500 focus:outline-none dark:text-neutral-500 dark:hover:bg-neutral-800 dark:hover:text-neutral-300 dark:focus:bg-neutral-800"
                             >
                                 <svg
                                     class="h-6 w-6"
@@ -173,35 +182,35 @@ useFlashToasts();
                             :href="route('dashboard')"
                             :active="route().current('dashboard')"
                         >
-                            Dashboard
+                            {{ __('Dashboard') }}
                         </ResponsiveNavLink>
                     </div>
 
                     <!-- Responsive Settings Options -->
                     <div
-                        class="border-t border-gray-200 pb-1 pt-4"
+                        class="border-t border-gray-200 pb-1 pt-4 dark:border-neutral-800"
                     >
                         <div class="px-4">
                             <div
-                                class="text-base font-medium text-gray-800"
+                                class="text-base font-medium text-gray-800 dark:text-neutral-100"
                             >
                                 {{ $page.props.auth.user.name }}
                             </div>
-                            <div class="text-sm font-medium text-gray-500">
+                            <div class="text-sm font-medium text-gray-500 dark:text-neutral-400">
                                 {{ $page.props.auth.user.email }}
                             </div>
                         </div>
 
                         <div class="mt-3 space-y-1">
                             <ResponsiveNavLink :href="route('profile.edit')">
-                                Profile
+                                {{ __('Profile') }}
                             </ResponsiveNavLink>
                             <ResponsiveNavLink
                                 :href="route('logout')"
                                 method="post"
                                 as="button"
                             >
-                                Log Out
+                                {{ __('Log Out') }}
                             </ResponsiveNavLink>
                         </div>
                     </div>
@@ -210,7 +219,7 @@ useFlashToasts();
 
             <!-- Page Heading -->
             <header
-                class="bg-white shadow"
+                class="bg-white shadow dark:border-b dark:border-neutral-800 dark:bg-neutral-900 dark:shadow-none"
                 v-if="$slots.header"
             >
                 <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -224,6 +233,6 @@ useFlashToasts();
             </main>
         </div>
 
-        <Toaster position="top-right" rich-colors close-button />
+        <Toaster :theme="isDark ? 'dark' : 'light'" position="top-right" rich-colors close-button />
     </div>
 </template>

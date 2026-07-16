@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
@@ -26,6 +28,11 @@ class AppServiceProvider extends ServiceProvider
         Vite::prefetch(concurrency: 3);
 
         $this->configureRateLimiting();
+
+        // Scramble serves /docs/api openly in local and 403s everywhere else
+        // unless this gate says otherwise. Admins only: the document lists every
+        // endpoint and payload shape, which is a map worth not handing out.
+        Gate::define('viewApiDocs', fn (?User $user) => (bool) $user?->isAdmin());
     }
 
     /**

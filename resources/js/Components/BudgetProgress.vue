@@ -19,7 +19,7 @@ const barClass = computed(() => STATUS_CLASSES[props.status] ?? STATUS_CLASSES.n
 
 <template>
     <div
-        class="h-2 w-full overflow-hidden rounded-full bg-gray-100"
+        class="h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-neutral-800"
         role="progressbar"
         :aria-valuenow="barPercent"
         aria-valuemin="0"

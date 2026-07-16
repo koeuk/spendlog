@@ -14,14 +14,14 @@ defineProps({
         <div
             v-for="day in days"
             :key="day"
-            class="overflow-hidden rounded-lg bg-white shadow-sm"
+            class="overflow-hidden rounded-lg bg-white shadow-sm dark:bg-neutral-900"
         >
-            <div class="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+            <div class="flex items-center justify-between border-b border-gray-100 px-4 py-3 dark:border-neutral-800">
                 <Skeleton class="h-4 w-24" />
                 <Skeleton class="h-4 w-16" />
             </div>
 
-            <ul class="divide-y divide-gray-100">
+            <ul class="divide-y divide-gray-100 dark:divide-neutral-800">
                 <li v-for="row in rows" :key="row" class="flex items-center gap-3 px-4 py-3">
                     <Skeleton class="size-8 shrink-0 rounded-full" />
                     <div class="min-w-0 flex-1 space-y-1.5">

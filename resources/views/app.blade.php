@@ -6,6 +6,22 @@
 
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
 
+        {{--
+            Runs before first paint, so a dark-mode user never sees a white
+            flash while the Vite bundle loads. Mirrors resources/js/composables/useTheme.js.
+        --}}
+        <script>
+            (function () {
+                try {
+                    var stored = localStorage.getItem('spendlog.theme');
+                    var dark = stored === 'dark' || (stored !== 'light'
+                        && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                    document.documentElement.classList.toggle('dark', dark);
+                    document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+                } catch (e) {}
+            })();
+        </script>
+
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />

@@ -5,6 +5,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import ExpenseForm from '@/Components/ExpenseForm.vue';
 import ExpenseListSkeleton from '@/Components/ExpenseListSkeleton.vue';
 import { useNavigating } from '@/composables/useNavigating';
+import { trans } from '@/lib/i18n';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
 import { Button } from '@/Components/ui/button';
 import {
@@ -131,7 +132,7 @@ function formatDay(date) {
     const todayDate = new Date();
     const isToday = value.toDateString() === todayDate.toDateString();
 
-    return isToday ? 'Today' : dayFormatter.format(value);
+    return isToday ? trans('Today') : dayFormatter.format(value);
 }
 
 const isEmpty = computed(() => props.days.length === 0);
@@ -144,7 +145,7 @@ const isEmpty = computed(() => props.days.length === 0);
         <template #header>
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <h2 class="text-xl font-semibold leading-tight text-gray-800">
-                    Expenses
+                    {{ __('Expenses') }}
                 </h2>
 
                 <div class="flex flex-wrap items-center gap-2">
@@ -163,7 +164,7 @@ const isEmpty = computed(() => props.days.length === 0);
                             "
                             @click="setScope('mine')"
                         >
-                            Mine
+                            {{ __('Mine') }}
                         </button>
                         <button
                             type="button"
@@ -175,7 +176,7 @@ const isEmpty = computed(() => props.days.length === 0);
                             "
                             @click="setScope('all')"
                         >
-                            Everyone
+                            {{ __('Everyone') }}
                         </button>
                     </div>
 
@@ -185,13 +186,13 @@ const isEmpty = computed(() => props.days.length === 0);
                         class="rounded-md border-gray-200 py-1 text-xs text-gray-700 focus:border-gray-400 focus:ring-0"
                         @change="applyUserFilter($event.target.value)"
                     >
-                        <option value="">All users</option>
+                        <option value="">{{ __('All users') }}</option>
                         <option v-for="u in users" :key="u.uuid" :value="u.uuid">
                             {{ u.name }}
                         </option>
                     </select>
 
-                    <Button size="sm" @click="openCreate">Add expense</Button>
+                    <Button size="sm" @click="openCreate">{{ __('Add expense') }}</Button>
                 </div>
             </div>
         </template>
@@ -205,10 +206,10 @@ const isEmpty = computed(() => props.days.length === 0);
                     class="rounded-lg bg-white p-10 text-center shadow-sm"
                 >
                     <p class="text-sm text-gray-600">
-                        No expenses yet, add your first one.
+                        {{ __('No expenses yet, add your first one.') }}
                     </p>
                     <Button class="mt-4" size="sm" @click="openCreate">
-                        Add expense
+                        {{ __('Add expense') }}
                     </Button>
                 </div>
 
@@ -274,7 +275,7 @@ const isEmpty = computed(() => props.days.length === 0);
                                     size="sm"
                                     @click="openEdit(expense)"
                                 >
-                                    Edit
+                                    {{ __('Edit') }}
                                 </Button>
                                 <Button
                                     variant="ghost"
@@ -283,7 +284,7 @@ const isEmpty = computed(() => props.days.length === 0);
                                     :disabled="deleting === expense.uuid"
                                     @click="destroy(expense)"
                                 >
-                                    Delete
+                                    {{ __('Delete') }}
                                 </Button>
                             </div>
                         </li>
@@ -299,7 +300,7 @@ const isEmpty = computed(() => props.days.length === 0);
                         :href="pagination.prev_page_url"
                         class="text-sm text-gray-600 hover:text-gray-900"
                     >
-                        &larr; Newer
+                        &larr; {{ __('Newer') }}
                     </Link>
                     <span v-else />
 
@@ -313,7 +314,7 @@ const isEmpty = computed(() => props.days.length === 0);
                         :href="pagination.next_page_url"
                         class="text-sm text-gray-600 hover:text-gray-900"
                     >
-                        Older &rarr;
+                        {{ __('Older') }} &rarr;
                     </Link>
                     <span v-else />
                 </div>
@@ -325,7 +326,7 @@ const isEmpty = computed(() => props.days.length === 0);
                 <form @submit.prevent="submit">
                     <DialogHeader>
                         <DialogTitle>
-                            {{ editing ? 'Edit expense' : 'Add expense' }}
+                            {{ editing ? __('Edit expense') : __('Add expense') }}
                         </DialogTitle>
                     </DialogHeader>
 
@@ -339,10 +340,10 @@ const isEmpty = computed(() => props.days.length === 0);
                             variant="outline"
                             @click="showDialog = false"
                         >
-                            Cancel
+                            {{ __('Cancel') }}
                         </Button>
                         <Button type="submit" :disabled="form.processing">
-                            {{ editing ? 'Save' : 'Add' }}
+                            {{ editing ? __('Save') : __('Add') }}
                         </Button>
                     </DialogFooter>
                 </form>

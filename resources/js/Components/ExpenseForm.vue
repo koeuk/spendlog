@@ -58,7 +58,7 @@ const maxDate = today(getLocalTimeZone());
 <template>
     <div class="grid gap-4">
         <div>
-            <Label for="item">Item</Label>
+            <Label for="item">{{ __('Item') }}</Label>
             <Input
                 id="item"
                 v-model="form.item"
@@ -73,7 +73,7 @@ const maxDate = today(getLocalTimeZone());
 
         <div class="grid grid-cols-2 gap-4">
             <div>
-                <Label for="price">Price</Label>
+                <Label for="price">{{ __('Price') }}</Label>
                 <Input
                     id="price"
                     v-model="form.price"
@@ -90,10 +90,10 @@ const maxDate = today(getLocalTimeZone());
             </div>
 
             <div>
-                <Label for="category">Category</Label>
+                <Label for="category">{{ __('Category') }}</Label>
                 <Select v-model="form.category_uuid">
                     <SelectTrigger id="category" class="mt-1 w-full">
-                        <SelectValue placeholder="Choose" />
+                        <SelectValue :placeholder="__('Choose')" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem
@@ -124,7 +124,7 @@ const maxDate = today(getLocalTimeZone());
         </div>
 
         <div>
-            <Label>Date</Label>
+            <Label>{{ __('Date') }}</Label>
             <Popover>
                 <PopoverTrigger as-child>
                     <Button

@@ -5,6 +5,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import BudgetProgress from '@/Components/BudgetProgress.vue';
 import CategoryBadge from '@/Components/CategoryBadge.vue';
 import { useNavigating } from '@/composables/useNavigating';
+import { trans } from '@/lib/i18n';
 import { Skeleton } from '@/Components/ui/skeleton';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
@@ -86,7 +87,7 @@ function clearBudget(row) {
         <template #header>
             <div class="flex items-center justify-between gap-4">
                 <h2 class="text-xl font-semibold leading-tight text-gray-800">
-                    Budgets
+                    {{ __('Budgets') }}
                 </h2>
                 <div class="flex items-center gap-1">
                     <Link
@@ -115,15 +116,15 @@ function clearBudget(row) {
                     <div class="flex items-start justify-between gap-4">
                         <div>
                             <h3 class="text-sm font-semibold text-gray-900">
-                                Overall budget
+                                {{ __('Overall budget') }}
                             </h3>
                             <p class="mt-0.5 text-xs text-gray-500">
-                                Across every category this month.
+                                {{ __('Across every category this month.') }}
                             </p>
                         </div>
                         <div class="flex gap-1">
                             <Button variant="outline" size="sm" @click="openEdit(summary.overall, null)">
-                                {{ summary.overall.budget !== null ? 'Edit' : 'Set budget' }}
+                                {{ summary.overall.budget !== null ? __('Edit') : __('Set a budget') }}
                             </Button>
                             <Button
                                 v-if="summary.overall.budget !== null"
@@ -132,7 +133,7 @@ function clearBudget(row) {
                                 class="text-red-600 hover:text-red-700"
                                 @click="clearBudget(summary.overall)"
                             >
-                                Clear
+                                {{ __('Clear') }}
                             </Button>
                         </div>
                     </div>
@@ -161,7 +162,7 @@ function clearBudget(row) {
                             >
                                 {{ summary.overall.percent }}%
                             </span>
-                            <span v-else class="text-xs text-gray-400">No budget set</span>
+                            <span v-else class="text-xs text-gray-400">{{ __('No budget set') }}</span>
                         </div>
                         <BudgetProgress
                             :status="summary.overall.status"
@@ -184,7 +185,7 @@ function clearBudget(row) {
                 <!-- Per category -->
                 <div class="overflow-hidden rounded-lg bg-white shadow-sm">
                     <div class="border-b border-gray-100 px-5 py-3">
-                        <h3 class="text-sm font-semibold text-gray-900">By category</h3>
+                        <h3 class="text-sm font-semibold text-gray-900">{{ __('By category') }}</h3>
                     </div>
 
                     <ul v-if="navigating" class="divide-y divide-gray-100" aria-busy="true">
@@ -218,7 +219,7 @@ function clearBudget(row) {
                                         size="sm"
                                         @click="openEdit(category, category.uuid)"
                                     >
-                                        {{ category.budget !== null ? 'Edit' : 'Set' }}
+                                        {{ category.budget !== null ? __('Edit') : __('Set') }}
                                     </Button>
                                     <Button
                                         v-if="category.budget !== null"
@@ -227,7 +228,7 @@ function clearBudget(row) {
                                         class="text-red-600 hover:text-red-700"
                                         @click="clearBudget(category)"
                                     >
-                                        Clear
+                                        {{ __('Clear') }}
                                     </Button>
                                 </div>
                             </div>
@@ -257,7 +258,7 @@ function clearBudget(row) {
                                         {{ category.percent }}%
                                     </span>
                                     <span v-else class="text-xs text-gray-400">
-                                        No budget set
+                                        {{ __('No budget set') }}
                                     </span>
                                 </div>
                                 <BudgetProgress
@@ -276,7 +277,7 @@ function clearBudget(row) {
                 <form @submit.prevent="submit">
                     <DialogHeader>
                         <DialogTitle>
-                            {{ form.category_uuid ? 'Category budget' : 'Overall budget' }}
+                            {{ form.category_uuid ? __('Category budget') : __('Overall budget') }}
                         </DialogTitle>
                         <DialogDescription>
                             {{ formatMonth(month) }}
@@ -284,7 +285,7 @@ function clearBudget(row) {
                     </DialogHeader>
 
                     <div class="py-4">
-                        <Label for="amount">Amount</Label>
+                        <Label for="amount">{{ __('Amount') }}</Label>
                         <Input
                             id="amount"
                             v-model="form.amount"
@@ -305,9 +306,9 @@ function clearBudget(row) {
 
                     <DialogFooter>
                         <Button type="button" variant="outline" @click="showDialog = false">
-                            Cancel
+                            {{ __('Cancel') }}
                         </Button>
-                        <Button type="submit" :disabled="form.processing">Save</Button>
+                        <Button type="submit" :disabled="form.processing">{{ __('Save') }}</Button>
                     </DialogFooter>
                 </form>
             </DialogContent>
