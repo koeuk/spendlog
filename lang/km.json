@@ -126,6 +126,12 @@
     "All": "ទាំងអស់",
     "Search month or year": "ស្វែងរកខែ ឬឆ្នាំ",
     "No period found.": "រកមិនឃើញអំឡុងពេលទេ។",
+    "Search…": "ស្វែងរក…",
+    "Nothing found.": "រកមិនឃើញទេ។",
+    "Search categories…": "ស្វែងរកប្រភេទ…",
+    "No category found.": "រកមិនឃើញប្រភេទទេ។",
+    "All categories": "ប្រភេទទាំងអស់",
+    "Filter by category": "ត្រងតាមប្រភេទ",
     "Per page": "ក្នុងមួយទំព័រ",
     "per page": "ក្នុងមួយទំព័រ",
     "Showing :from–:to of :total": "កំពុងបង្ហាញ :from–:to ក្នុងចំណោម :total"

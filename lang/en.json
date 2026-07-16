@@ -126,6 +126,12 @@
     "All": "All",
     "Search month or year": "Search month or year",
     "No period found.": "No period found.",
+    "Search…": "Search…",
+    "Nothing found.": "Nothing found.",
+    "Search categories…": "Search categories…",
+    "No category found.": "No category found.",
+    "All categories": "All categories",
+    "Filter by category": "Filter by category",
     "Per page": "Per page",
     "per page": "per page",
     "Showing :from–:to of :total": "Showing :from–:to of :total"

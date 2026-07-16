@@ -8,6 +8,7 @@ import { CARD } from '@/lib/appStyles';
 import ExpenseListSkeleton from '@/Components/ExpenseListSkeleton.vue';
 import Pagination from '@/Components/Pagination.vue';
 import SearchInput from '@/Components/SearchInput.vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 import { useNavigating } from '@/composables/useNavigating';
 import { localized, trans } from '@/lib/i18n';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
@@ -43,10 +44,10 @@ const viewingAll = computed(() => props.scope === 'all');
  * reka-ui rejects an empty-string SelectItem value — it reserves '' for "nothing
  * selected", so an <SelectItem value=""> throws. The filter's real "no filter"
  * value IS the empty string, so it travels under a sentinel and is unwrapped on
- * the way out.
+ * the way out. The category filter is our own SearchableSelect and needs none of
+ * this: '' is just a value there.
  */
 const ALL_USERS = '__all__';
-const ALL_CATEGORIES = '__all__';
 
 const { navigating } = useNavigating();
 
@@ -92,6 +93,16 @@ const search = ref(props.filters?.filter?.item ?? '');
 watch(search, (value) => navigate({ item: value }));
 
 const categoryFilter = ref(props.filters?.filter?.category ?? '');
+
+// '' is the "no filter" option rather than a sentinel, so it round-trips
+// through navigate()'s empty-value drop untouched.
+const categoryOptions = computed(() => [
+    { value: '', label: trans('All categories') },
+    ...props.categories.map((c) => ({
+        value: c.uuid,
+        label: localized(c.name),
+    })),
+]);
 
 function applyCategoryFilter(uuid) {
     categoryFilter.value = uuid;
@@ -312,24 +323,17 @@ const filtered = computed(() =>
                         class="sm:max-w-sm sm:flex-1"
                     />
 
-                    <Select
-                        :model-value="categoryFilter || ALL_CATEGORIES"
-                        @update:model-value="
-                            applyCategoryFilter($event === ALL_CATEGORIES ? '' : $event)
-                        "
-                    >
-                        <SelectTrigger class="sm:w-52" :aria-label="__('Filter by category')">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem :value="ALL_CATEGORIES">
-                                {{ __('All categories') }}
-                            </SelectItem>
-                            <SelectItem v-for="c in categories" :key="c.uuid" :value="c.uuid">
-                                {{ localized(c.name) }}
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                        :options="categoryOptions"
+                        :model-value="categoryFilter"
+                        :label="__('Filter by category')"
+                        :search-placeholder="__('Search categories…')"
+                        :empty-text="__('No category found.')"
+                        align="start"
+                        content-class="w-52"
+                        trigger-class="border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 rounded-md border bg-transparent px-2.5 py-2 text-sm shadow-xs sm:w-52"
+                        @update:model-value="applyCategoryFilter"
+                    />
                 </div>
 
                 <ExpenseListSkeleton v-if="navigating" />

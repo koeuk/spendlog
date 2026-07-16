@@ -185,7 +185,7 @@ class ExpenseTest extends TestCase
     public function test_an_admin_can_update_anyones_expense(): void
     {
         $admin = User::factory()->create();
-        $admin->assignRole(RoleName::Admin->value);
+        $admin->applyRole(RoleName::Admin);
         $theirs = Expense::factory()->create();
         $category = Category::factory()->create();
 
@@ -215,7 +215,7 @@ class ExpenseTest extends TestCase
     public function test_an_admin_can_view_everyones_expenses(): void
     {
         $admin = User::factory()->create();
-        $admin->assignRole(RoleName::Admin->value);
+        $admin->applyRole(RoleName::Admin);
         Expense::factory()->for($admin)->create();
         Expense::factory()->create();
 

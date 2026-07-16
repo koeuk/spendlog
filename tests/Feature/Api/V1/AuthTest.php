@@ -98,7 +98,7 @@ class AuthTest extends TestCase
     public function test_a_new_token_excludes_categories_write_by_default(): void
     {
         $user = User::factory()->create(['email' => 'sam@example.com']);
-        $user->assignRole(RoleName::Admin->value);
+        $user->applyRole(RoleName::Admin);
 
         $this->postJson('/api/v1/login', [
             'email' => 'sam@example.com',
@@ -136,7 +136,7 @@ class AuthTest extends TestCase
     public function test_a_non_admin_cannot_request_categories_write(): void
     {
         $user = User::factory()->create(['email' => 'sam@example.com']);
-        $user->assignRole(RoleName::User->value);
+        $user->applyRole(RoleName::User);
 
         $this->postJson('/api/v1/login', [
             'email' => 'sam@example.com',

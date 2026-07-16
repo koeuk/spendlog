@@ -29,7 +29,7 @@ class CategoryTest extends TestCase
     private function admin(): User
     {
         $admin = User::factory()->create();
-        $admin->assignRole(RoleName::Admin->value);
+        $admin->applyRole(RoleName::Admin);
 
         return $admin;
     }
@@ -56,7 +56,7 @@ class CategoryTest extends TestCase
     public function test_filtering_by_name_matches_the_value_not_the_locale_key(): void
     {
         $user = User::factory()->create();
-        $user->assignRole(RoleName::User->value);
+        $user->applyRole(RoleName::User);
         Category::factory()->create(['name' => ['en' => 'Food', 'km' => 'អាហារ']]);
         Category::factory()->create(['name' => ['en' => 'Transport', 'km' => 'ដឹកជញ្ជូន']]);
 
@@ -77,7 +77,7 @@ class CategoryTest extends TestCase
     public function test_filtering_by_name_finds_a_khmer_value_while_the_api_is_in_english(): void
     {
         $user = User::factory()->create();
-        $user->assignRole(RoleName::User->value);
+        $user->applyRole(RoleName::User);
         Category::factory()->create(['name' => ['en' => 'Food', 'km' => 'អាហារ']]);
         Category::factory()->create(['name' => ['en' => 'Transport', 'km' => 'ដឹកជញ្ជូន']]);
 
@@ -102,7 +102,7 @@ class CategoryTest extends TestCase
     public function test_a_non_admin_can_create_a_category_with_the_ability(): void
     {
         $user = User::factory()->create();
-        $user->assignRole(RoleName::User->value);
+        $user->applyRole(RoleName::User);
 
         Sanctum::actingAs($user, [TokenAbility::CategoriesWrite->value]);
 
@@ -123,7 +123,7 @@ class CategoryTest extends TestCase
         $category = Category::factory()->create(['name' => ['en' => 'Food']]);
 
         $user = User::factory()->create();
-        $user->assignRole(RoleName::User->value);
+        $user->applyRole(RoleName::User);
 
         Sanctum::actingAs($user, [TokenAbility::CategoriesWrite->value]);
 

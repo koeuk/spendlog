@@ -25,7 +25,7 @@ class UserPermissionsTest extends TestCase
     private function admin(): User
     {
         $admin = User::factory()->create();
-        $admin->assignRole(RoleName::Admin->value);
+        $admin->applyRole(RoleName::Admin);
 
         return $admin;
     }
@@ -33,7 +33,7 @@ class UserPermissionsTest extends TestCase
     private function user(): User
     {
         $user = User::factory()->create();
-        $user->assignRole(RoleName::User->value);
+        $user->applyRole(RoleName::User);
 
         return $user;
     }
@@ -90,20 +90,30 @@ class UserPermissionsTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_permissions_already_granted_by_the_role_are_not_stored_as_direct(): void
+    /**
+     * The ticked list is the whole truth, even for an admin.
+     *
+     * Nothing is filtered out against the role, because the role grants nothing:
+     * a permission the drawer does not send is a permission the person loses,
+     * regardless of the badge on their row.
+     */
+    public function test_the_submitted_list_replaces_everything_the_role_started_them_with(): void
     {
         $target = $this->user();
-        $target->assignRole(RoleName::Admin->value);
+        $target->applyRole(RoleName::Admin);
 
         $this->actingAs($this->admin())
             ->put($this->url($target), ['permissions' => [Permission::UsersManage->value]])
             ->assertRedirect();
 
-        // Kept via the role, but not duplicated as a direct grant — otherwise it
-        // would outlive the role it came from.
         $target = $target->fresh();
         $this->assertTrue($target->hasPermissionTo(Permission::UsersManage->value));
-        $this->assertFalse($target->hasDirectPermission(Permission::UsersManage->value));
+        $this->assertTrue($target->hasDirectPermission(Permission::UsersManage->value));
+
+        // Still an admin by role, but the admin defaults it was created with are
+        // gone — only what was ticked survives.
+        $this->assertTrue($target->isAdmin());
+        $this->assertFalse($target->hasPermissionTo(Permission::ExpensesViewAll->value));
     }
 
     public function test_unchecked_permissions_are_revoked(): void

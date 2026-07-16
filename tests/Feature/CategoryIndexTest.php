@@ -24,7 +24,7 @@ class CategoryIndexTest extends TestCase
     private function user(): User
     {
         $user = User::factory()->create();
-        $user->assignRole(RoleName::User->value);
+        $user->applyRole(RoleName::User);
 
         return $user;
     }

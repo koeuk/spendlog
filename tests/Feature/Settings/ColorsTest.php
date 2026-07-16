@@ -31,7 +31,7 @@ class ColorsTest extends TestCase
     private function admin(): User
     {
         $admin = User::factory()->create();
-        $admin->assignRole(RoleName::Admin->value);
+        $admin->applyRole(RoleName::Admin);
 
         return $admin;
     }
@@ -48,7 +48,7 @@ class ColorsTest extends TestCase
     public function test_the_page_is_admin_only(): void
     {
         $user = User::factory()->create();
-        $user->assignRole(RoleName::User->value);
+        $user->applyRole(RoleName::User);
 
         $this->actingAs($user)->get('/settings/colors')->assertForbidden();
         $this->actingAs($this->admin())->get('/settings/colors')->assertOk();
@@ -57,7 +57,7 @@ class ColorsTest extends TestCase
     public function test_a_non_admin_cannot_change_the_colours(): void
     {
         $user = User::factory()->create();
-        $user->assignRole(RoleName::User->value);
+        $user->applyRole(RoleName::User);
 
         $this->actingAs($user)
             ->post('/settings/colors', $this->payload(['button_color' => ButtonColor::Red->value]))
