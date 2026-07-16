@@ -72,6 +72,13 @@ const showingNavigationDropdown = ref(false);
                                             >
                                                 {{ $page.props.auth.user.name }}
 
+                                                <span
+                                                    v-if="$page.props.auth.is_admin"
+                                                    class="ms-2 rounded-full bg-gray-900 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white"
+                                                >
+                                                    Admin
+                                                </span>
+
                                                 <svg
                                                     class="-me-0.5 ms-2 h-4 w-4"
                                                     xmlns="http://www.w3.org/2000/svg"

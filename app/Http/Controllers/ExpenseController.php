@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ExpenseRequest;
 use App\Models\Category;
 use App\Models\Expense;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,27 +19,45 @@ class ExpenseController extends Controller
 {
     public function index(Request $request): Response
     {
-        $expenses = QueryBuilder::for(Expense::class)
-            ->allowedFilters(
-                AllowedFilter::partial('item'),
-                // Filter by the public UUID; the column itself stays internal.
-                AllowedFilter::callback('category', fn ($query, $value) => $query->whereHas(
-                    'category',
-                    fn ($q) => $q->whereIn('uuid', (array) $value),
-                )),
-                AllowedFilter::callback('from', fn ($query, $value) => $query->whereDate('spent_on', '>=', $value)),
-                AllowedFilter::callback('to', fn ($query, $value) => $query->whereDate('spent_on', '<=', $value)),
-            )
+        $isAdmin = $request->user()->isAdmin();
+        // Only an admin can opt out of the owner scope, and only explicitly.
+        $viewingAll = $isAdmin && $request->query('scope') === 'all';
+
+        $filters = [
+            AllowedFilter::partial('item'),
+            // Filter by the public UUID; the column itself stays internal.
+            AllowedFilter::callback('category', fn ($query, $value) => $query->whereHas(
+                'category',
+                fn ($q) => $q->whereIn('uuid', (array) $value),
+            )),
+            AllowedFilter::callback('from', fn ($query, $value) => $query->whereDate('spent_on', '>=', $value)),
+            AllowedFilter::callback('to', fn ($query, $value) => $query->whereDate('spent_on', '<=', $value)),
+        ];
+
+        // The user filter only exists while viewing everyone, so a non-admin
+        // cannot use it to probe for other people's rows.
+        if ($viewingAll) {
+            $filters[] = AllowedFilter::callback('user', fn ($query, $value) => $query->whereHas(
+                'user',
+                fn ($q) => $q->whereIn('uuid', (array) $value),
+            ));
+        }
+
+        $query = QueryBuilder::for(Expense::class)
+            ->allowedFilters(...$filters)
             ->allowedSorts('spent_on', 'price', 'item')
             ->defaultSort('-spent_on', '-id')
-            ->with(['category:id,uuid,name,color,icon', 'user:id,uuid,name'])
-            // Scoped last so no filter can widen it beyond the owner's rows.
-            ->where('user_id', $request->user()->id)
-            ->paginate(50)
-            ->withQueryString();
+            ->with(['category:id,uuid,name,color,icon', 'user:id,uuid,name']);
+
+        // Applied last so no filter can widen it beyond the owner's rows.
+        if (! $viewingAll) {
+            $query->where('user_id', $request->user()->id);
+        }
+
+        $expenses = $query->paginate(50)->withQueryString();
 
         return Inertia::render('Expenses/Index', [
-            'days' => $this->groupByDay($expenses->items()),
+            'days' => $this->groupByDay($expenses->items(), $viewingAll),
             'pagination' => [
                 'current_page' => $expenses->currentPage(),
                 'last_page' => $expenses->lastPage(),
@@ -47,6 +66,12 @@ class ExpenseController extends Controller
                 'total' => $expenses->total(),
             ],
             'filters' => $request->only('filter', 'sort'),
+            'scope' => $viewingAll ? 'all' : 'mine',
+            'can' => ['view_all' => $isAdmin],
+            // Only an admin viewing everyone needs the user list.
+            'users' => $viewingAll
+                ? User::query()->orderBy('name')->get(['uuid', 'name'])
+                : [],
             'categories' => Category::query()
                 ->orderBy('name')
                 ->get(['uuid', 'name', 'color', 'icon']),
@@ -114,7 +139,7 @@ class ExpenseController extends Controller
      *
      * @param  array<int, Expense>  $expenses
      */
-    private function groupByDay(array $expenses): array
+    private function groupByDay(array $expenses, bool $withOwner = false): array
     {
         return collect($expenses)
             ->groupBy(fn (Expense $expense) => $expense->spent_on->toDateString())
@@ -130,6 +155,8 @@ class ExpenseController extends Controller
                     'category' => $expense->category->name,
                     'category_color' => $expense->category->color?->value,
                     'category_icon' => $expense->category->icon?->value,
+                    // Only surfaced in the admin's everyone view.
+                    'owner' => $withOwner ? $expense->user->name : null,
                 ])->values(),
             ])
             ->values()

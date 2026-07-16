@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import ExpenseForm from '@/Components/ExpenseForm.vue';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
@@ -17,7 +17,33 @@ const props = defineProps({
     days: { type: Array, required: true },
     pagination: { type: Object, required: true },
     categories: { type: Array, required: true },
+    scope: { type: String, default: 'mine' },
+    can: { type: Object, default: () => ({ view_all: false }) },
+    users: { type: Array, default: () => [] },
+    filters: { type: Object, default: () => ({}) },
 });
+
+const viewingAll = computed(() => props.scope === 'all');
+
+function setScope(scope) {
+    router.get(
+        route('expenses.index'),
+        scope === 'all' ? { scope: 'all' } : {},
+        { preserveScroll: true },
+    );
+}
+
+// Admin-only: narrow the everyone view to a single person.
+const userFilter = ref(props.filters?.filter?.user ?? '');
+
+function applyUserFilter(uuid) {
+    userFilter.value = uuid;
+    router.get(
+        route('expenses.index'),
+        uuid ? { scope: 'all', filter: { user: uuid } } : { scope: 'all' },
+        { preserveScroll: true },
+    );
+}
 
 function todayString() {
     // Local date, not UTC — toISOString() would shift the day for some zones.
@@ -112,11 +138,57 @@ const isEmpty = computed(() => props.days.length === 0);
 
     <AuthenticatedLayout>
         <template #header>
-            <div class="flex items-center justify-between gap-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
                 <h2 class="text-xl font-semibold leading-tight text-gray-800">
                     Expenses
                 </h2>
-                <Button size="sm" @click="openCreate">Add expense</Button>
+
+                <div class="flex flex-wrap items-center gap-2">
+                    <!-- Admin only: switch between own expenses and everyone's -->
+                    <div
+                        v-if="can.view_all"
+                        class="inline-flex rounded-md border border-gray-200 bg-white p-0.5"
+                    >
+                        <button
+                            type="button"
+                            class="rounded px-2.5 py-1 text-xs font-medium transition"
+                            :class="
+                                !viewingAll
+                                    ? 'bg-gray-900 text-white'
+                                    : 'text-gray-600 hover:bg-gray-50'
+                            "
+                            @click="setScope('mine')"
+                        >
+                            Mine
+                        </button>
+                        <button
+                            type="button"
+                            class="rounded px-2.5 py-1 text-xs font-medium transition"
+                            :class="
+                                viewingAll
+                                    ? 'bg-gray-900 text-white'
+                                    : 'text-gray-600 hover:bg-gray-50'
+                            "
+                            @click="setScope('all')"
+                        >
+                            Everyone
+                        </button>
+                    </div>
+
+                    <select
+                        v-if="can.view_all && viewingAll"
+                        :value="userFilter"
+                        class="rounded-md border-gray-200 py-1 text-xs text-gray-700 focus:border-gray-400 focus:ring-0"
+                        @change="applyUserFilter($event.target.value)"
+                    >
+                        <option value="">All users</option>
+                        <option v-for="u in users" :key="u.uuid" :value="u.uuid">
+                            {{ u.name }}
+                        </option>
+                    </select>
+
+                    <Button size="sm" @click="openCreate">Add expense</Button>
+                </div>
             </div>
         </template>
 
@@ -176,8 +248,11 @@ const isEmpty = computed(() => props.days.length === 0);
                                 <p class="truncate text-sm font-medium text-gray-900">
                                     {{ expense.item }}
                                 </p>
-                                <p class="text-xs text-gray-500">
+                                <p class="truncate text-xs text-gray-500">
                                     {{ expense.category }}
+                                    <template v-if="expense.owner">
+                                        · {{ expense.owner }}
+                                    </template>
                                 </p>
                             </div>
 
