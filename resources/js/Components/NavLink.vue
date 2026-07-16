@@ -12,15 +12,17 @@ const props = defineProps({
     },
 });
 
+// A filled pill for the current page — the same active treatment the EN/KM and
+// Mine/Everyone controls already use, rather than a second idiom.
 const classes = computed(() =>
     props.active
-        ? 'inline-flex items-center px-1 pt-1 border-b-2 border-indigo-400 text-sm font-medium leading-5 text-gray-900 dark:text-neutral-100 dark:border-indigo-400 focus:outline-none focus:border-indigo-700 transition duration-150 ease-in-out'
-        : 'inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 dark:text-neutral-400 hover:text-gray-700 dark:hover:text-neutral-200 hover:border-gray-300 dark:hover:border-neutral-600 focus:outline-none focus:text-gray-700 focus:border-gray-300 transition duration-150 ease-in-out',
+        ? 'inline-flex items-center rounded-full bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition dark:bg-neutral-100 dark:text-neutral-900'
+        : 'inline-flex items-center rounded-full px-4 py-2 text-sm font-medium text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100',
 );
 </script>
 
 <template>
-    <Link :href="href" :class="classes">
+    <Link :href="href" :class="classes" :aria-current="active ? 'page' : undefined">
         <slot />
     </Link>
 </template>

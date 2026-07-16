@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Enums\Locale;
+use App\Models\AppSetting;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -40,6 +41,9 @@ class HandleInertiaRequests extends Middleware
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
             ],
+            // Every page renders the wordmark, so this is shared rather than
+            // repeated in each controller. AppSetting::current() is cached.
+            'branding' => fn () => $this->branding(),
             'locale' => fn () => app()->getLocale(),
             'locales' => fn () => collect(Locale::cases())
                 ->map(fn (Locale $locale) => [
@@ -51,6 +55,20 @@ class HandleInertiaRequests extends Middleware
             // The whole active-locale dictionary; it is a few KB and lets the
             // frontend resolve __() without a round trip per string.
             'translations' => fn () => $this->translations(app()->getLocale()),
+        ];
+    }
+
+    /**
+     * @return array{name: string, logo: string|null, favicon: string|null}
+     */
+    private function branding(): array
+    {
+        $settings = AppSetting::current();
+
+        return [
+            'name' => $settings->app_name,
+            'logo' => $settings->logoUrl(),
+            'favicon' => $settings->faviconUrl(),
         ];
     }
 

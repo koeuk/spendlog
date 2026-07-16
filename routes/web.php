@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SettingsController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -32,9 +33,23 @@ Route::middleware('auth')->group(function () {
     Route::resource('budgets', BudgetController::class)
         ->only(['index', 'store', 'destroy']);
 
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    /*
+     * Settings. The route names stay as they were (profile.edit, password.update)
+     * so existing links and tests keep working — only the URLs moved under /settings.
+     */
+    Route::prefix('settings')->group(function () {
+        Route::redirect('/', '/settings/profile')->name('settings');
+
+        Route::get('/profile', [SettingsController::class, 'profile'])->name('profile.edit');
+        Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+        Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+        Route::get('/password', [SettingsController::class, 'password'])->name('password.edit');
+
+        // Admin only — enforced in the controller, not just hidden in the UI.
+        Route::get('/branding', [SettingsController::class, 'branding'])->name('branding.edit');
+        Route::post('/branding', [SettingsController::class, 'updateBranding'])->name('branding.update');
+    });
 });
 
 require __DIR__.'/auth.php';

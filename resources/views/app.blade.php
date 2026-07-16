@@ -4,7 +4,18 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title inertia>{{ config('app.name', 'Laravel') }}</title>
+        {{-- Cached, so this does not cost a query per request. --}}
+        @php($branding = \App\Models\AppSetting::current())
+
+        <title inertia>{{ $branding->app_name }}</title>
+
+        @if ($favicon = $branding->faviconUrl())
+            <link rel="icon" href="{{ $favicon }}">
+        @else
+            {{-- No uploaded favicon: fall back to the built-in mark rather than
+                 letting the browser 404 on /favicon.ico. --}}
+            <link rel="icon" href="/favicon.ico">
+        @endif
 
         {{--
             Runs before first paint, so a dark-mode user never sees a white

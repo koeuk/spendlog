@@ -3,8 +3,9 @@ import { computed } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import BudgetProgress from '@/Components/BudgetProgress.vue';
-import CategoryBadge from '@/Components/CategoryBadge.vue';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
+import { CARD, CARD_TINT, EYEBROW, FIGURE, MUTED } from '@/lib/appStyles';
+import { ArrowRight } from 'lucide-vue-next';
 
 const props = defineProps({
     today: { type: Object, required: true },
@@ -34,125 +35,135 @@ function formatDay(date) {
     });
 }
 
+const overall = computed(() => props.summary.overall);
+
 // Only categories the user actually budgeted — an unset budget has nothing to track.
 const budgeted = computed(() =>
     props.summary.categories.filter((category) => category.budget !== null),
 );
 
-const overall = computed(() => props.summary.overall);
-
 const statusText = {
     over: 'text-red-600 dark:text-red-400',
     warning: 'text-amber-600 dark:text-amber-400',
-    ok: 'text-gray-500 dark:text-neutral-400',
-    none: 'text-gray-400 dark:text-neutral-500',
+    ok: 'text-[#4b9d5f] dark:text-[#6cc182]',
+    none: 'text-neutral-400',
 };
 </script>
 
 <template>
-    <Head title="Dashboard" />
+    <Head :title="__('Dashboard')" />
 
     <AuthenticatedLayout>
         <template #header>
-            <div class="flex items-center justify-between gap-4">
-                <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-neutral-100">
+            <div>
+                <p :class="EYEBROW">{{ formatMonth(summary.month) }}</p>
+                <h1 class="mt-1 text-3xl font-extrabold tracking-[-0.03em] sm:text-4xl">
                     {{ __('Dashboard') }}
-                </h2>
-                <span class="text-sm text-gray-500 dark:text-neutral-400">{{ formatMonth(summary.month) }}</span>
+                </h1>
             </div>
         </template>
 
-        <div class="py-8">
-            <div class="mx-auto max-w-5xl space-y-4 px-4 sm:px-6 lg:px-8">
-                <!-- Totals -->
-                <div class="grid gap-4 sm:grid-cols-3">
-                    <div class="rounded-lg bg-white p-5 shadow-sm dark:bg-neutral-900">
-                        <p class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-neutral-400">
-                            {{ __('Today') }}
-                        </p>
-                        <p class="mt-1 text-2xl font-semibold tabular-nums text-gray-900 dark:text-neutral-100">
-                            {{ money.format(today.total) }}
-                        </p>
-                    </div>
+        <div class="space-y-3">
+            <!-- Hero: the month, and how much room is left in it -->
+            <div class="grid gap-3 lg:grid-cols-3">
+                <div :class="[CARD_TINT, 'anim p-6 sm:p-8 lg:col-span-2']" style="--d: 60ms">
+                    <p :class="EYEBROW">{{ __('This month') }}</p>
 
-                    <div class="rounded-lg bg-white p-5 shadow-sm dark:bg-neutral-900">
-                        <p class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-neutral-400">
-                            {{ __('This month') }}
-                        </p>
-                        <p class="mt-1 text-2xl font-semibold tabular-nums text-gray-900 dark:text-neutral-100">
+                    <div class="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                        <span :class="[FIGURE, 'text-[2.6rem] leading-none sm:text-5xl']">
                             {{ money.format(overall.spent) }}
-                        </p>
-                    </div>
-
-                    <div class="rounded-lg bg-white p-5 shadow-sm dark:bg-neutral-900">
-                        <p class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-neutral-400">
-                            {{ overall.remaining !== null && overall.remaining < 0 ? __('Over budget') : __('Left to spend') }}
-                        </p>
-                        <p
-                            v-if="overall.remaining !== null"
-                            class="mt-1 text-2xl font-semibold tabular-nums"
-                            :class="overall.remaining < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-neutral-100'"
+                        </span>
+                        <span
+                            v-if="overall.budget !== null"
+                            class="text-sm font-medium text-neutral-500 dark:text-neutral-400"
                         >
-                            {{ money.format(Math.abs(overall.remaining)) }}
-                        </p>
-                        <p v-else class="mt-1 text-sm text-gray-400 dark:text-neutral-500">
-                            <Link :href="route('budgets.index')" class="underline underline-offset-2 hover:text-gray-600 dark:hover:text-neutral-300">
-                                {{ __('Set a budget') }}
-                            </Link>
-                        </p>
+                            {{ __('of :amount', { amount: money.format(overall.budget) }) }}
+                        </span>
                     </div>
-                </div>
 
-                <!-- Overall budget -->
-                <div v-if="overall.budget !== null" class="rounded-lg bg-white p-5 shadow-sm dark:bg-neutral-900">
-                    <div class="mb-1.5 flex items-baseline justify-between text-sm">
-                        <span class="font-medium text-gray-900 dark:text-neutral-100">
-                            {{ __('Overall budget') }}
-                            <span class="font-normal text-gray-500 dark:text-neutral-400">
-                                — {{ money.format(overall.spent) }} {{ __('of :amount', { amount: money.format(overall.budget) }) }}
+                    <div v-if="overall.budget !== null" class="mt-6">
+                        <BudgetProgress
+                            :status="overall.status"
+                            :bar-percent="overall.bar_percent"
+                        />
+                        <div class="mt-2.5 flex items-center justify-between text-xs font-semibold">
+                            <span :class="statusText[overall.status]">
+                                {{
+                                    overall.remaining < 0
+                                        ? __(':amount over budget', {
+                                              amount: money.format(Math.abs(overall.remaining)),
+                                          })
+                                        : __(':amount left', {
+                                              amount: money.format(overall.remaining),
+                                          })
+                                }}
                             </span>
-                        </span>
-                        <span class="text-xs font-medium" :class="statusText[overall.status]">
-                            {{ overall.percent }}%
-                        </span>
+                            <span :class="statusText[overall.status]">{{ overall.percent }}%</span>
+                        </div>
                     </div>
-                    <BudgetProgress :status="overall.status" :bar-percent="overall.bar_percent" />
+
+                    <Link
+                        v-else
+                        :href="route('budgets.index')"
+                        class="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-[#4b9d5f] underline-offset-4 hover:underline dark:text-[#6cc182]"
+                    >
+                        {{ __('Set a budget') }}
+                        <ArrowRight class="size-4" />
+                    </Link>
                 </div>
 
-                <!-- Spending by category -->
-                <div class="overflow-hidden rounded-lg bg-white shadow-sm dark:bg-neutral-900">
-                    <div class="border-b border-gray-100 dark:border-neutral-800 px-5 py-3">
-                        <h3 class="text-sm font-semibold text-gray-900 dark:text-neutral-100">{{ __('Where it went') }}</h3>
-                    </div>
+                <div
+                    :class="[CARD, 'anim flex flex-col justify-between p-6 sm:p-8']"
+                    style="--d: 120ms"
+                >
+                    <p :class="EYEBROW">{{ __('Today') }}</p>
+                    <span :class="[FIGURE, 'mt-2 text-[2.6rem] leading-none']">
+                        {{ money.format(today.total) }}
+                    </span>
+                    <Link
+                        :href="route('expenses.index')"
+                        class="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-neutral-900 underline-offset-4 hover:underline dark:text-neutral-100"
+                    >
+                        {{ __('Add an expense') }}
+                        <ArrowRight class="size-4" />
+                    </Link>
+                </div>
+            </div>
 
-                    <p v-if="!breakdown.length" class="px-5 py-10 text-center text-sm text-gray-500 dark:text-neutral-400">
+            <!-- Breakdown + budgets -->
+            <div class="grid gap-3 lg:grid-cols-2">
+                <div :class="[CARD, 'anim p-6 sm:p-7']" style="--d: 180ms">
+                    <h2 class="text-base font-bold tracking-tight">
+                        {{ __('Where it went') }}
+                    </h2>
+
+                    <p v-if="!breakdown.length" :class="[MUTED, 'py-10 text-center text-sm']">
                         {{ __('Nothing logged this month yet.') }}
-                        <Link :href="route('expenses.index')" class="underline underline-offset-2">
-                            {{ __('Add an expense') }}
-                        </Link>
                     </p>
 
-                    <ul v-else class="space-y-4 px-5 py-4">
+                    <ul v-else class="mt-5 space-y-4">
                         <li v-for="row in breakdown" :key="row.uuid">
-                            <div class="mb-1.5 flex items-baseline justify-between gap-3 text-sm">
+                            <div class="mb-2 flex items-baseline justify-between gap-3 text-sm">
                                 <span class="flex min-w-0 items-center gap-2">
                                     <component
                                         :is="categoryIcon(row.icon)"
                                         v-if="categoryIcon(row.icon)"
-                                        class="size-3.5 shrink-0 text-gray-400 dark:text-neutral-500"
+                                        class="size-4 shrink-0 text-neutral-400"
                                         aria-hidden="true"
                                     />
-                                    <span class="truncate text-gray-900 dark:text-neutral-100">{{ row.name }}</span>
+                                    <span class="truncate font-medium">{{ row.name }}</span>
                                 </span>
-                                <span class="shrink-0 tabular-nums text-gray-900 dark:text-neutral-100">
+                                <span class="shrink-0 font-semibold tabular-nums">
                                     {{ money.format(row.spent) }}
-                                    <span class="ml-1 text-xs text-gray-400 dark:text-neutral-500">{{ row.share }}%</span>
+                                    <span :class="[MUTED, 'ms-1 text-xs font-medium']">
+                                        {{ row.share }}%
+                                    </span>
                                 </span>
                             </div>
                             <div
-                                class="h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-neutral-800"
+                                class="h-1.5 w-full overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800"
                                 role="img"
-                                :aria-label="`${row.name}: ${row.share}% of this month's spending`"
+                                :aria-label="`${row.name}: ${row.share}%`"
                             >
                                 <div
                                     class="h-full rounded-full"
@@ -164,77 +175,93 @@ const statusText = {
                     </ul>
                 </div>
 
-                <!-- Budget progress -->
-                <div v-if="budgeted.length" class="overflow-hidden rounded-lg bg-white shadow-sm dark:bg-neutral-900">
-                    <div class="flex items-center justify-between border-b border-gray-100 dark:border-neutral-800 px-5 py-3">
-                        <h3 class="text-sm font-semibold text-gray-900 dark:text-neutral-100">{{ __('Budgets') }}</h3>
+                <div :class="[CARD, 'anim p-6 sm:p-7']" style="--d: 240ms">
+                    <div class="flex items-center justify-between gap-3">
+                        <h2 class="text-base font-bold tracking-tight">{{ __('Budgets') }}</h2>
                         <Link
                             :href="route('budgets.index')"
-                            class="text-xs text-gray-500 dark:text-neutral-400 underline-offset-2 hover:underline"
+                            :class="[MUTED, 'text-xs font-semibold underline-offset-4 hover:underline']"
                         >
                             {{ __('Manage') }}
                         </Link>
                     </div>
 
-                    <ul class="divide-y divide-gray-100 dark:divide-neutral-800">
-                        <li v-for="category in budgeted" :key="category.uuid" class="px-5 py-4">
-                            <div class="mb-1.5 flex items-baseline justify-between gap-3 text-sm">
-                                <span class="truncate text-gray-900 dark:text-neutral-100">{{ category.name }}</span>
-                                <span class="shrink-0 tabular-nums text-gray-500 dark:text-neutral-400">
-                                    {{ money.format(category.spent) }} of
-                                    {{ money.format(category.budget) }}
-                                    <span class="ml-1 text-xs font-medium" :class="statusText[category.status]">
-                                        {{ category.percent }}%
+                    <p v-if="!budgeted.length" :class="[MUTED, 'py-10 text-center text-sm']">
+                        {{ __('No budget set') }}
+                    </p>
+
+                    <ul v-else class="mt-5 space-y-4">
+                        <li v-for="row in budgeted" :key="row.uuid">
+                            <div class="mb-2 flex items-baseline justify-between gap-3 text-sm">
+                                <span class="truncate font-medium">{{ row.name }}</span>
+                                <span
+                                    class="shrink-0 text-xs font-semibold tabular-nums"
+                                    :class="statusText[row.status]"
+                                >
+                                    {{ money.format(row.spent) }}
+                                    <span class="font-medium text-neutral-400">
+                                        / {{ money.format(row.budget) }}
                                     </span>
                                 </span>
                             </div>
-                            <BudgetProgress
-                                :status="category.status"
-                                :bar-percent="category.bar_percent"
+                            <BudgetProgress :status="row.status" :bar-percent="row.bar_percent" />
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Recent -->
+            <div :class="[CARD, 'anim overflow-hidden']" style="--d: 300ms">
+                <div class="flex items-center justify-between gap-3 px-6 pb-4 pt-6 sm:px-7">
+                    <h2 class="text-base font-bold tracking-tight">{{ __('Recent') }}</h2>
+                    <Link
+                        :href="route('expenses.index')"
+                        :class="[MUTED, 'text-xs font-semibold underline-offset-4 hover:underline']"
+                    >
+                        {{ __('View all') }}
+                    </Link>
+                </div>
+
+                <p v-if="!recent.length" :class="[MUTED, 'px-6 pb-10 pt-4 text-center text-sm']">
+                    {{ __('No expenses yet, add your first one.') }}
+                </p>
+
+                <ul v-else class="divide-y divide-neutral-100 dark:divide-neutral-800">
+                    <li
+                        v-for="expense in recent"
+                        :key="expense.uuid"
+                        class="flex items-center gap-3 px-6 py-3.5 sm:px-7"
+                    >
+                        <span
+                            class="grid size-9 shrink-0 place-items-center rounded-full ring-1 ring-inset"
+                            :class="categoryColor(expense.color).badge"
+                        >
+                            <component
+                                :is="categoryIcon(expense.icon)"
+                                v-if="categoryIcon(expense.icon)"
+                                class="size-4"
+                                aria-hidden="true"
                             />
-                        </li>
-                    </ul>
-                </div>
+                            <span
+                                v-else
+                                class="size-2 rounded-full"
+                                :class="categoryColor(expense.color).dot"
+                            />
+                        </span>
 
-                <!-- Recent -->
-                <div class="overflow-hidden rounded-lg bg-white shadow-sm dark:bg-neutral-900">
-                    <div class="flex items-center justify-between border-b border-gray-100 dark:border-neutral-800 px-5 py-3">
-                        <h3 class="text-sm font-semibold text-gray-900 dark:text-neutral-100">{{ __('Recent') }}</h3>
-                        <Link
-                            :href="route('expenses.index')"
-                            class="text-xs text-gray-500 dark:text-neutral-400 underline-offset-2 hover:underline"
-                        >
-                            {{ __('View all') }}
-                        </Link>
-                    </div>
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate text-sm font-semibold">{{ expense.item }}</p>
+                            <p :class="[MUTED, 'truncate text-xs']">{{ expense.category }}</p>
+                        </div>
 
-                    <p v-if="!recent.length" class="px-5 py-10 text-center text-sm text-gray-500 dark:text-neutral-400">
-                        No expenses yet — add your first one.
-                    </p>
-
-                    <ul v-else class="divide-y divide-gray-100 dark:divide-neutral-800">
-                        <li
-                            v-for="expense in recent"
-                            :key="expense.uuid"
-                            class="flex items-center justify-between gap-3 px-5 py-3"
-                        >
-                            <div class="flex min-w-0 items-center gap-3">
-                                <CategoryBadge
-                                    :name="expense.category"
-                                    :color="expense.color"
-                                    :icon="expense.icon"
-                                />
-                                <span class="truncate text-sm text-gray-900 dark:text-neutral-100">{{ expense.item }}</span>
-                            </div>
-                            <div class="flex shrink-0 items-center gap-3">
-                                <span class="text-xs text-gray-400 dark:text-neutral-500">{{ formatDay(expense.spent_on) }}</span>
-                                <span class="text-sm font-medium tabular-nums text-gray-900 dark:text-neutral-100">
-                                    {{ money.format(expense.price) }}
-                                </span>
-                            </div>
-                        </li>
-                    </ul>
-                </div>
+                        <span :class="[MUTED, 'shrink-0 text-xs font-medium']">
+                            {{ formatDay(expense.spent_on) }}
+                        </span>
+                        <span class="w-20 shrink-0 text-end text-sm font-semibold tabular-nums">
+                            {{ money.format(expense.price) }}
+                        </span>
+                    </li>
+                </ul>
             </div>
         </div>
     </AuthenticatedLayout>

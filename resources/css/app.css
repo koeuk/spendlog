@@ -135,3 +135,31 @@
         cursor: not-allowed;
     }
 }
+
+/*
+ * Staggered entrance used across the auth screens and the app shell.
+ * Set the offset per element with style="--d: 120ms".
+ */
+@layer components {
+    .anim {
+        animation: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+        animation-delay: var(--d, 0ms);
+    }
+}
+
+@keyframes rise {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .anim {
+        animation: none;
+    }
+}
