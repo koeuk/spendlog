@@ -7,16 +7,57 @@
  * runtime would never be generated.
  */
 
-/** Page shell. Matches AUTH_PAGE. */
+/**
+ * Page shell. Matches AUTH_PAGE, plus `relative` + `isolate` so the ambient
+ * wash below sits behind the content without escaping the stacking context.
+ */
 export const APP_PAGE =
-    'min-h-screen bg-white font-display text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100';
+    'relative isolate min-h-screen bg-white font-display text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100';
 
-/** The standard surface: a soft card on the page. */
+/**
+ * The glass surface.
+ *
+ * Frosted glass is only frosted if something shows through it — on a flat white
+ * page a blurred card is indistinguishable from an opaque one. So this pairs
+ * with the ambient wash rendered by the layout: translucent fill + backdrop
+ * blur to bend it, a hairline ring for the edge, and an inset top highlight for
+ * the lit rim that reads as thickness.
+ */
 export const CARD =
+    'rounded-[28px] border border-white/60 bg-white/60 shadow-[0_8px_32px_-8px_rgba(15,23,42,0.10),inset_0_1px_0_0_rgba(255,255,255,0.75)] backdrop-blur-xl backdrop-saturate-150 ' +
+    'dark:border-white/10 dark:bg-neutral-900/50 dark:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.6),inset_0_1px_0_0_rgba(255,255,255,0.06)]';
+
+/** The tinted glass — same green wash as the login artwork panel, made liquid. */
+export const CARD_TINT =
+    'rounded-[28px] border border-white/50 bg-[#eaf5e6]/70 shadow-[0_8px_32px_-8px_rgba(75,157,95,0.18),inset_0_1px_0_0_rgba(255,255,255,0.7)] backdrop-blur-xl backdrop-saturate-150 ' +
+    'dark:border-[#6cc182]/15 dark:bg-[#16281a]/60 dark:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.6),inset_0_1px_0_0_rgba(255,255,255,0.05)]';
+
+/**
+ * A lighter pane for nested surfaces (modals, popovers) that sit above a card
+ * and would otherwise blur an already-blurred layer — stacking backdrop filters
+ * costs a lot and muddies both.
+ */
+export const CARD_SOLID =
     'rounded-[28px] border border-neutral-200/70 bg-white dark:border-neutral-800 dark:bg-neutral-900';
 
-/** The tinted surface — same green wash as the login artwork panel. */
-export const CARD_TINT = 'rounded-[28px] bg-[#f1f7ef] dark:bg-[#0f1a12]';
+/**
+ * The flat list surface — expense days, budget rows, the categories table.
+ *
+ * Deliberately not CARD: those are the Dashboard's glass panels, which earn
+ * their depth by sitting over the ambient wash. A long list of glass cards
+ * would be noise, so these define their edge with a hairline border and carry
+ * no resting shadow at all.
+ */
+export const PANEL =
+    'rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900';
+
+/**
+ * PANEL for surfaces you can act on, lifting on hover to say so.
+ *
+ * Only shadow transitions — animating the border colour or transform here would
+ * make a list of these shimmer as the pointer crosses it.
+ */
+export const PANEL_HOVER = `${PANEL} transition-shadow duration-200 ease-out hover:shadow-md`;
 
 /** Muted body copy. Matches AUTH_MUTED. */
 export const MUTED = 'text-neutral-500 dark:text-neutral-400';

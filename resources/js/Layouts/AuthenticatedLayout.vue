@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue';
+import AmbientBackdrop from '@/Components/AmbientBackdrop.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
@@ -9,7 +10,7 @@ import ThemeToggle from '@/Components/ThemeToggle.vue';
 import { Toaster } from '@/Components/ui/sonner';
 import { useFlashToasts } from '@/composables/useFlashToasts';
 import { useTheme } from '@/composables/useTheme';
-import { APP_PAGE } from '@/lib/appStyles';
+import { APP_PAGE, CARD } from '@/lib/appStyles';
 import { ChevronDown, Menu, X } from 'lucide-vue-next';
 import { Link, usePage } from '@inertiajs/vue3';
 
@@ -35,6 +36,8 @@ const links = [
 
 <template>
     <div :class="APP_PAGE">
+        <AmbientBackdrop />
+
         <div class="mx-auto max-w-6xl px-3 pb-10 lg:px-4">
             <!-- The bar floats on the page rather than spanning it edge to edge,
                  echoing the panel geometry of the auth screens. -->
@@ -125,7 +128,7 @@ const links = [
             <!-- Mobile menu -->
             <div
                 v-show="showingNavigationDropdown"
-                class="anim mb-3 rounded-[28px] border border-neutral-200/70 bg-white p-2 md:hidden dark:border-neutral-800 dark:bg-neutral-900"
+                :class="[CARD, 'anim mb-3 p-2 md:hidden']"
             >
                 <div class="flex flex-col gap-0.5">
                     <ResponsiveNavLink

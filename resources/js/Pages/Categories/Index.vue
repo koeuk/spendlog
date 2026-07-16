@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import CategoryBadge from '@/Components/CategoryBadge.vue';
+import { CARD } from '@/lib/appStyles';
 import CategoryStylePicker from '@/Components/CategoryStylePicker.vue';
 import { localized } from '@/lib/i18n';
 import { Button } from '@/Components/ui/button';
@@ -107,7 +108,7 @@ function destroy(category) {
             <!-- Width and gutters come from the layout's one container, so the
                  column never resizes when navigating between pages. -->
             <div>
-                <div class="overflow-hidden rounded-lg bg-white shadow-sm dark:bg-neutral-900">
+                <div :class="[CARD, 'overflow-hidden']">
                     <Table>
                         <TableHeader>
                             <TableRow>

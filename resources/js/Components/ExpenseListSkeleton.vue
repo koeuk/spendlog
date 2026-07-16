@@ -1,5 +1,6 @@
 <script setup>
 import { Skeleton } from '@/Components/ui/skeleton';
+import { CARD } from '@/lib/appStyles';
 
 defineProps({
     days: { type: Number, default: 2 },
@@ -14,7 +15,7 @@ defineProps({
         <div
             v-for="day in days"
             :key="day"
-            class="overflow-hidden rounded-lg bg-white shadow-sm dark:bg-neutral-900"
+            :class="[CARD, 'overflow-hidden']"
         >
             <div class="flex items-center justify-between border-b border-gray-100 px-4 py-3 dark:border-neutral-800">
                 <Skeleton class="h-4 w-24" />

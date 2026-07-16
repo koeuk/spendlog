@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import BudgetProgress from '@/Components/BudgetProgress.vue';
+import { CARD } from '@/lib/appStyles';
 import CategoryBadge from '@/Components/CategoryBadge.vue';
 import { useNavigating } from '@/composables/useNavigating';
 import { trans } from '@/lib/i18n';
@@ -114,7 +115,7 @@ function clearBudget(row) {
                  column never resizes when navigating between pages. -->
             <div class="space-y-4">
                 <!-- Overall -->
-                <div class="rounded-lg bg-white p-5 shadow-sm dark:bg-neutral-900">
+                <div :class="[CARD, 'p-5']">
                     <div class="flex items-start justify-between gap-4">
                         <div>
                             <h3 class="text-sm font-semibold text-gray-900 dark:text-neutral-100">
@@ -189,7 +190,7 @@ function clearBudget(row) {
                 </div>
 
                 <!-- Per category -->
-                <div class="overflow-hidden rounded-lg bg-white shadow-sm dark:bg-neutral-900">
+                <div :class="[CARD, 'overflow-hidden']">
                     <div class="border-b border-gray-100 dark:border-neutral-800 px-5 py-3">
                         <h3 class="text-sm font-semibold text-gray-900 dark:text-neutral-100">{{ __('By category') }}</h3>
                     </div>

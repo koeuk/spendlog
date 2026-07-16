@@ -188,6 +188,14 @@ function submit() {
                     </div>
                 </div>
 
+                <input
+                    ref="faviconInput"
+                    type="file"
+                    accept="image/png,image/x-icon,image/vnd.microsoft.icon,image/webp,image/jpeg"
+                    class="sr-only"
+                    @change="pick('favicon', $event)"
+                />
+
                 <p class="mt-2 text-xs text-gray-500 dark:text-neutral-400">
                     {{ __('Shown in the browser tab. PNG, ICO, JPG or WebP, up to 1 MB. Square works best.') }}
                 </p>

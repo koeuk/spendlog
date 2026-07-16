@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import ExpenseForm from '@/Components/ExpenseForm.vue';
+import { CARD } from '@/lib/appStyles';
 import ExpenseListSkeleton from '@/Components/ExpenseListSkeleton.vue';
 import { useNavigating } from '@/composables/useNavigating';
 import { trans } from '@/lib/i18n';
@@ -218,7 +219,7 @@ const isEmpty = computed(() => props.days.length === 0);
                 <div
                     v-for="day in navigating ? [] : days"
                     :key="day.date"
-                    class="overflow-hidden rounded-lg bg-white shadow-sm dark:bg-neutral-900"
+                    :class="[CARD, 'overflow-hidden']"
                 >
                     <div
                         class="flex items-center justify-between border-b border-gray-100 dark:border-neutral-800 px-4 py-3"
