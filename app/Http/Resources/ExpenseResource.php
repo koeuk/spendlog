@@ -18,7 +18,12 @@ class ExpenseResource extends JsonResource
     {
         return [
             'uuid' => $this->uuid,
+            // Resolved for the active locale, falling back to English — this is
+            // the one to render.
             'item' => $this->item,
+            // The raw per-locale map, so a client editing an expense can round
+            // trip it back to POST/PATCH, which take item[en]/item[km].
+            'item_translations' => $this->getTranslations('item'),
             // Money is a string throughout this API — see the money note in
             // DEVELOPMENT_PLAN.md. The decimal:2 cast already yields "12.50",
             // so this preserves the trailing zero a float would drop.

@@ -1,11 +1,12 @@
 <script setup>
 import { computed, ref } from 'vue';
+import { router } from '@inertiajs/vue3';
 import { ChartColumn, ChartSpline } from 'lucide-vue-next';
 import { monotonePath } from '@/lib/curve';
 import { EYEBROW, FIGURE, MUTED } from '@/lib/appStyles';
 
 const props = defineProps({
-    // { week: {label, total, buckets[]}, month: {...}, year: {...} }
+    // { granularity, anchor, options: [{value,label}], series: {label,total,buckets} }
     trend: { type: Object, required: true },
 });
 
@@ -20,9 +21,34 @@ const VIEWS = [
     { key: 'line', label: 'Line', icon: ChartSpline },
 ];
 
-const period = ref('month');
+// Bars vs line is pure presentation, so it stays client-side. Which period to
+// show is data, so it goes to the server.
 const view = ref('line');
-const series = computed(() => props.trend[period.value]);
+
+const series = computed(() => props.trend.series);
+
+const loading = ref(false);
+
+/**
+ * Reloads only the `trend` prop — the rest of the dashboard is untouched, so
+ * changing period does not re-run the budget and category queries.
+ */
+function load(granularity, anchor = null) {
+    router.get(
+        route('dashboard'),
+        // Dropping `at` when the granularity changes: an anchor is written in
+        // that granularity's own format, so a week value is meaningless to year.
+        anchor ? { trend: granularity, at: anchor } : { trend: granularity },
+        {
+            only: ['trend'],
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            onStart: () => (loading.value = true),
+            onFinish: () => (loading.value = false),
+        },
+    );
+}
 
 const money = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -179,8 +205,22 @@ const tooltipTop = computed(() => {
                 </p>
             </div>
 
-            <!-- Filters in one row above the plot: what is shown, then how. -->
-            <div class="flex items-center gap-2">
+            <!-- Filters in one row above the plot: which period, then how it is drawn. -->
+            <div class="flex flex-wrap items-center gap-2">
+                <!-- Native select on purpose: it is a plain one-of-many choice,
+                     and the OS picker beats a custom menu on a phone. -->
+                <select
+                    :value="trend.anchor"
+                    class="h-8 rounded-full border-neutral-200 bg-white/70 py-0 ps-3 pe-8 text-xs font-semibold text-neutral-700 focus:border-neutral-400 focus:ring-0 dark:border-neutral-700 dark:bg-neutral-800/70 dark:text-neutral-200"
+                    :aria-label="__('Period')"
+                    :disabled="loading"
+                    @change="load(trend.granularity, $event.target.value)"
+                >
+                    <option v-for="option in trend.options" :key="option.value" :value="option.value">
+                        {{ option.label }}
+                    </option>
+                </select>
+
                 <div
                     class="inline-flex rounded-full border border-neutral-200 bg-white/70 p-0.5 dark:border-neutral-700 dark:bg-neutral-800/70"
                     role="group"
@@ -192,12 +232,12 @@ const tooltipTop = computed(() => {
                         type="button"
                         class="rounded-full px-3 py-1 text-xs font-semibold transition-colors duration-200"
                         :class="
-                            period === option.key
+                            trend.granularity === option.key
                                 ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900'
                                 : 'text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100'
                         "
-                        :aria-pressed="period === option.key"
-                        @click="period = option.key"
+                        :aria-pressed="trend.granularity === option.key"
+                        @click="load(option.key)"
                     >
                         {{ __(option.label) }}
                     </button>
@@ -230,7 +270,10 @@ const tooltipTop = computed(() => {
         </div>
 
         <!-- Plot -->
-        <div class="relative mt-6">
+        <div
+            class="relative mt-6 transition-opacity duration-200"
+            :class="loading ? 'opacity-50' : 'opacity-100'"
+        >
             <!-- One recessive reference line at the peak; a full grid would out-shout the marks. -->
             <div
                 class="pointer-events-none absolute inset-x-0 top-0 border-t border-dashed border-neutral-200 dark:border-neutral-800"
@@ -276,13 +319,13 @@ const tooltipTop = computed(() => {
                     aria-hidden="true"
                 >
                     <defs>
-                        <linearGradient :id="`trend-${period}`" x1="0" y1="0" x2="0" y2="1">
+                        <linearGradient :id="`trend-${trend.granularity}`" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="0%" stop-color="currentColor" stop-opacity="0.28" />
                             <stop offset="100%" stop-color="currentColor" stop-opacity="0" />
                         </linearGradient>
                     </defs>
 
-                    <path v-if="areaPath" :d="areaPath" :fill="`url(#trend-${period})`" />
+                    <path v-if="areaPath" :d="areaPath" :fill="`url(#trend-${trend.granularity})`" />
                     <path
                         v-if="linePath"
                         :d="linePath"

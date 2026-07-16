@@ -114,7 +114,7 @@ endpoints:
         name: uuid
         description: ''
         required: true
-        example: 019f6ad4-2531-7262-9f98-61f540ee605f
+        example: 019f6ae4-8bd7-720f-8055-3f87ef4a17d3
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -132,7 +132,7 @@ endpoints:
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      uuid: 019f6ad4-2531-7262-9f98-61f540ee605f
+      uuid: 019f6ae4-8bd7-720f-8055-3f87ef4a17d3
       category: 0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
     queryParameters: []
     cleanQueryParameters: []
@@ -310,7 +310,7 @@ endpoints:
         name: uuid
         description: ''
         required: true
-        example: 019f6ad4-2531-7262-9f98-61f540ee605f
+        example: 019f6ae4-8bd7-720f-8055-3f87ef4a17d3
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -333,7 +333,7 @@ endpoints:
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      uuid: 019f6ad4-2531-7262-9f98-61f540ee605f
+      uuid: 019f6ae4-8bd7-720f-8055-3f87ef4a17d3
       category: |-
         0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
 
@@ -457,7 +457,7 @@ endpoints:
         name: uuid
         description: ''
         required: true
-        example: 019f6ad4-2531-7262-9f98-61f540ee605f
+        example: 019f6ae4-8bd7-720f-8055-3f87ef4a17d3
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -475,7 +475,7 @@ endpoints:
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      uuid: 019f6ad4-2531-7262-9f98-61f540ee605f
+      uuid: 019f6ae4-8bd7-720f-8055-3f87ef4a17d3
       category: 0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
     queryParameters: []
     cleanQueryParameters: []

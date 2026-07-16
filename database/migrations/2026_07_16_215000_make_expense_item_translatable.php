@@ -33,6 +33,13 @@ return new class extends Migration
         Schema::table('expenses', function (Blueprint $table) {
             $table->renameColumn('item_translations', 'item');
         });
+
+        // The staging column had to be nullable to be added to populated rows;
+        // restore the constraint the original column carried, or an expense with
+        // no item at all becomes representable.
+        Schema::table('expenses', function (Blueprint $table) {
+            $table->json('item')->nullable(false)->change();
+        });
     }
 
     public function down(): void

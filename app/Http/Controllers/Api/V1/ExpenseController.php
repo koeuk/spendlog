@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ExpenseRequest;
 use App\Http\Resources\ExpenseResource;
 use App\Models\Expense;
+use App\Support\TranslatableQuery;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -46,7 +47,7 @@ class ExpenseController extends Controller
      * @queryParam scope string Admin only. Set to "all" to list every user's expenses and include `owner`. Example: all
      * @queryParam per_page int Default 50, clamped to 100. Example: 25
      *
-     * @response 200 scenario="success" {"data": [{"uuid": "0198f...", "item": "Coffee", "price": "4.50", "spent_on": "2026-07-16", "category": {"uuid": "0198a...", "name": "Food", "color": "amber", "icon": "utensils"}, "created_at": "2026-07-16T10:00:00+00:00", "updated_at": "2026-07-16T10:00:00+00:00"}], "links": {"first": "...", "last": "...", "prev": null, "next": null}, "meta": {"current_page": 1, "per_page": 50, "total": 1}}
+     * @response 200 scenario="success" {"data": [{"uuid": "0198f...", "item": "Coffee", "item_translations": {"en": "Coffee"}, "price": "4.50", "spent_on": "2026-07-16", "category": {"uuid": "0198a...", "name": "Food", "color": "amber", "icon": "utensils"}, "created_at": "2026-07-16T10:00:00+00:00", "updated_at": "2026-07-16T10:00:00+00:00"}], "links": {"first": "...", "last": "...", "prev": null, "next": null}, "meta": {"current_page": 1, "per_page": 50, "total": 1}}
      * @response 400 scenario="non-admin used filter[user]" {"message": "Requested filter(s) `user` are not allowed."}
      */
     public function index(Request $request): AnonymousResourceCollection
@@ -56,7 +57,7 @@ class ExpenseController extends Controller
         $viewingAll = $isAdmin && $request->query('scope') === 'all';
 
         $filters = [
-            AllowedFilter::partial('item'),
+            TranslatableQuery::filter('item'),
             // Filter by the public UUID; the column itself stays internal.
             AllowedFilter::callback('category', fn ($query, $value) => $query->whereHas(
                 'category',
@@ -77,7 +78,7 @@ class ExpenseController extends Controller
 
         $query = QueryBuilder::for(Expense::class)
             ->allowedFilters(...$filters)
-            ->allowedSorts('spent_on', 'price', 'item')
+            ->allowedSorts('spent_on', 'price', TranslatableQuery::sort('item'))
             ->defaultSort('-spent_on', '-id')
             ->with('category');
 
@@ -102,7 +103,7 @@ class ExpenseController extends Controller
      *
      * @urlParam expense string required The expense UUID. Example: 0198f1a2-b3c4-7d5e-8f9a-0b1c2d3e4f5a
      *
-     * @response 200 {"data": {"uuid": "0198f...", "item": "Coffee", "price": "4.50", "spent_on": "2026-07-16", "category": {"uuid": "0198a...", "name": "Food", "color": "amber", "icon": "utensils"}}}
+     * @response 200 {"data": {"uuid": "0198f...", "item": "Coffee", "item_translations": {"en": "Coffee"}, "price": "4.50", "spent_on": "2026-07-16", "category": {"uuid": "0198a...", "name": "Food", "color": "amber", "icon": "utensils"}}}
      * @response 403 scenario="someone else's expense" {"message": "This action is unauthorized."}
      * @response 404 scenario="unknown or non-UUID" {"message": "Not found."}
      */
@@ -119,12 +120,17 @@ class ExpenseController extends Controller
      * The owner always comes from the token — a `user_id` in the payload is
      * ignored, not honoured.
      *
-     * @bodyParam item string required What was bought. Example: Coffee
+     * The item is translatable, so it is sent as a per-locale map rather than a
+     * string. English is the fallback locale and is therefore required.
+     *
+     * @bodyParam item object required Per-locale item names.
+     * @bodyParam item.en string required Example: Coffee
+     * @bodyParam item.km string Optional Khmer name. Example: កាហ្វេ
      * @bodyParam price number required Max 99999999.99. Example: 4.50
      * @bodyParam category_uuid string required Must be an existing category. Example: 0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
      * @bodyParam spent_on date required Cannot be in the future. Example: 2026-07-16
      *
-     * @response 201 {"data": {"uuid": "0198f...", "item": "Coffee", "price": "4.50", "spent_on": "2026-07-16", "category": {"uuid": "0198a...", "name": "Food"}}}
+     * @response 201 {"data": {"uuid": "0198f...", "item": "Coffee", "item_translations": {"en": "Coffee"}, "price": "4.50", "spent_on": "2026-07-16", "category": {"uuid": "0198a...", "name": "Food"}}}
      * @response 403 scenario="token lacks expenses:write" {"message": "Invalid ability provided."}
      * @response 422 scenario="future date" {"message": "You cannot log an expense in the future.", "errors": {"spent_on": ["You cannot log an expense in the future."]}}
      */
@@ -148,12 +154,14 @@ class ExpenseController extends Controller
      *
      * @urlParam expense string required The expense UUID. Example: 0198f1a2-b3c4-7d5e-8f9a-0b1c2d3e4f5a
      *
-     * @bodyParam item string required Example: Coffee
+     * @bodyParam item object required Per-locale item names.
+     * @bodyParam item.en string required Example: Coffee
+     * @bodyParam item.km string Optional Khmer name. Example: កាហ្វេ
      * @bodyParam price number required Example: 4.50
      * @bodyParam category_uuid string required Example: 0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
      * @bodyParam spent_on date required Cannot be in the future. Example: 2026-07-16
      *
-     * @response 200 {"data": {"uuid": "0198f...", "item": "Coffee", "price": "4.50", "spent_on": "2026-07-16"}}
+     * @response 200 {"data": {"uuid": "0198f...", "item": "Coffee", "item_translations": {"en": "Coffee"}, "price": "4.50", "spent_on": "2026-07-16"}}
      * @response 403 scenario="someone else's expense" {"message": "This action is unauthorized."}
      */
     public function update(ExpenseRequest $request, Expense $expense): ExpenseResource

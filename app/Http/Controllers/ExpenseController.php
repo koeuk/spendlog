@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ExpenseRequest;
 use App\Models\Category;
 use App\Models\Expense;
+use App\Support\TranslatableQuery;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,7 +25,7 @@ class ExpenseController extends Controller
         $viewingAll = $isAdmin && $request->query('scope') === 'all';
 
         $filters = [
-            AllowedFilter::partial('item'),
+            TranslatableQuery::filter('item'),
             // Filter by the public UUID; the column itself stays internal.
             AllowedFilter::callback('category', fn ($query, $value) => $query->whereHas(
                 'category',
@@ -45,7 +46,7 @@ class ExpenseController extends Controller
 
         $query = QueryBuilder::for(Expense::class)
             ->allowedFilters(...$filters)
-            ->allowedSorts('spent_on', 'price', 'item')
+            ->allowedSorts('spent_on', 'price', TranslatableQuery::sort('item'))
             ->defaultSort('-spent_on', '-id')
             ->with(['category:id,uuid,name,color,icon', 'user:id,uuid,name']);
 

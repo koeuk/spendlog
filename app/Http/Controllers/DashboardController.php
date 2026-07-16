@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Expense;
 use App\Models\User;
 use App\Services\BudgetSummary;
+use App\Enums\TrendGranularity;
 use App\Services\SpendingTrend;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
@@ -37,10 +38,34 @@ class DashboardController extends Controller
             ],
             'summary' => $summary,
             'breakdown' => $this->breakdown($summary),
-            // All three granularities at once — the toggle is then instant.
-            'trend' => $this->trend->forUser($user, $today),
+            'trend' => $this->trendPayload($request),
             'recent' => $this->recent($user),
         ]);
+    }
+
+    /**
+     * The chart's own slice of state. Everything it needs to render and to
+     * repopulate its own controls travels together, so the page can reload just
+     * this key when the period changes.
+     *
+     * @return array<string, mixed>
+     */
+    private function trendPayload(Request $request): array
+    {
+        $user = $request->user();
+
+        // A junk ?trend= falls back rather than 500s — it is a query string, not a form.
+        $granularity = TrendGranularity::tryFrom((string) $request->query('trend'))
+            ?? TrendGranularity::Month;
+
+        $anchor = $this->trend->resolveAnchor($granularity, $request->query('at'));
+
+        return [
+            'granularity' => $granularity->value,
+            'anchor' => $this->trend->anchorValue($granularity, $anchor),
+            'options' => $this->trend->options($user, $granularity),
+            'series' => $this->trend->series($user, $granularity, $anchor),
+        ];
     }
 
     private function todayTotal(User $user, CarbonImmutable $today): float

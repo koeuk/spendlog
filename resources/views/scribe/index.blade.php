@@ -26,7 +26,7 @@
             </style>
 
     <script>
-        var tryItOutBaseUrl = "http://localhost";
+        var tryItOutBaseUrl = "http://127.0.0.1:8000";
         var useCsrf = Boolean();
         var csrfUrl = "/sanctum/csrf-cookie";
     </script>
@@ -177,7 +177,7 @@
         <h1 id="introduction">Introduction</h1>
 <p>Token-authenticated JSON API for mobile and third-party clients.</p>
 <aside>
-    <strong>Base URL</strong>: <code>http://localhost</code>
+    <strong>Base URL</strong>: <code>http://127.0.0.1:8000</code>
 </aside>
 <pre><code>The Inertia frontend is unaffected by this API — it keeps using session auth.
 
@@ -230,7 +230,7 @@ distinguishable response would be a free user-enumeration oracle.</p>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request POST \
-    "http://localhost/api/v1/login" \
+    "http://127.0.0.1:8000/api/v1/login" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json" \
     --data "{
@@ -246,7 +246,7 @@ distinguishable response would be a free user-enumeration oracle.</p>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/v1/login"
+    "http://127.0.0.1:8000/api/v1/login"
 );
 
 const headers = {
@@ -453,7 +453,7 @@ ignored, not honoured.</p>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request POST \
-    "http://localhost/api/v1/register" \
+    "http://127.0.0.1:8000/api/v1/register" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json" \
     --data "{
@@ -468,7 +468,7 @@ ignored, not honoured.</p>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/v1/register"
+    "http://127.0.0.1:8000/api/v1/register"
 );
 
 const headers = {
@@ -671,7 +671,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request GET \
-    --get "http://localhost/api/v1/me" \
+    --get "http://127.0.0.1:8000/api/v1/me" \
     --header "Authorization: Bearer {YOUR_AUTH_TOKEN}" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json"</code></pre></div>
@@ -679,7 +679,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/v1/me"
+    "http://127.0.0.1:8000/api/v1/me"
 );
 
 const headers = {
@@ -814,7 +814,7 @@ user's other devices signed in.</p>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request POST \
-    "http://localhost/api/v1/logout" \
+    "http://127.0.0.1:8000/api/v1/logout" \
     --header "Authorization: Bearer {YOUR_AUTH_TOKEN}" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json"</code></pre></div>
@@ -822,7 +822,7 @@ user's other devices signed in.</p>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/v1/logout"
+    "http://127.0.0.1:8000/api/v1/logout"
 );
 
 const headers = {
@@ -955,7 +955,7 @@ summary endpoint — that is what the Budgets screen renders.</p>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request GET \
-    --get "http://localhost/api/v1/budgets?month=2026-07" \
+    --get "http://127.0.0.1:8000/api/v1/budgets?month=2026-07" \
     --header "Authorization: Bearer {YOUR_AUTH_TOKEN}" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json"</code></pre></div>
@@ -963,7 +963,7 @@ summary endpoint — that is what the Budgets screen renders.</p>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/v1/budgets"
+    "http://127.0.0.1:8000/api/v1/budgets"
 );
 
 const params = {
@@ -1129,7 +1129,7 @@ track; <code>percent</code> keeps the truth.</p>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request GET \
-    --get "http://localhost/api/v1/budgets/summary?month=2026-07" \
+    --get "http://127.0.0.1:8000/api/v1/budgets/summary?month=2026-07" \
     --header "Authorization: Bearer {YOUR_AUTH_TOKEN}" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json"</code></pre></div>
@@ -1137,7 +1137,7 @@ track; <code>percent</code> keeps the truth.</p>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/v1/budgets/summary"
+    "http://127.0.0.1:8000/api/v1/budgets/summary"
 );
 
 const params = {
@@ -1311,7 +1311,7 @@ already exists. Returns 201 when the slot was empty, 200 when it was not.</p>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request POST \
-    "http://localhost/api/v1/budgets" \
+    "http://127.0.0.1:8000/api/v1/budgets" \
     --header "Authorization: Bearer {YOUR_AUTH_TOKEN}" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json" \
@@ -1325,7 +1325,7 @@ already exists. Returns 201 when the slot was empty, 200 when it was not.</p>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/v1/budgets"
+    "http://127.0.0.1:8000/api/v1/budgets"
 );
 
 const headers = {
@@ -1534,7 +1534,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request DELETE \
-    "http://localhost/api/v1/budgets/6ff8f7f6-1eb3-3525-be4a-3932c805afed" \
+    "http://127.0.0.1:8000/api/v1/budgets/019f6ae7-135a-7260-af68-2eab80d9d865" \
     --header "Authorization: Bearer {YOUR_AUTH_TOKEN}" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json"</code></pre></div>
@@ -1542,7 +1542,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/v1/budgets/6ff8f7f6-1eb3-3525-be4a-3932c805afed"
+    "http://127.0.0.1:8000/api/v1/budgets/019f6ae7-135a-7260-af68-2eab80d9d865"
 );
 
 const headers = {
@@ -1667,10 +1667,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="uuid"                data-endpoint="DELETEapi-v1-budgets--uuid-"
-               value="6ff8f7f6-1eb3-3525-be4a-3932c805afed"
+               value="019f6ae7-135a-7260-af68-2eab80d9d865"
                data-component="url">
     <br>
-<p>Example: <code>6ff8f7f6-1eb3-3525-be4a-3932c805afed</code></p>
+<p>Example: <code>019f6ae7-135a-7260-af68-2eab80d9d865</code></p>
             </div>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>budget</code></b>&nbsp;&nbsp;
@@ -1706,7 +1706,7 @@ writable by admins only — and a token needs <code>categories:write</code> on t
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request GET \
-    --get "http://localhost/api/v1/categories?filter%5Bname%5D=foo&amp;filter%5Bcolor%5D=amber&amp;sort=-expenses" \
+    --get "http://127.0.0.1:8000/api/v1/categories?filter%5Bname%5D=foo&amp;filter%5Bcolor%5D=amber&amp;sort=-expenses" \
     --header "Authorization: Bearer {YOUR_AUTH_TOKEN}" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json"</code></pre></div>
@@ -1714,7 +1714,7 @@ writable by admins only — and a token needs <code>categories:write</code> on t
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/v1/categories"
+    "http://127.0.0.1:8000/api/v1/categories"
 );
 
 const params = {
@@ -1900,7 +1900,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request GET \
-    --get "http://localhost/api/v1/categories/019f6ad4-2531-7262-9f98-61f540ee605f" \
+    --get "http://127.0.0.1:8000/api/v1/categories/019f6ae4-8bd7-720f-8055-3f87ef4a17d3" \
     --header "Authorization: Bearer {YOUR_AUTH_TOKEN}" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json"</code></pre></div>
@@ -1908,7 +1908,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/v1/categories/019f6ad4-2531-7262-9f98-61f540ee605f"
+    "http://127.0.0.1:8000/api/v1/categories/019f6ae4-8bd7-720f-8055-3f87ef4a17d3"
 );
 
 const headers = {
@@ -2042,10 +2042,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="uuid"                data-endpoint="GETapi-v1-categories--uuid-"
-               value="019f6ad4-2531-7262-9f98-61f540ee605f"
+               value="019f6ae4-8bd7-720f-8055-3f87ef4a17d3"
                data-component="url">
     <br>
-<p>Example: <code>019f6ad4-2531-7262-9f98-61f540ee605f</code></p>
+<p>Example: <code>019f6ae4-8bd7-720f-8055-3f87ef4a17d3</code></p>
             </div>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>category</code></b>&nbsp;&nbsp;
@@ -2079,7 +2079,7 @@ optional, and an empty locale is dropped rather than stored as "".</p>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request POST \
-    "http://localhost/api/v1/categories" \
+    "http://127.0.0.1:8000/api/v1/categories" \
     --header "Authorization: Bearer {YOUR_AUTH_TOKEN}" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json" \
@@ -2096,7 +2096,7 @@ optional, and an empty locale is dropped rather than stored as "".</p>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/v1/categories"
+    "http://127.0.0.1:8000/api/v1/categories"
 );
 
 const headers = {
@@ -2325,7 +2325,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request PATCH \
-    "http://localhost/api/v1/categories/019f6ad4-2531-7262-9f98-61f540ee605f" \
+    "http://127.0.0.1:8000/api/v1/categories/019f6ae4-8bd7-720f-8055-3f87ef4a17d3" \
     --header "Authorization: Bearer {YOUR_AUTH_TOKEN}" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json" \
@@ -2342,7 +2342,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/v1/categories/019f6ad4-2531-7262-9f98-61f540ee605f"
+    "http://127.0.0.1:8000/api/v1/categories/019f6ae4-8bd7-720f-8055-3f87ef4a17d3"
 );
 
 const headers = {
@@ -2487,10 +2487,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="uuid"                data-endpoint="PATCHapi-v1-categories--uuid-"
-               value="019f6ad4-2531-7262-9f98-61f540ee605f"
+               value="019f6ae4-8bd7-720f-8055-3f87ef4a17d3"
                data-component="url">
     <br>
-<p>Example: <code>019f6ad4-2531-7262-9f98-61f540ee605f</code></p>
+<p>Example: <code>019f6ae4-8bd7-720f-8055-3f87ef4a17d3</code></p>
             </div>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>category</code></b>&nbsp;&nbsp;
@@ -2590,7 +2590,7 @@ well-formed, the state just forbids it.</p>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request DELETE \
-    "http://localhost/api/v1/categories/019f6ad4-2531-7262-9f98-61f540ee605f" \
+    "http://127.0.0.1:8000/api/v1/categories/019f6ae4-8bd7-720f-8055-3f87ef4a17d3" \
     --header "Authorization: Bearer {YOUR_AUTH_TOKEN}" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json"</code></pre></div>
@@ -2598,7 +2598,7 @@ well-formed, the state just forbids it.</p>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/v1/categories/019f6ad4-2531-7262-9f98-61f540ee605f"
+    "http://127.0.0.1:8000/api/v1/categories/019f6ae4-8bd7-720f-8055-3f87ef4a17d3"
 );
 
 const headers = {
@@ -2723,10 +2723,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="uuid"                data-endpoint="DELETEapi-v1-categories--uuid-"
-               value="019f6ad4-2531-7262-9f98-61f540ee605f"
+               value="019f6ae4-8bd7-720f-8055-3f87ef4a17d3"
                data-component="url">
     <br>
-<p>Example: <code>019f6ad4-2531-7262-9f98-61f540ee605f</code></p>
+<p>Example: <code>019f6ae4-8bd7-720f-8055-3f87ef4a17d3</code></p>
             </div>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>category</code></b>&nbsp;&nbsp;
@@ -2765,7 +2765,7 @@ be meaningless.</p>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request GET \
-    --get "http://localhost/api/v1/dashboard" \
+    --get "http://127.0.0.1:8000/api/v1/dashboard" \
     --header "Authorization: Bearer {YOUR_AUTH_TOKEN}" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json"</code></pre></div>
@@ -2773,7 +2773,7 @@ be meaningless.</p>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/v1/dashboard"
+    "http://127.0.0.1:8000/api/v1/dashboard"
 );
 
 const headers = {
@@ -2955,7 +2955,7 @@ else it is a 400, not a silently empty result.</p>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request GET \
-    --get "http://localhost/api/v1/expenses?filter%5Bitem%5D=coffee&amp;filter%5Bcategory%5D=0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b&amp;filter%5Bfrom%5D=2026-07-01&amp;filter%5Bto%5D=2026-07-31&amp;filter%5Buser%5D=architecto&amp;sort=-price&amp;scope=all&amp;per_page=25" \
+    --get "http://127.0.0.1:8000/api/v1/expenses?filter%5Bitem%5D=coffee&amp;filter%5Bcategory%5D=0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b&amp;filter%5Bfrom%5D=2026-07-01&amp;filter%5Bto%5D=2026-07-31&amp;filter%5Buser%5D=architecto&amp;sort=-price&amp;scope=all&amp;per_page=25" \
     --header "Authorization: Bearer {YOUR_AUTH_TOKEN}" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json"</code></pre></div>
@@ -2963,7 +2963,7 @@ else it is a 400, not a silently empty result.</p>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/v1/expenses"
+    "http://127.0.0.1:8000/api/v1/expenses"
 );
 
 const params = {
@@ -3004,6 +3004,9 @@ fetch(url, {
         {
             &quot;uuid&quot;: &quot;0198f...&quot;,
             &quot;item&quot;: &quot;Coffee&quot;,
+            &quot;item_translations&quot;: {
+                &quot;en&quot;: &quot;Coffee&quot;
+            },
             &quot;price&quot;: &quot;4.50&quot;,
             &quot;spent_on&quot;: &quot;2026-07-16&quot;,
             &quot;category&quot;: {
@@ -3235,7 +3238,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request GET \
-    --get "http://localhost/api/v1/expenses/6ff8f7f6-1eb3-3525-be4a-3932c805afed" \
+    --get "http://127.0.0.1:8000/api/v1/expenses/019f6ae4-8ed5-70c4-8c08-27482f2fc7be" \
     --header "Authorization: Bearer {YOUR_AUTH_TOKEN}" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json"</code></pre></div>
@@ -3243,7 +3246,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/v1/expenses/6ff8f7f6-1eb3-3525-be4a-3932c805afed"
+    "http://127.0.0.1:8000/api/v1/expenses/019f6ae4-8ed5-70c4-8c08-27482f2fc7be"
 );
 
 const headers = {
@@ -3270,6 +3273,9 @@ fetch(url, {
     &quot;data&quot;: {
         &quot;uuid&quot;: &quot;0198f...&quot;,
         &quot;item&quot;: &quot;Coffee&quot;,
+        &quot;item_translations&quot;: {
+            &quot;en&quot;: &quot;Coffee&quot;
+        },
         &quot;price&quot;: &quot;4.50&quot;,
         &quot;spent_on&quot;: &quot;2026-07-16&quot;,
         &quot;category&quot;: {
@@ -3391,10 +3397,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="uuid"                data-endpoint="GETapi-v1-expenses--uuid-"
-               value="6ff8f7f6-1eb3-3525-be4a-3932c805afed"
+               value="019f6ae4-8ed5-70c4-8c08-27482f2fc7be"
                data-component="url">
     <br>
-<p>Example: <code>6ff8f7f6-1eb3-3525-be4a-3932c805afed</code></p>
+<p>Example: <code>019f6ae4-8ed5-70c4-8c08-27482f2fc7be</code></p>
             </div>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>expense</code></b>&nbsp;&nbsp;
@@ -3418,6 +3424,8 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <p>The owner always comes from the token — a <code>user_id</code> in the payload is
 ignored, not honoured.</p>
+<p>The item is translatable, so it is sent as a per-locale map rather than a
+string. English is the fallback locale and is therefore required.</p>
 
 <span id="example-requests-POSTapi-v1-expenses">
 <blockquote>Example request:</blockquote>
@@ -3425,12 +3433,15 @@ ignored, not honoured.</p>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request POST \
-    "http://localhost/api/v1/expenses" \
+    "http://127.0.0.1:8000/api/v1/expenses" \
     --header "Authorization: Bearer {YOUR_AUTH_TOKEN}" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json" \
     --data "{
-    \"item\": \"Coffee\",
+    \"item\": {
+        \"en\": \"Coffee\",
+        \"km\": \"កាហ្វេ\"
+    },
     \"price\": 4.5,
     \"category_uuid\": \"0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b\",
     \"spent_on\": \"2026-07-16\"
@@ -3440,7 +3451,7 @@ ignored, not honoured.</p>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/v1/expenses"
+    "http://127.0.0.1:8000/api/v1/expenses"
 );
 
 const headers = {
@@ -3450,7 +3461,10 @@ const headers = {
 };
 
 let body = {
-    "item": "Coffee",
+    "item": {
+        "en": "Coffee",
+        "km": "កាហ្វេ"
+    },
     "price": 4.5,
     "category_uuid": "0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b",
     "spent_on": "2026-07-16"
@@ -3474,6 +3488,9 @@ fetch(url, {
     &quot;data&quot;: {
         &quot;uuid&quot;: &quot;0198f...&quot;,
         &quot;item&quot;: &quot;Coffee&quot;,
+        &quot;item_translations&quot;: {
+            &quot;en&quot;: &quot;Coffee&quot;
+        },
         &quot;price&quot;: &quot;4.50&quot;,
         &quot;spent_on&quot;: &quot;2026-07-16&quot;,
         &quot;category&quot;: {
@@ -3592,16 +3609,40 @@ You can check the Dev Tools console for debugging information.</code></pre>
             </div>
                                 <h4 class="fancy-heading-panel"><b>Body Parameters</b></h4>
         <div style=" padding-left: 28px;  clear: unset;">
-            <b style="line-height: 2;"><code>item</code></b>&nbsp;&nbsp;
+        <details>
+            <summary style="padding-bottom: 10px;">
+                <b style="line-height: 2;"><code>item</code></b>&nbsp;&nbsp;
+<small>object</small>&nbsp;
+ &nbsp;
+ &nbsp;
+<br>
+<p>Per-locale item names.</p>
+            </summary>
+                                                <div style="margin-left: 14px; clear: unset;">
+                        <b style="line-height: 2;"><code>en</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
-                              name="item"                data-endpoint="POSTapi-v1-expenses"
+                              name="item.en"                data-endpoint="POSTapi-v1-expenses"
                value="Coffee"
                data-component="body">
     <br>
-<p>What was bought. Example: <code>Coffee</code></p>
+<p>Example: <code>Coffee</code></p>
+                    </div>
+                                                                <div style="margin-left: 14px; clear: unset;">
+                        <b style="line-height: 2;"><code>km</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="item.km"                data-endpoint="POSTapi-v1-expenses"
+               value="កាហ្វេ"
+               data-component="body">
+    <br>
+<p>Optional Khmer name. Example: <code>កាហ្វេ</code></p>
+                    </div>
+                                    </details>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>price</code></b>&nbsp;&nbsp;
@@ -3655,12 +3696,15 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request PATCH \
-    "http://localhost/api/v1/expenses/6ff8f7f6-1eb3-3525-be4a-3932c805afed" \
+    "http://127.0.0.1:8000/api/v1/expenses/019f6ae4-8ed5-70c4-8c08-27482f2fc7be" \
     --header "Authorization: Bearer {YOUR_AUTH_TOKEN}" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json" \
     --data "{
-    \"item\": \"Coffee\",
+    \"item\": {
+        \"en\": \"Coffee\",
+        \"km\": \"កាហ្វេ\"
+    },
     \"price\": 4.5,
     \"category_uuid\": \"0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b\",
     \"spent_on\": \"2026-07-16\"
@@ -3670,7 +3714,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/v1/expenses/6ff8f7f6-1eb3-3525-be4a-3932c805afed"
+    "http://127.0.0.1:8000/api/v1/expenses/019f6ae4-8ed5-70c4-8c08-27482f2fc7be"
 );
 
 const headers = {
@@ -3680,7 +3724,10 @@ const headers = {
 };
 
 let body = {
-    "item": "Coffee",
+    "item": {
+        "en": "Coffee",
+        "km": "កាហ្វេ"
+    },
     "price": 4.5,
     "category_uuid": "0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b",
     "spent_on": "2026-07-16"
@@ -3704,6 +3751,9 @@ fetch(url, {
     &quot;data&quot;: {
         &quot;uuid&quot;: &quot;0198f...&quot;,
         &quot;item&quot;: &quot;Coffee&quot;,
+        &quot;item_translations&quot;: {
+            &quot;en&quot;: &quot;Coffee&quot;
+        },
         &quot;price&quot;: &quot;4.50&quot;,
         &quot;spent_on&quot;: &quot;2026-07-16&quot;
     }
@@ -3810,10 +3860,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="uuid"                data-endpoint="PATCHapi-v1-expenses--uuid-"
-               value="6ff8f7f6-1eb3-3525-be4a-3932c805afed"
+               value="019f6ae4-8ed5-70c4-8c08-27482f2fc7be"
                data-component="url">
     <br>
-<p>Example: <code>6ff8f7f6-1eb3-3525-be4a-3932c805afed</code></p>
+<p>Example: <code>019f6ae4-8ed5-70c4-8c08-27482f2fc7be</code></p>
             </div>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>expense</code></b>&nbsp;&nbsp;
@@ -3829,16 +3879,40 @@ You can check the Dev Tools console for debugging information.</code></pre>
             </div>
                             <h4 class="fancy-heading-panel"><b>Body Parameters</b></h4>
         <div style=" padding-left: 28px;  clear: unset;">
-            <b style="line-height: 2;"><code>item</code></b>&nbsp;&nbsp;
+        <details>
+            <summary style="padding-bottom: 10px;">
+                <b style="line-height: 2;"><code>item</code></b>&nbsp;&nbsp;
+<small>object</small>&nbsp;
+ &nbsp;
+ &nbsp;
+<br>
+<p>Per-locale item names.</p>
+            </summary>
+                                                <div style="margin-left: 14px; clear: unset;">
+                        <b style="line-height: 2;"><code>en</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
-                              name="item"                data-endpoint="PATCHapi-v1-expenses--uuid-"
+                              name="item.en"                data-endpoint="PATCHapi-v1-expenses--uuid-"
                value="Coffee"
                data-component="body">
     <br>
 <p>Example: <code>Coffee</code></p>
+                    </div>
+                                                                <div style="margin-left: 14px; clear: unset;">
+                        <b style="line-height: 2;"><code>km</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="item.km"                data-endpoint="PATCHapi-v1-expenses--uuid-"
+               value="កាហ្វេ"
+               data-component="body">
+    <br>
+<p>Optional Khmer name. Example: <code>កាហ្វេ</code></p>
+                    </div>
+                                    </details>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>price</code></b>&nbsp;&nbsp;
@@ -3892,7 +3966,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request DELETE \
-    "http://localhost/api/v1/expenses/6ff8f7f6-1eb3-3525-be4a-3932c805afed" \
+    "http://127.0.0.1:8000/api/v1/expenses/019f6ae4-8ed5-70c4-8c08-27482f2fc7be" \
     --header "Authorization: Bearer {YOUR_AUTH_TOKEN}" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json"</code></pre></div>
@@ -3900,7 +3974,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/v1/expenses/6ff8f7f6-1eb3-3525-be4a-3932c805afed"
+    "http://127.0.0.1:8000/api/v1/expenses/019f6ae4-8ed5-70c4-8c08-27482f2fc7be"
 );
 
 const headers = {
@@ -4025,10 +4099,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="uuid"                data-endpoint="DELETEapi-v1-expenses--uuid-"
-               value="6ff8f7f6-1eb3-3525-be4a-3932c805afed"
+               value="019f6ae4-8ed5-70c4-8c08-27482f2fc7be"
                data-component="url">
     <br>
-<p>Example: <code>6ff8f7f6-1eb3-3525-be4a-3932c805afed</code></p>
+<p>Example: <code>019f6ae4-8ed5-70c4-8c08-27482f2fc7be</code></p>
             </div>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>expense</code></b>&nbsp;&nbsp;

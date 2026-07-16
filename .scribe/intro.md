@@ -3,7 +3,7 @@
 Token-authenticated JSON API for mobile and third-party clients.
 
 <aside>
-    <strong>Base URL</strong>: <code>http://localhost</code>
+    <strong>Base URL</strong>: <code>http://127.0.0.1:8000</code>
 </aside>
 
     The Inertia frontend is unaffected by this API — it keeps using session auth.

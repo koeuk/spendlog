@@ -251,7 +251,7 @@ endpoints:
         name: uuid
         description: ''
         required: true
-        example: 6ff8f7f6-1eb3-3525-be4a-3932c805afed
+        example: 019f6ae7-135a-7260-af68-2eab80d9d865
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -269,7 +269,7 @@ endpoints:
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      uuid: 6ff8f7f6-1eb3-3525-be4a-3932c805afed
+      uuid: 019f6ae7-135a-7260-af68-2eab80d9d865
       budget: 0198b1c2-d3e4-7f5a-8b9c-0d1e2f3a4b5c
     queryParameters: []
     cleanQueryParameters: []

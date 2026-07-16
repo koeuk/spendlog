@@ -66,7 +66,7 @@ class ExpenseTest extends TestCase
         Sanctum::actingAs($user, [TokenAbility::ExpensesRead->value]);
 
         $this->postJson('/api/v1/expenses', [
-            'item' => 'Coffee',
+            'item' => ['en' => 'Coffee'],
             'price' => 4.5,
             'category_uuid' => $category->uuid,
             'spent_on' => now()->toDateString(),
@@ -81,7 +81,7 @@ class ExpenseTest extends TestCase
         Sanctum::actingAs($user, [TokenAbility::ExpensesWrite->value]);
 
         $response = $this->postJson('/api/v1/expenses', [
-            'item' => 'Coffee',
+            'item' => ['en' => 'Coffee'],
             'price' => 4.5,
             'category_uuid' => $category->uuid,
             'spent_on' => now()->toDateString(),
@@ -89,11 +89,14 @@ class ExpenseTest extends TestCase
 
         $response->assertStatus(201)->assertJsonPath('data.item', 'Coffee');
 
-        $this->assertDatabaseHas('expenses', [
-            'item' => 'Coffee',
-            'user_id' => $user->id,
-            'category_id' => $category->id,
-        ]);
+        // whereJsonContains, not assertDatabaseHas: item is a translated JSON
+        // column, so the stored value is the string {"en": "Coffee"} and an
+        // array never matches it.
+        $this->assertSame(1, Expense::query()
+            ->whereJsonContains('item->en', 'Coffee')
+            ->where('user_id', $user->id)
+            ->where('category_id', $category->id)
+            ->count());
     }
 
     /**
@@ -109,15 +112,22 @@ class ExpenseTest extends TestCase
         Sanctum::actingAs($user, [TokenAbility::ExpensesWrite->value]);
 
         $this->postJson('/api/v1/expenses', [
-            'item' => 'Coffee',
+            'item' => ['en' => 'Coffee'],
             'price' => 4.5,
             'category_uuid' => $category->uuid,
             'spent_on' => now()->toDateString(),
             'user_id' => $victim->id,
         ])->assertStatus(201);
 
-        $this->assertDatabaseHas('expenses', ['item' => 'Coffee', 'user_id' => $user->id]);
-        $this->assertDatabaseMissing('expenses', ['item' => 'Coffee', 'user_id' => $victim->id]);
+        // The row exists, and it belongs to the token holder — not the id in the
+        // payload. Asserted as "these are the only owners" so a stray second row
+        // owned by the victim would fail rather than slip past a missing-check.
+        $owners = Expense::query()
+            ->whereJsonContains('item->en', 'Coffee')
+            ->pluck('user_id')
+            ->all();
+
+        $this->assertSame([$user->id], $owners);
     }
 
     public function test_store_rejects_a_future_date(): void
@@ -128,7 +138,7 @@ class ExpenseTest extends TestCase
         Sanctum::actingAs($user, [TokenAbility::ExpensesWrite->value]);
 
         $this->postJson('/api/v1/expenses', [
-            'item' => 'Coffee',
+            'item' => ['en' => 'Coffee'],
             'price' => 4.5,
             'category_uuid' => $category->uuid,
             'spent_on' => now()->addDay()->toDateString(),
@@ -144,7 +154,7 @@ class ExpenseTest extends TestCase
         Sanctum::actingAs($user, [TokenAbility::ExpensesWrite->value]);
 
         $this->patchJson("/api/v1/expenses/{$theirs->uuid}", [
-            'item' => 'Hijacked',
+            'item' => ['en' => 'Hijacked'],
             'price' => 1,
             'category_uuid' => $category->uuid,
             'spent_on' => now()->toDateString(),
@@ -182,7 +192,7 @@ class ExpenseTest extends TestCase
         Sanctum::actingAs($admin, [TokenAbility::ExpensesWrite->value]);
 
         $this->patchJson("/api/v1/expenses/{$theirs->uuid}", [
-            'item' => 'Corrected',
+            'item' => ['en' => 'Corrected'],
             'price' => 9.99,
             'category_uuid' => $category->uuid,
             'spent_on' => now()->toDateString(),

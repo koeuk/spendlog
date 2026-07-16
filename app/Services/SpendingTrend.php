@@ -2,71 +2,153 @@
 
 namespace App\Services;
 
+use App\Enums\TrendGranularity;
 use App\Models\Expense;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
 /**
- * Spend over time, bucketed three ways for the dashboard chart.
+ * Spend over time for one period, plus the list of periods worth offering.
  *
- * All three series ship together: the whole payload is ~50 numbers, far cheaper
- * than a round trip per toggle, so switching granularity is instant.
+ * One series per request rather than all three at once: the chart can now look
+ * back over any month or year, so the combinations are unbounded and the old
+ * ship-everything approach would have to guess which slice you wanted.
  */
 class SpendingTrend
 {
-    /**
-     * @return array{week: array, month: array, year: array}
-     */
-    public function forUser(User $user, ?CarbonImmutable $now = null): array
-    {
-        $now ??= CarbonImmutable::now();
+    /** How many past periods the picker offers, at most. */
+    private const MAX_OPTIONS = [
+        TrendGranularity::Week->value => 12,
+        TrendGranularity::Month->value => 24,
+        TrendGranularity::Year->value => 10,
+    ];
 
-        return [
-            'week' => $this->week($user, $now),
-            'month' => $this->month($user, $now),
-            'year' => $this->year($user, $now),
-        ];
+    /**
+     * @return array{label: string, total: float, buckets: array}
+     */
+    public function series(User $user, TrendGranularity $granularity, CarbonImmutable $anchor): array
+    {
+        return match ($granularity) {
+            TrendGranularity::Week => $this->week($user, $anchor),
+            TrendGranularity::Month => $this->month($user, $anchor),
+            TrendGranularity::Year => $this->year($user, $anchor),
+        };
     }
 
     /**
-     * The current week, Monday to Sunday — one bar per day.
+     * The periods the dropdown lists — bounded by the user's own history, so a
+     * new account is not offered ten empty years to browse.
      *
-     * @return array{label: string, total: float, buckets: array}
+     * @return array<int, array{value: string, label: string}>
      */
-    private function week(User $user, CarbonImmutable $now): array
+    public function options(User $user, TrendGranularity $granularity, ?CarbonImmutable $now = null): array
     {
-        $start = $now->startOfWeek();
-        $totals = $this->dailyTotals($user, $start, $start->endOfWeek());
+        $now ??= CarbonImmutable::now();
+        $earliest = $this->earliestExpense($user) ?? $now;
+        $limit = self::MAX_OPTIONS[$granularity->value];
+
+        $options = [];
+        $cursor = $this->startOf($granularity, $now);
+        $floor = $this->startOf($granularity, $earliest);
+
+        while ($cursor->gte($floor) && count($options) < $limit) {
+            $options[] = [
+                'value' => $this->anchorValue($granularity, $cursor),
+                'label' => $this->periodLabel($granularity, $cursor),
+            ];
+
+            $cursor = match ($granularity) {
+                TrendGranularity::Week => $cursor->subWeek(),
+                TrendGranularity::Month => $cursor->subMonth(),
+                TrendGranularity::Year => $cursor->subYear(),
+            };
+        }
+
+        return $options;
+    }
+
+    /**
+     * Turn the picker's value back into a date, falling back to today when it is
+     * missing or malformed — a bad query string should not 500 the dashboard.
+     */
+    public function resolveAnchor(TrendGranularity $granularity, ?string $value, ?CarbonImmutable $now = null): CarbonImmutable
+    {
+        $now ??= CarbonImmutable::now();
+
+        if (! $value) {
+            return $now;
+        }
+
+        try {
+            $date = match ($granularity) {
+                TrendGranularity::Week => CarbonImmutable::createFromFormat('Y-m-d', $value),
+                TrendGranularity::Month => CarbonImmutable::createFromFormat('Y-m-d', $value.'-01'),
+                TrendGranularity::Year => CarbonImmutable::createFromFormat('Y-m-d', $value.'-01-01'),
+            };
+        } catch (\Throwable) {
+            return $now;
+        }
+
+        // Never anchor to the future: there is nothing logged there to show.
+        return $date && $date->lte($now) ? $date : $now;
+    }
+
+    public function anchorValue(TrendGranularity $granularity, CarbonImmutable $date): string
+    {
+        return match ($granularity) {
+            TrendGranularity::Week => $date->startOfWeek()->toDateString(),
+            TrendGranularity::Month => $date->format('Y-m'),
+            TrendGranularity::Year => $date->format('Y'),
+        };
+    }
+
+    private function startOf(TrendGranularity $granularity, CarbonImmutable $date): CarbonImmutable
+    {
+        return match ($granularity) {
+            TrendGranularity::Week => $date->startOfWeek(),
+            TrendGranularity::Month => $date->startOfMonth(),
+            TrendGranularity::Year => $date->startOfYear(),
+        };
+    }
+
+    private function periodLabel(TrendGranularity $granularity, CarbonImmutable $date): string
+    {
+        return match ($granularity) {
+            TrendGranularity::Week => $date->startOfWeek()->isoFormat('D MMM').' – '.$date->endOfWeek()->isoFormat('D MMM YYYY'),
+            TrendGranularity::Month => $date->isoFormat('MMMM YYYY'),
+            TrendGranularity::Year => $date->isoFormat('YYYY'),
+        };
+    }
+
+    /** One bar per day, Monday to Sunday. */
+    private function week(User $user, CarbonImmutable $anchor): array
+    {
+        $start = $anchor->startOfWeek();
+        $end = $start->endOfWeek();
+        $totals = $this->dailyTotals($user, $start, $end);
 
         $buckets = [];
 
-        for ($day = $start; $day->lte($start->endOfWeek()); $day = $day->addDay()) {
+        for ($day = $start; $day->lte($end); $day = $day->addDay()) {
             $buckets[] = $this->bucket(
                 key: $day->toDateString(),
                 // Single letter: seven of these must fit a narrow card.
                 label: $day->isoFormat('dd'),
                 caption: $day->isoFormat('ddd D MMM'),
                 value: (float) ($totals[$day->toDateString()] ?? 0),
-                now: $now,
                 date: $day,
             );
         }
 
-        return [
-            'label' => $start->isoFormat('D MMM').' – '.$start->endOfWeek()->isoFormat('D MMM'),
-            'total' => round(array_sum(array_column($buckets, 'value')), 2),
-            'buckets' => $buckets,
-        ];
+        return $this->assemble($this->periodLabel(TrendGranularity::Week, $start), $buckets);
     }
 
-    /**
-     * The current month — one bar per day.
-     */
-    private function month(User $user, CarbonImmutable $now): array
+    /** One bar per day of the month. */
+    private function month(User $user, CarbonImmutable $anchor): array
     {
-        $start = $now->startOfMonth();
-        $end = $now->endOfMonth();
+        $start = $anchor->startOfMonth();
+        $end = $anchor->endOfMonth();
         $totals = $this->dailyTotals($user, $start, $end);
 
         $buckets = [];
@@ -78,30 +160,23 @@ class SpendingTrend
                 label: ($day->day === 1 || $day->day % 5 === 0) ? (string) $day->day : '',
                 caption: $day->isoFormat('ddd D MMM'),
                 value: (float) ($totals[$day->toDateString()] ?? 0),
-                now: $now,
                 date: $day,
             );
         }
 
-        return [
-            'label' => $start->isoFormat('MMMM YYYY'),
-            'total' => round(array_sum(array_column($buckets, 'value')), 2),
-            'buckets' => $buckets,
-        ];
+        return $this->assemble($this->periodLabel(TrendGranularity::Month, $start), $buckets);
     }
 
-    /**
-     * The current year — one bar per month.
-     */
-    private function year(User $user, CarbonImmutable $now): array
+    /** One bar per month of the year. */
+    private function year(User $user, CarbonImmutable $anchor): array
     {
-        $start = $now->startOfYear();
-        $end = $now->endOfYear();
+        $start = $anchor->startOfYear();
+        $end = $anchor->endOfYear();
 
         $totals = Expense::query()
             ->where('user_id', $user->id)
             ->whereBetween('spent_on', [$start->toDateString(), $end->toDateString()])
-            ->groupByRaw('YEAR(spent_on), MONTH(spent_on)')
+            ->groupByRaw('MONTH(spent_on)')
             ->selectRaw('MONTH(spent_on) as bucket, SUM(price) as total')
             ->pluck('total', 'bucket');
 
@@ -113,14 +188,21 @@ class SpendingTrend
                 label: $month->isoFormat('MMM'),
                 caption: $month->isoFormat('MMMM YYYY'),
                 value: (float) ($totals[$month->month] ?? 0),
-                now: $now,
                 date: $month,
-                granularity: 'month',
+                granularity: TrendGranularity::Year,
             );
         }
 
+        return $this->assemble($this->periodLabel(TrendGranularity::Year, $start), $buckets);
+    }
+
+    /**
+     * @param  array<int, array>  $buckets
+     */
+    private function assemble(string $label, array $buckets): array
+    {
         return [
-            'label' => $start->isoFormat('YYYY'),
+            'label' => $label,
             'total' => round(array_sum(array_column($buckets, 'value')), 2),
             'buckets' => $buckets,
         ];
@@ -143,25 +225,30 @@ class SpendingTrend
             ->mapWithKeys(fn ($total, $bucket) => [CarbonImmutable::parse($bucket)->toDateString() => $total]);
     }
 
-    /**
-     * @return array{key: string, label: string, caption: string, value: float, is_current: bool, is_future: bool}
-     */
+    private function earliestExpense(User $user): ?CarbonImmutable
+    {
+        $earliest = Expense::query()->where('user_id', $user->id)->min('spent_on');
+
+        return $earliest ? CarbonImmutable::parse($earliest) : null;
+    }
+
     private function bucket(
         string $key,
         string $label,
         string $caption,
         float $value,
-        CarbonImmutable $now,
         CarbonImmutable $date,
-        string $granularity = 'day',
+        TrendGranularity $granularity = TrendGranularity::Month,
     ): array {
-        $isCurrent = $granularity === 'month'
+        $now = CarbonImmutable::now();
+
+        $isCurrent = $granularity === TrendGranularity::Year
             ? $date->isSameMonth($now)
             : $date->isSameDay($now);
 
-        // Days that have not happened yet are drawn as empty track, not as a
-        // zero — "nothing spent" and "not yet" are different claims.
-        $isFuture = $granularity === 'month'
+        // Buckets that have not happened yet are drawn as empty, not as a zero —
+        // "nothing spent" and "not yet" are different claims.
+        $isFuture = $granularity === TrendGranularity::Year
             ? $date->startOfMonth()->gt($now->startOfMonth())
             : $date->gt($now);
 
