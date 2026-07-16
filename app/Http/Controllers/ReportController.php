@@ -81,23 +81,30 @@ class ReportController extends Controller
         $anchor = $this->trend->resolveAnchor($granularity, $request->query('at'));
         [$start, $end] = $this->trend->range($granularity, $anchor, $user);
 
+        // 'expenses' drops the summary and ships the list alone — the button
+        // on the Expenses card, for when you want the rows and nothing else.
+        $listOnly = $request->query('scope') === 'expenses';
+
         $periodLabel = $this->periodLabelFor($granularity, $anchor);
         $expenses = $this->allExpenses($user, $start, $end);
-        $filename = $this->filename($periodLabel, $format);
+        $filename = $this->filename($periodLabel, $format, $listOnly);
 
+        // The spreadsheet is already one row per expense, so the scope only
+        // changes its name, not its contents.
         if ($format !== 'pdf') {
             return Excel::download(new ExpensesExport($expenses, $periodLabel), $filename);
         }
 
-        $breakdown = $this->breakdown($user, $start, $end);
+        $breakdown = $listOnly ? [] : $this->breakdown($user, $start, $end);
 
         $pdf = Pdf::loadView('reports.pdf', [
             'brand' => AppSetting::current()->app_name,
             'userName' => $user->name,
             'periodLabel' => $periodLabel,
             'generatedAt' => CarbonImmutable::now()->isoFormat('D MMM YYYY, HH:mm'),
-            'stats' => $this->stats($user, $start, $end, $granularity, $anchor, $breakdown),
+            'stats' => $this->stats($user, $start, $end, $granularity, $anchor, $this->breakdown($user, $start, $end)),
             'breakdown' => $breakdown,
+            'listOnly' => $listOnly,
             'expenses' => $expenses,
             // Formatting helpers, so the view holds no logic.
             'money' => fn (float $amount) => '$'.number_format($amount, 2),
@@ -121,12 +128,13 @@ class ReportController extends Controller
             ->get();
     }
 
-    /** e.g. "MoneyLog-July-2026.pdf" — sortable, and safe on every filesystem. */
-    private function filename(string $periodLabel, string $format): string
+    /** e.g. "moneylog-expenses-july-2026.pdf" — sortable, and safe on every filesystem. */
+    private function filename(string $periodLabel, string $format, bool $listOnly = false): string
     {
         $brand = Str::slug(AppSetting::current()->app_name) ?: 'report';
+        $kind = $listOnly ? 'expenses-' : '';
 
-        return $brand.'-'.Str::slug($periodLabel).'.'.$format;
+        return $brand.'-'.$kind.Str::slug($periodLabel).'.'.$format;
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace Tests\Feature\Settings;
 
 use App\Enums\BodyColor;
+use App\Enums\ButtonColor;
 use App\Enums\RoleName;
 use App\Models\AppSetting;
 use App\Models\User;
@@ -37,7 +38,7 @@ class ColorsTest extends TestCase
     private function payload(array $overrides = []): array
     {
         return array_merge([
-            'button_color' => '#4b9d5f',
+            'button_color' => ButtonColor::Green->value,
             'body_color' => BodyColor::Cream->value,
         ], $overrides);
     }
@@ -57,13 +58,13 @@ class ColorsTest extends TestCase
         $user->assignRole(RoleName::User->value);
 
         $this->actingAs($user)
-            ->post('/settings/colors', $this->payload(['button_color' => '#ff0000']))
+            ->post('/settings/colors', $this->payload(['button_color' => ButtonColor::Red->value]))
             ->assertForbidden();
 
         $this->assertSame('#171717', AppSetting::current()->button_color);
     }
 
-    public function test_the_page_ships_the_current_colours_and_the_five_presets(): void
+    public function test_the_page_ships_the_current_colours_and_both_preset_sets(): void
     {
         $response = $this->actingAs($this->admin())->get('/settings/colors');
 
@@ -71,8 +72,11 @@ class ColorsTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->has('colors.button_color')
                 ->has('colors.body_color')
-                ->has('body_presets', 5)
+                ->has('body_presets', count(BodyColor::cases()))
+                ->has('button_presets', count(ButtonColor::cases()))
                 ->where('body_presets.0.value', BodyColor::White->value)
+                // The page marks the default rather than making the admin guess.
+                ->where('button_presets.0.is_default', true)
             );
     }
 
@@ -84,44 +88,48 @@ class ColorsTest extends TestCase
 
         $settings = AppSetting::current();
 
-        $this->assertSame('#4b9d5f', $settings->button_color);
+        $this->assertSame(ButtonColor::Green->value, $settings->button_color);
         $this->assertSame(BodyColor::Cream->value, $settings->body_color);
     }
 
-    public function test_a_custom_body_colour_outside_the_presets_is_accepted(): void
-    {
-        // "Flexible" is the point: the five presets are a shortcut, not a fence.
-        $this->actingAs($this->admin())
-            ->post('/settings/colors', $this->payload(['body_color' => '#e8f0ff']))
-            ->assertRedirect();
-
-        $this->assertSame('#e8f0ff', AppSetting::current()->body_color);
-    }
-
     /**
-     * The light theme is built on a pale page: near-black text, translucent-white
-     * cards. A dark background makes the text vanish and turns the cards into
-     * light-grey slabs — neither theme. Dark mode already does this properly.
+     * A swatch the picker offers but the validator refuses would be a trap, and
+     * the two are defined in different places — so this pins them together.
      */
-    public function test_a_body_colour_too_dark_for_the_light_page_is_rejected(): void
+    public function test_every_offered_preset_is_accepted(): void
     {
-        foreach (['#000000', '#171717', '#ac2f2f', '#333333'] as $tooDark) {
-            $this->actingAs($this->admin())
-                ->post('/settings/colors', $this->payload(['body_color' => $tooDark]))
-                ->assertSessionHasErrors('body_color');
-        }
-
-        $this->assertSame(BodyColor::White->value, AppSetting::current()->body_color);
-    }
-
-    public function test_every_offered_preset_passes_its_own_rule(): void
-    {
-        // A preset the picker offers but the validator refuses would be a trap.
         foreach (BodyColor::cases() as $preset) {
             $this->actingAs($this->admin())
                 ->post('/settings/colors', $this->payload(['body_color' => $preset->value]))
                 ->assertSessionHasNoErrors();
         }
+
+        foreach (ButtonColor::cases() as $preset) {
+            $this->actingAs($this->admin())
+                ->post('/settings/colors', $this->payload(['button_color' => $preset->value]))
+                ->assertSessionHasNoErrors();
+        }
+    }
+
+    /**
+     * The set is the rule now: anything off it is refused, including colours a
+     * free picker would once have taken.
+     */
+    public function test_a_colour_outside_the_offered_set_is_refused(): void
+    {
+        foreach (['#e8f0ff', '#000000', '#123456'] as $offList) {
+            $this->actingAs($this->admin())
+                ->post('/settings/colors', $this->payload(['body_color' => $offList]))
+                ->assertSessionHasErrors('body_color');
+        }
+
+        foreach (['#ff0000', '#d92626', 'red', '#fff'] as $offList) {
+            $this->actingAs($this->admin())
+                ->post('/settings/colors', $this->payload(['button_color' => $offList]))
+                ->assertSessionHasErrors('button_color');
+        }
+
+        $this->assertSame(BodyColor::White->value, AppSetting::current()->body_color);
     }
 
     /**
@@ -146,17 +154,6 @@ class ColorsTest extends TestCase
         $this->actingAs($this->admin())
             ->get('/dashboard')
             ->assertInertia(fn ($page) => $page->where('branding.plain_background', true));
-    }
-
-    public function test_hex_is_normalised_to_lower_case(): void
-    {
-        $this->actingAs($this->admin())
-            ->post('/settings/colors', $this->payload(['button_color' => '#4B9D5F']))
-            ->assertRedirect();
-
-        // One canonical form in the column, so comparing against a preset stays
-        // a plain string match.
-        $this->assertSame('#4b9d5f', AppSetting::current()->button_color);
     }
 
     /**
@@ -191,10 +188,10 @@ class ColorsTest extends TestCase
         $this->assertSame('#171717', AppSetting::current()->button_color);
 
         $this->actingAs($this->admin())
-            ->post('/settings/colors', $this->payload(['button_color' => '#0000ff']))
+            ->post('/settings/colors', $this->payload(['button_color' => ButtonColor::Blue->value]))
             ->assertRedirect();
 
-        $this->assertSame('#0000ff', AppSetting::current()->button_color);
+        $this->assertSame(ButtonColor::Blue->value, AppSetting::current()->button_color);
     }
 
     /**
@@ -242,7 +239,7 @@ class ColorsTest extends TestCase
     public function test_a_chosen_button_colour_does_override_primary(): void
     {
         $this->actingAs($this->admin())
-            ->post('/settings/colors', $this->payload(['button_color' => '#b42727']));
+            ->post('/settings/colors', $this->payload(['button_color' => ButtonColor::Red->value]));
 
         $vars = AppSetting::current()->cssVariables();
 

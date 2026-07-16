@@ -36,6 +36,12 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
                 'is_admin' => (bool) $request->user()?->isAdmin(),
+                // The frontend shows/hides on these; the policies still decide.
+                // Sent as a flat list so a template can ask can('users.view')
+                // rather than re-deriving it from the role.
+                'permissions' => $request->user()
+                    ? $request->user()->getAllPermissions()->pluck('name')->values()
+                    : [],
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

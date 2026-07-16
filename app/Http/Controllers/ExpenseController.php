@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ExpenseRequest;
 use App\Models\Category;
+use App\Enums\Permission;
 use App\Models\Expense;
 use App\Support\TranslatableQuery;
 use App\Models\User;
@@ -20,7 +21,9 @@ class ExpenseController extends Controller
 {
     public function index(Request $request): Response
     {
-        $isAdmin = $request->user()->isAdmin();
+        // The permission, not the role: granting expenses.view_all to a
+        // non-admin has to actually open the Everyone view.
+        $isAdmin = $request->user()->hasPermissionTo(Permission::ExpensesViewAll->value);
         // Only an admin can opt out of the owner scope, and only explicitly.
         $viewingAll = $isAdmin && $request->query('scope') === 'all';
 

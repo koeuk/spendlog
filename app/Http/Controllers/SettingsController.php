@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\BodyColor;
+use App\Enums\Permission;
 use App\Enums\ButtonColor;
 use App\Http\Requests\BrandingRequest;
 use App\Http\Requests\ColorRequest;
@@ -123,6 +124,9 @@ class SettingsController extends Controller
 
     private function authorizeAdmin(Request $request): void
     {
-        abort_unless($request->user()?->isAdmin(), 403);
+        abort_unless(
+            (bool) $request->user()?->hasPermissionTo(Permission::SettingsBranding->value),
+            403,
+        );
     }
 }

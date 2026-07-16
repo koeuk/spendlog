@@ -16,7 +16,9 @@ export const APP_PAGE =
     // literal white here paints straight over the admin's body colour and the
     // setting silently does nothing. The token resolves to the same white and
     // near-black by default, so this changes nothing until a colour is chosen.
-    'relative isolate min-h-screen bg-background font-display text-neutral-900 dark:text-neutral-100';
+    // text-foreground, not text-neutral-900: the page colour is derived, so the
+    // text on it has to be too, or a dark background keeps near-black body copy.
+    'relative isolate min-h-screen bg-background font-display text-foreground';
 
 /**
  * The hover lift, shared by every card so they all rise the same way.
@@ -57,8 +59,11 @@ const CARD_LIFT =
  * also animate the backdrop filter, which is expensive on every card at once.
  */
 export const CARD =
-    `rounded-[28px] border border-neutral-200/80 bg-white/60 backdrop-blur-xl backdrop-saturate-150 ${CARD_LIFT} ` +
-    'dark:border-white/10 dark:bg-neutral-900/50';
+    // bg-card/border-border, not literal white: a translucent *white* card over a
+    // tinted page is just a washed-out patch of that tint. The tokens are derived
+    // from the background, so the card sits a measured step off it in the same
+    // hue — and still resolve to today's white and near-black by default.
+    `rounded-[28px] border border-border bg-card/70 backdrop-blur-xl backdrop-saturate-150 ${CARD_LIFT}`;
 
 /**
  * The tinted glass — same green wash as the login artwork panel, made liquid.
@@ -75,7 +80,7 @@ export const CARD_TINT =
  * costs a lot and muddies both.
  */
 export const CARD_SOLID =
-    'rounded-[28px] border border-neutral-200/70 bg-white dark:border-neutral-800 dark:bg-neutral-900';
+    'rounded-[28px] border border-border bg-popover';
 
 /**
  * The fill for the selected one of a set — the active nav tab, the chosen
@@ -92,19 +97,19 @@ export const CARD_SOLID =
  */
 export const ACTIVE = 'bg-primary text-primary-foreground';
 
-/** Muted body copy. Matches AUTH_MUTED. */
-export const MUTED = 'text-neutral-500 dark:text-neutral-400';
+/** Muted body copy. Derived to clear AA on the card it sits on. */
+export const MUTED = 'text-muted-foreground';
 
 /** The green accent, matching AUTH_LINK. */
 export const ACCENT = 'text-[#4b9d5f] dark:text-[#6cc182]';
 
 /** Section label above a card's content. */
 export const EYEBROW =
-    'text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-400 dark:text-neutral-500';
+    'text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground';
 
 /** The big number a card exists to show. */
 export const FIGURE =
-    'font-extrabold tracking-[-0.03em] tabular-nums text-neutral-900 dark:text-neutral-100';
+    'font-extrabold tracking-[-0.03em] tabular-nums text-foreground';
 
 /** Compact pill button, e.g. "Add expense" in a page header. */
 export const PILL_ACTION =
@@ -112,8 +117,8 @@ export const PILL_ACTION =
 
 /** A segmented control (Mine/Everyone, EN/KM). */
 export const SEGMENT =
-    'inline-flex rounded-full border border-neutral-200 bg-white p-0.5 dark:border-neutral-700 dark:bg-neutral-800';
+    'inline-flex rounded-full border border-border bg-muted p-0.5';
 
 export const SEGMENT_ON = `rounded-full ${ACTIVE}`;
 export const SEGMENT_OFF =
-    'rounded-full text-neutral-600 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-neutral-700/60';
+    'rounded-full text-muted-foreground hover:text-foreground';

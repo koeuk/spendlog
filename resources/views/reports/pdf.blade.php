@@ -64,6 +64,7 @@
         <div class="generated">{{ __('Generated :date', ['date' => $generatedAt]) }}</div>
     </div>
 
+    @unless ($listOnly ?? false)
     <table class="stats">
         <tr>
             <td>
@@ -84,6 +85,7 @@
             </td>
         </tr>
     </table>
+    @endunless
 
     @if (count($breakdown))
         <h2>{{ __('By category') }}</h2>

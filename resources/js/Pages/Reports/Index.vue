@@ -86,11 +86,13 @@ function goToPage(url) {
     });
 }
 
-function exportUrl(format) {
+function exportUrl(format, scope = null) {
     return route('reports.export', {
         format,
         period: props.granularity,
         at: props.anchor,
+        // 'expenses' asks for the list alone; omitted means the full report.
+        ...(scope ? { scope } : {}),
     });
 }
 
@@ -375,11 +377,32 @@ const change = computed(() => {
             <!-- Every expense in the period. Paginated, because a year is hundreds
                  of rows; the exports are how you get the lot. -->
             <div :class="[CARD, 'anim overflow-hidden']" style="--d: 300ms">
-                <div class="flex items-center justify-between gap-3 px-4 pb-4 pt-6 sm:px-7">
-                    <h2 class="text-base font-bold tracking-tight">{{ __('Expenses') }}</h2>
-                    <span :class="[MUTED, 'text-xs font-medium tabular-nums']">
-                        {{ expenses.total }}
-                    </span>
+                <div class="flex flex-wrap items-center justify-between gap-3 px-4 pb-4 pt-6 sm:px-7">
+                    <h2 class="text-base font-bold tracking-tight">
+                        {{ __('Expenses') }}
+                        <span :class="[MUTED, 'ms-1 text-xs font-medium tabular-nums']">
+                            {{ expenses.total }}
+                        </span>
+                    </h2>
+
+                    <!-- The list on its own, without the summary the page-level
+                         buttons include. -->
+                    <div v-if="expenses.data.length" class="flex items-center gap-1">
+                        <a
+                            :href="exportUrl('pdf', 'expenses')"
+                            class="inline-flex h-8 items-center gap-1.5 rounded-full border border-neutral-200 bg-white/70 px-2.5 text-xs font-semibold text-neutral-700 transition hover:bg-white dark:border-neutral-700 dark:bg-neutral-800/70 dark:text-neutral-200 dark:hover:bg-neutral-800"
+                        >
+                            <FileText class="size-3.5" />
+                            {{ __('PDF') }}
+                        </a>
+                        <a
+                            :href="exportUrl('xlsx', 'expenses')"
+                            class="inline-flex h-8 items-center gap-1.5 rounded-full border border-neutral-200 bg-white/70 px-2.5 text-xs font-semibold text-neutral-700 transition hover:bg-white dark:border-neutral-700 dark:bg-neutral-800/70 dark:text-neutral-200 dark:hover:bg-neutral-800"
+                        >
+                            <FileSpreadsheet class="size-3.5" />
+                            {{ __('Excel') }}
+                        </a>
+                    </div>
                 </div>
 
                 <p v-if="!expenses.data.length" :class="[MUTED, 'px-6 pb-10 pt-4 text-center text-sm']">

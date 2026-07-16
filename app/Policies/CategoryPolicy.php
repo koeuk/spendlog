@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\Permission;
 use App\Models\Category;
 use App\Models\User;
 
@@ -31,11 +32,11 @@ class CategoryPolicy
 
     public function update(User $user, Category $category): bool
     {
-        return $user->isAdmin();
+        return $user->hasPermissionTo(Permission::CategoriesUpdate->value);
     }
 
     public function delete(User $user, Category $category): bool
     {
-        return $user->isAdmin();
+        return $user->hasPermissionTo(Permission::CategoriesDelete->value);
     }
 }

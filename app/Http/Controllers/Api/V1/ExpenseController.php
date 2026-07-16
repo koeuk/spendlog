@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ExpenseRequest;
 use App\Http\Resources\ExpenseResource;
+use App\Enums\Permission;
 use App\Models\Expense;
 use App\Support\TranslatableQuery;
 use Illuminate\Http\JsonResponse;
@@ -52,7 +53,9 @@ class ExpenseController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
-        $isAdmin = $request->user()->isAdmin();
+        // The permission, not the role: granting expenses.view_all to a
+        // non-admin has to actually open the Everyone view.
+        $isAdmin = $request->user()->hasPermissionTo(Permission::ExpensesViewAll->value);
         // Only an admin can opt out of the owner scope, and only explicitly.
         $viewingAll = $isAdmin && $request->query('scope') === 'all';
 

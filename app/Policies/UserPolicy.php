@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\Permission;
 use App\Enums\RoleName;
 use App\Enums\UserStatus;
 use App\Models\User;
@@ -22,17 +23,25 @@ class UserPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->isAdmin();
+        return $user->hasPermissionTo(Permission::UsersView->value);
     }
 
     public function create(User $user): bool
     {
-        return $user->isAdmin();
+        return $user->hasPermissionTo(Permission::UsersManage->value);
     }
 
     public function update(User $user, User $target): bool
     {
-        return $user->isAdmin();
+        return $user->hasPermissionTo(Permission::UsersManage->value);
+    }
+
+    /** Granting permissions is itself an administrative act. */
+    public function managePermissions(User $user, User $target): bool
+    {
+        // Editing your own permissions is how an admin accidentally locks
+        // themselves out of the very screen they are standing on.
+        return $user->hasPermissionTo(Permission::UsersManage->value) && ! $user->is($target);
     }
 
     /**
@@ -41,7 +50,7 @@ class UserPolicy
      */
     public function delete(User $user, User $target): bool
     {
-        if (! $user->isAdmin() || $user->is($target)) {
+        if (! $user->hasPermissionTo(Permission::UsersManage->value) || $user->is($target)) {
             return false;
         }
 
@@ -51,7 +60,7 @@ class UserPolicy
     /** Suspending yourself would end your own session on the next request. */
     public function suspend(User $user, User $target): bool
     {
-        if (! $user->isAdmin() || $user->is($target)) {
+        if (! $user->hasPermissionTo(Permission::UsersManage->value) || $user->is($target)) {
             return false;
         }
 
@@ -64,7 +73,7 @@ class UserPolicy
      */
     public function changeRole(User $user, User $target): bool
     {
-        if (! $user->isAdmin() || $user->is($target)) {
+        if (! $user->hasPermissionTo(Permission::UsersManage->value) || $user->is($target)) {
             return false;
         }
 

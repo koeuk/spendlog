@@ -15,19 +15,24 @@ const page = usePage();
 
 const isAdmin = computed(() => Boolean(page.props.auth?.is_admin));
 
+// Mirrors the policies. A non-admin granted users.view should see the item; a
+// role check alone would hide it from them.
+const granted = computed(() => page.props.auth?.permissions ?? []);
+const can = (permission) => granted.value.includes(permission);
+
 // The admin pages are admin-only server-side too — this just keeps them out of
 // the way for everyone else.
 const items = computed(() =>
     [
         { key: 'profile', label: trans('Profile'), href: route('profile.edit'), icon: UserRound, pattern: 'profile.*' },
         { key: 'password', label: trans('Password'), href: route('password.edit'), icon: ShieldCheck, pattern: 'password.edit' },
-        isAdmin.value
+        can('users.view')
             ? { key: 'users', label: trans('Users'), href: route('users.index'), icon: Users, pattern: 'users.*' }
             : null,
-        isAdmin.value
+        can('settings.branding')
             ? { key: 'branding', label: trans('Appearance'), href: route('branding.edit'), icon: Palette, pattern: 'branding.*' }
             : null,
-        isAdmin.value
+        can('settings.branding')
             ? { key: 'colors', label: trans('Colours'), href: route('colors.edit'), icon: SwatchBook, pattern: 'colors.*' }
             : null,
     ].filter(Boolean),
