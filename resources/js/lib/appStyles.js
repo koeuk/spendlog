@@ -12,34 +12,32 @@
  * wash below sits behind the content without escaping the stacking context.
  */
 export const APP_PAGE =
-    'relative isolate min-h-screen bg-white font-display text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100';
+    // bg-background, not bg-white: the shell covers the whole viewport, so a
+    // literal white here paints straight over the admin's body colour and the
+    // setting silently does nothing. The token resolves to the same white and
+    // near-black by default, so this changes nothing until a colour is chosen.
+    'relative isolate min-h-screen bg-background font-display text-neutral-900 dark:text-neutral-100';
 
 /**
  * The hover lift, shared by every card so they all rise the same way.
  *
- * Thin on purpose: a tight 1px offset with a short blur reads as the card
- * peeling a millimetre off the page. A wide, soft shadow (shadow-md and up)
- * pushes it much further away than a hover should imply, and under a
- * translucent pane the spill is visible *through* the neighbouring card.
+ * Shadow only — the card does not move. A shadow alone still says "this is the
+ * one under the pointer", and nothing shifts under the cursor while you read.
  *
- * The scale is deliberately tiny. These cards run up to ~1100px wide, so even
- * 1% would grow one by 11px and shove its text sideways; 0.4% is a breath.
- *
- * transform-gpu keeps the scale on the compositor — without it, scaling a
- * backdrop-blur surface re-rasterises the blur every frame.
+ * Two layers, as real light casts: a wide soft one for the throw and a tight
+ * dark one for the contact edge. A single big blur alone just looks like fog
+ * under the card. Negative spread keeps the throw from bleeding sideways —
+ * under a translucent pane, any spill shows *through* the neighbouring card.
  *
  * The curve is the same cubic-bezier the .anim entrance uses: it moves most of
- * the way early then settles, so the card glides in and out rather than easing
- * off a linear ramp. 300ms in, and a slightly longer 400ms out — a lift that
- * leaves as fast as it arrives feels snatched away.
+ * the way early then settles, so the shadow fades up and away rather than
+ * snapping off a linear ramp. 300ms in, and a slightly longer 400ms out — a
+ * lift that leaves as fast as it arrives feels snatched away.
  */
 const CARD_LIFT =
-    'transform-gpu transition-[box-shadow,transform] duration-[400ms] ease-[cubic-bezier(0.22,1,0.36,1)] ' +
-    'hover:duration-300 ' +
-    'hover:scale-[1.004] hover:shadow-[0_1px_3px_0_rgba(15,23,42,0.07),0_1px_2px_-1px_rgba(15,23,42,0.05)] ' +
-    'dark:hover:shadow-[0_1px_3px_0_rgba(0,0,0,0.5),0_1px_2px_-1px_rgba(0,0,0,0.4)] ' +
-    // Scale is motion; honour the OS setting and leave the shadow to do the job.
-    'motion-reduce:transition-none motion-reduce:hover:scale-100';
+    'transition-shadow duration-[400ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:duration-300 ' +
+    'hover:shadow-[0_12px_28px_-8px_rgba(15,23,42,0.16),0_4px_10px_-4px_rgba(15,23,42,0.10)] ' +
+    'dark:hover:shadow-[0_12px_28px_-8px_rgba(0,0,0,0.65),0_4px_10px_-4px_rgba(0,0,0,0.5)]';
 
 /**
  * The glass surface.

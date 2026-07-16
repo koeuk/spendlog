@@ -12,6 +12,7 @@ let lastPill = null;
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
+import { useWindowScroll } from '@vueuse/core';
 import AmbientBackdrop from '@/Components/AmbientBackdrop.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
@@ -27,6 +28,17 @@ import { ChevronDown, Menu, X } from 'lucide-vue-next';
 import { Link, usePage } from '@inertiajs/vue3';
 
 const showingNavigationDropdown = ref(false);
+
+/*
+ * The bar only earns its glass once there is content behind it to bend. At the
+ * top of the page it stays invisible so the header reads as part of the page.
+ *
+ * useWindowScroll listens passively and reads on rAF, so this does not fight the
+ * scroll thread. The 8px threshold keeps a trackpad's sub-pixel jitter from
+ * flickering the background on and off at rest.
+ */
+const { y: scrollY } = useWindowScroll();
+const scrolled = computed(() => scrollY.value > 8);
 
 const { isDark } = useTheme();
 
@@ -136,8 +148,25 @@ watch(() => page.url, () => nextTick(measurePill));
         <AmbientBackdrop />
 
         <div class="mx-auto max-w-6xl px-3 pb-10 lg:px-4">
-            <!-- The bar floats on the page rather than spanning it edge to edge,
-                 echoing the panel geometry of the auth screens. -->
+            <!--
+                The bar floats on the page rather than spanning it edge to edge,
+                echoing the panel geometry of the auth screens.
+
+                The wrapper is what sticks, not the <nav>: it cancels the
+                container's gutter with -mx/px so the glass can reach the panel
+                edges while the nav's contents stay on the same grid as the
+                cards below. Nothing here changes size on scroll — only colour,
+                border, shadow and blur animate, so the page never reflows and
+                the links never shift under the pointer.
+            -->
+            <div
+                class="sticky top-0 z-40 -mx-3 px-3 transition-[background-color,border-color,box-shadow,backdrop-filter] duration-300 ease-out lg:-mx-4 lg:px-4"
+                :class="
+                    scrolled
+                        ? 'rounded-b-[28px] border-b border-neutral-200/70 bg-white/70 shadow-[0_8px_24px_-12px_rgba(15,23,42,0.15)] backdrop-blur-xl backdrop-saturate-150 dark:border-white/10 dark:bg-neutral-900/60 dark:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.6)]'
+                        : 'border-b border-transparent'
+                "
+            >
             <nav class="flex h-20 items-center justify-between gap-4">
                 <div class="flex items-center gap-6">
                     <Link
@@ -272,6 +301,9 @@ watch(() => page.url, () => nextTick(measurePill));
                     </div>
                 </div>
             </div>
+            </div>
+            <!-- /sticky bar — the mobile menu lives inside it so an open menu
+                 scrolls with the bar rather than being left behind. -->
 
             <header v-if="$slots.header" class="anim pb-6 pt-2" style="--d: 40ms">
                 <slot name="header" />
