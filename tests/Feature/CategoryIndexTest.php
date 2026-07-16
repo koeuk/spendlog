@@ -92,6 +92,77 @@ class CategoryIndexTest extends TestCase
         $this->assertSame('Food', $props['categories'][0]['name']['en']);
     }
 
+    /** @return list<string> The English names, in the order the page lists them. */
+    private function names(TestResponse $response): array
+    {
+        $props = json_decode($this->payload($response), true)['props'];
+
+        return array_column(array_column($props['categories'], 'name'), 'en');
+    }
+
+    public function test_the_list_is_newest_first_by_default(): void
+    {
+        Category::factory()->create(['name' => ['en' => 'Oldest'], 'created_at' => '2026-01-01 09:00:00']);
+        Category::factory()->create(['name' => ['en' => 'Newest'], 'created_at' => '2026-03-01 09:00:00']);
+        Category::factory()->create(['name' => ['en' => 'Middle'], 'created_at' => '2026-02-01 09:00:00']);
+
+        $response = $this->actingAs($this->user())->get(route('categories.index'));
+
+        $response->assertOk();
+        $this->assertSame(['Newest', 'Middle', 'Oldest'], $this->names($response));
+    }
+
+    public function test_sort_created_lists_oldest_first(): void
+    {
+        Category::factory()->create(['name' => ['en' => 'Oldest'], 'created_at' => '2026-01-01 09:00:00']);
+        Category::factory()->create(['name' => ['en' => 'Newest'], 'created_at' => '2026-03-01 09:00:00']);
+        Category::factory()->create(['name' => ['en' => 'Middle'], 'created_at' => '2026-02-01 09:00:00']);
+
+        $response = $this->actingAs($this->user())
+            ->get(route('categories.index', ['sort' => 'created']));
+
+        $response->assertOk();
+        $this->assertSame(['Oldest', 'Middle', 'Newest'], $this->names($response));
+    }
+
+    /**
+     * A seed or import stamps every row with the same created_at, and MySQL may
+     * then return those tied rows in a different order on each query. Without a
+     * tie-break the list reshuffles on a plain reload, so id decides — in the
+     * direction that was asked for, which also makes oldest the exact mirror of
+     * newest rather than an unrelated shuffle of the same rows.
+     */
+    public function test_rows_sharing_a_timestamp_still_have_a_stable_mirrored_order(): void
+    {
+        $tied = '2026-01-01 09:00:00';
+
+        foreach (['A', 'B', 'C'] as $name) {
+            Category::factory()->create(['name' => ['en' => $name], 'created_at' => $tied]);
+        }
+
+        $newest = $this->actingAs($this->user())->get(route('categories.index'));
+        $oldest = $this->actingAs($this->user())
+            ->get(route('categories.index', ['sort' => 'created']));
+
+        $this->assertSame(['C', 'B', 'A'], $this->names($newest));
+        $this->assertSame(['A', 'B', 'C'], $this->names($oldest));
+    }
+
+    public function test_sorting_and_searching_apply_together(): void
+    {
+        Category::factory()->create(['name' => ['en' => 'Food'], 'created_at' => '2026-01-01 09:00:00']);
+        Category::factory()->create(['name' => ['en' => 'Fuel'], 'created_at' => '2026-03-01 09:00:00']);
+        Category::factory()->create(['name' => ['en' => 'Transport'], 'created_at' => '2026-02-01 09:00:00']);
+
+        $response = $this->actingAs($this->user())->get(route('categories.index', [
+            'filter' => ['name' => 'Fu'],
+            'sort' => 'created',
+        ]));
+
+        $response->assertOk();
+        $this->assertSame(['Fuel'], $this->names($response));
+    }
+
     /** 'en' is a key in every row's JSON, and part of no category's name. */
     public function test_searching_the_locale_key_matches_nothing(): void
     {
