@@ -77,6 +77,21 @@ export const CARD_TINT =
 export const CARD_SOLID =
     'rounded-[28px] border border-neutral-200/70 bg-white dark:border-neutral-800 dark:bg-neutral-900';
 
+/**
+ * The fill for the selected one of a set — the active nav tab, the chosen
+ * segment, the current settings page.
+ *
+ * The token, not a literal: it tracks the admin's button colour, so choosing a
+ * brand colour moves every one of these at once instead of leaving black pills
+ * scattered around a red app.
+ *
+ * No dark: variant, deliberately. --primary is already theme-aware on its own —
+ * near-black on white, near-white on near-black — and once a brand colour is set
+ * it is a single value that belongs in both. A dark: override here would fight
+ * both cases.
+ */
+export const ACTIVE = 'bg-primary text-primary-foreground';
+
 /** Muted body copy. Matches AUTH_MUTED. */
 export const MUTED = 'text-neutral-500 dark:text-neutral-400';
 
@@ -99,6 +114,6 @@ export const PILL_ACTION =
 export const SEGMENT =
     'inline-flex rounded-full border border-neutral-200 bg-white p-0.5 dark:border-neutral-700 dark:bg-neutral-800';
 
-export const SEGMENT_ON = 'rounded-full bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900';
+export const SEGMENT_ON = `rounded-full ${ACTIVE}`;
 export const SEGMENT_OFF =
     'rounded-full text-neutral-600 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-neutral-700/60';

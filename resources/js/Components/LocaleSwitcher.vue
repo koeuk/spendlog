@@ -26,7 +26,7 @@ function switchTo(locale) {
             class="rounded px-2 py-1 text-xs font-medium transition"
             :class="
                 locale.value === current
-                    ? 'bg-gray-900 text-white dark:bg-neutral-100 dark:text-neutral-900'
+                    ? 'bg-primary text-primary-foreground'
                     : 'text-gray-600 hover:bg-gray-50 dark:text-neutral-400 dark:hover:bg-neutral-700'
             "
             :aria-pressed="locale.value === current"

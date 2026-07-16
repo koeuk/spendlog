@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\BudgetRequest;
 use App\Models\Budget;
+use App\Models\Expense;
+use App\Models\User;
 use App\Services\BudgetSummary;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;

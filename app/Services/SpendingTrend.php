@@ -94,6 +94,21 @@ class SpendingTrend
         return $date && $date->lte($now) ? $date : $now;
     }
 
+    /**
+     * The calendar span a granularity + anchor covers. Shared so the report's
+     * totals and its chart can never disagree about where a period starts.
+     *
+     * @return array{0: CarbonImmutable, 1: CarbonImmutable}
+     */
+    public function range(TrendGranularity $granularity, CarbonImmutable $anchor): array
+    {
+        return match ($granularity) {
+            TrendGranularity::Week => [$anchor->startOfWeek(), $anchor->endOfWeek()],
+            TrendGranularity::Month => [$anchor->startOfMonth(), $anchor->endOfMonth()],
+            TrendGranularity::Year => [$anchor->startOfYear(), $anchor->endOfYear()],
+        };
+    }
+
     public function anchorValue(TrendGranularity $granularity, CarbonImmutable $date): string
     {
         return match ($granularity) {

@@ -1,10 +1,10 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import BudgetProgress from '@/Components/BudgetProgress.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
-import { CARD } from '@/lib/appStyles';
+import { CARD, EYEBROW } from '@/lib/appStyles';
 import CategoryBadge from '@/Components/CategoryBadge.vue';
 import { useNavigating } from '@/composables/useNavigating';
 import { trans } from '@/lib/i18n';
@@ -12,6 +12,14 @@ import { Skeleton } from '@/Components/ui/skeleton';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/Components/ui/select';
+import { ChevronLeft, ChevronRight } from 'lucide-vue-next';
 import {
     Dialog,
     DialogContent,
@@ -26,7 +34,29 @@ const props = defineProps({
     month: { type: String, required: true },
     prev_month: { type: String, required: true },
     next_month: { type: String, required: true },
+    // Month labels are built server-side so they follow the app locale.
+    months: { type: Array, default: () => [] },
+    years: { type: Array, default: () => [] },
 });
+
+// 'YYYY-MM' is one value on the wire but two controls on screen.
+const monthPart = computed(() => props.month.split('-')[1]);
+const yearPart = computed(() => props.month.split('-')[0]);
+
+function visit(month) {
+    router.get(route('budgets.index', { month }), {}, {
+        preserveScroll: true,
+        preserveState: true,
+    });
+}
+
+function goToMonth(value) {
+    visit(`${yearPart.value}-${value}`);
+}
+
+function goToYear(value) {
+    visit(`${value}-${monthPart.value}`);
+}
 
 const { navigating } = useNavigating();
 
@@ -108,25 +138,66 @@ function clearBudget() {
 
     <AuthenticatedLayout>
         <template #header>
-            <div class="flex items-center justify-between gap-4">
-                <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-neutral-100">
-                    {{ __('Budgets') }}
-                </h2>
-                <div class="flex items-center gap-1">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <p :class="EYEBROW">{{ formatMonth(month) }}</p>
+                    <h1 class="mt-1 text-3xl font-extrabold tracking-[-0.03em] sm:text-4xl">
+                        {{ __('Budgets') }}
+                    </h1>
+                </div>
+
+                <!--
+                    The arrows stay for stepping to an adjacent month, which is
+                    the common case; the selects exist for the far ones, where
+                    stepping would be a dozen round trips.
+                -->
+                <div
+                    class="flex items-center gap-1 rounded-full border border-neutral-200/80 bg-white/60 p-1 backdrop-blur-xl backdrop-saturate-150 dark:border-white/10 dark:bg-neutral-900/50"
+                >
                     <Link
                         :href="route('budgets.index', { month: prev_month })"
-                        class="rounded-md px-2 py-1 text-sm text-gray-600 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-neutral-800"
+                        preserve-scroll
+                        class="grid size-8 place-items-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                        :aria-label="__('Previous month')"
                     >
-                        &larr;
+                        <ChevronLeft class="size-4" />
                     </Link>
-                    <span class="min-w-36 text-center text-sm font-medium text-gray-700 dark:text-neutral-300">
-                        {{ formatMonth(month) }}
-                    </span>
+
+                    <Select :model-value="monthPart" @update:model-value="goToMonth">
+                        <SelectTrigger
+                            class="h-8 w-[7.5rem] rounded-full border-0 bg-transparent px-3 text-sm font-semibold shadow-none focus-visible:ring-0 dark:bg-transparent"
+                            :aria-label="__('Month')"
+                        >
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem v-for="m in months" :key="m.value" :value="m.value">
+                                {{ m.label }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+
+                    <Select :model-value="yearPart" @update:model-value="goToYear">
+                        <SelectTrigger
+                            class="h-8 w-[5.5rem] rounded-full border-0 bg-transparent px-3 text-sm font-semibold tabular-nums shadow-none focus-visible:ring-0 dark:bg-transparent"
+                            :aria-label="__('Year')"
+                        >
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem v-for="y in years" :key="y" :value="String(y)">
+                                {{ y }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+
                     <Link
                         :href="route('budgets.index', { month: next_month })"
-                        class="rounded-md px-2 py-1 text-sm text-gray-600 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-neutral-800"
+                        preserve-scroll
+                        class="grid size-8 place-items-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                        :aria-label="__('Next month')"
                     >
-                        &rarr;
+                        <ChevronRight class="size-4" />
                     </Link>
                 </div>
             </div>

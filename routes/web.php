@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SettingsController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -28,6 +29,8 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('expenses', ExpenseController::class)
         ->only(['index', 'store', 'update', 'destroy']);
+
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
 
     // store() upserts the (category, month) slot, so no separate update route.
     Route::resource('budgets', BudgetController::class)

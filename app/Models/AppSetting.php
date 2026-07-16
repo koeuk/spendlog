@@ -18,6 +18,12 @@ class AppSetting extends Model
     private const CACHE_KEY = 'app_settings.current';
 
     /**
+     * Doubles as a sentinel for "no brand colour chosen" — see cssVariables().
+     * Must match the column default in the migration.
+     */
+    public const DEFAULT_BUTTON_COLOR = '#171717';
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array
@@ -101,19 +107,32 @@ class AppSetting extends Model
      * The design tokens this row overrides, as bare HSL triplets ready to drop
      * into a CSS custom property.
      *
-     * `background` is light-mode only. Dark mode keeps its own near-black: an
-     * admin picking Cream should not be able to switch dark mode off for
-     * everyone, and pale text on a pale page is unreadable, not just off-brand.
+     * `primary` is null while the button colour is still the default, and the
+     * page then leaves the token alone. That matters: app.css defines --primary
+     * as a *theme-aware pair* — near-black in light, near-white in dark — and
+     * the default #171717 is only the light half of it. Forcing that half into
+     * both themes puts a #171717 button on a #0a0a0a page: 1.1:1, invisible.
      *
-     * @return array{primary: string, primaryForeground: string, background: string}
+     * A real brand colour is a single value and does belong in both themes, so
+     * once an admin picks one it applies to each. The default is the one value
+     * that cannot, which is exactly why it means "leave the stock tokens alone".
+     *
+     * `background` is light-mode only, for the mirror reason: an admin picking
+     * Cream should not be able to switch dark mode off for everyone.
+     *
+     * @return array{primary: string|null, primaryForeground: string|null, background: string}
      */
     public function cssVariables(): array
     {
+        $branded = $this->button_color !== self::DEFAULT_BUTTON_COLOR;
+
         return [
-            'primary' => Color::toHslTriplet($this->button_color),
+            'primary' => $branded ? Color::toHslTriplet($this->button_color) : null,
             // Computed, never chosen: a free colour picker otherwise lets an
             // admin put white text on a pale button and lose the label.
-            'primaryForeground' => Color::readableForegroundTriplet($this->button_color),
+            'primaryForeground' => $branded
+                ? Color::readableForegroundTriplet($this->button_color)
+                : null,
             'background' => Color::toHslTriplet($this->body_color),
         ];
     }

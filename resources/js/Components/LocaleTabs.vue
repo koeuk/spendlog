@@ -69,7 +69,7 @@ defineExpose({ focusFirstError });
                     class="relative rounded-full px-2.5 py-1 text-xs font-semibold transition"
                     :class="
                         active === tab.value
-                            ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900'
+                            ? 'bg-primary text-primary-foreground'
                             : 'text-neutral-500 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-neutral-700/60'
                     "
                     @click="active = tab.value"

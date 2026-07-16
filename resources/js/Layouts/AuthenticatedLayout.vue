@@ -196,7 +196,7 @@ watch(() => page.url, () => nextTick(measurePill));
                              carries aria-current="page". -->
                         <span
                             aria-hidden="true"
-                            class="pointer-events-none absolute inset-y-0 left-0 rounded-full bg-neutral-900 will-change-transform motion-reduce:transition-none dark:bg-neutral-100"
+                            class="pointer-events-none absolute inset-y-0 left-0 rounded-full bg-primary will-change-transform motion-reduce:transition-none"
                             :class="pillAnimates ? 'transition-[transform,width,opacity] duration-300 ease-out' : ''"
                             :style="pillStyle"
                         />

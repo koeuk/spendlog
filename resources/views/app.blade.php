@@ -42,9 +42,14 @@
                     var t = @json($branding->cssVariables());
                     var s = document.documentElement.style;
 
-                    // The brand button reads in either theme.
-                    s.setProperty('--primary', t.primary);
-                    s.setProperty('--primary-foreground', t.primaryForeground);
+                    // Null while no brand colour is set: --primary is a
+                    // theme-aware pair in app.css (near-black in light,
+                    // near-white in dark), and pinning one value over both would
+                    // make the default button vanish into the dark page.
+                    if (t.primary) {
+                        s.setProperty('--primary', t.primary);
+                        s.setProperty('--primary-foreground', t.primaryForeground);
+                    }
 
                     // Always parked here, even in dark mode, and never read by a
                     // token directly. It is the stash useTheme reads from when the

@@ -233,7 +233,7 @@ const tooltipTop = computed(() => {
                         class="rounded-full px-3 py-1 text-xs font-semibold transition-colors duration-200"
                         :class="
                             trend.granularity === option.key
-                                ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900'
+                                ? 'bg-primary text-primary-foreground'
                                 : 'text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100'
                         "
                         :aria-pressed="trend.granularity === option.key"
@@ -255,7 +255,7 @@ const tooltipTop = computed(() => {
                         class="grid size-7 place-items-center rounded-full transition-colors duration-200"
                         :class="
                             view === option.key
-                                ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900'
+                                ? 'bg-primary text-primary-foreground'
                                 : 'text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100'
                         "
                         :aria-pressed="view === option.key"
