@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\Category;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\ValidationException;
 
 class BudgetRequest extends FormRequest
 {
@@ -49,11 +50,32 @@ class BudgetRequest extends FormRequest
         $categoryUuid = $data['category_uuid'] ?? null;
 
         return [
-            'category_id' => $categoryUuid
-                ? Category::where('uuid', $categoryUuid)->value('id')
-                : null,
+            'category_id' => $categoryUuid ? $this->resolveCategoryId($categoryUuid) : null,
             'month' => $data['month'].'-01',
             'amount' => $data['amount'],
         ];
+    }
+
+    /**
+     * The uuid passed `exists` a moment ago, but that was a separate query — the
+     * row can be gone by the time we look it up.
+     *
+     * Null is not a neutral failure here: it is this schema's encoding for the
+     * overall budget covering every category (see the rule above, BudgetSummary,
+     * and the category_key generated column). Letting a vanished category fall
+     * through to null would quietly rewrite "$250 for Food" as "$250 across
+     * everything" — no exception, no error, and a wrong number on the dashboard.
+     */
+    private function resolveCategoryId(string $categoryUuid): int
+    {
+        $id = Category::where('uuid', $categoryUuid)->value('id');
+
+        if ($id === null) {
+            throw ValidationException::withMessages([
+                'category_uuid' => __('That category no longer exists.'),
+            ]);
+        }
+
+        return $id;
     }
 }
