@@ -49,9 +49,17 @@ class CategoryController extends Controller
 
         return Inertia::render('Categories/Index', [
             'categories' => $categories,
-            'filters' => request()->only('filter', 'sort'),
+            // Cast: only() returns [] when nothing is set, which serialises to a
+            // JSON array — and filters.filter in JS then finds Array.prototype's
+            // own filter() rather than undefined. Its .name is the string
+            // "filter", which is how that word appeared in the search box.
+            'filters' => (object) request()->only('filter', 'sort'),
+            // One flag per verb: 'create' no longer implies 'update' now that a
+            // normal user can add a category inline but not edit a shared one.
             'can' => [
-                'manage' => Gate::allows('create', Category::class),
+                'create' => Gate::allows('create', Category::class),
+                'update' => Gate::allows('update', new Category),
+                'delete' => Gate::allows('delete', new Category),
             ],
         ]);
     }

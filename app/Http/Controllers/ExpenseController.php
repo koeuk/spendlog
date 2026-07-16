@@ -68,7 +68,10 @@ class ExpenseController extends Controller
         return Inertia::render('Expenses/Index', [
             'days' => $this->groupByDay($expenses->items(), $viewingAll),
             'pagination' => $this->paginationMeta($expenses),
-            'filters' => $request->only('filter', 'sort'),
+            // Cast for the same reason as CategoryController@index: an empty
+            // only() is a JSON array, and filters.filter then resolves to
+            // Array.prototype.filter instead of undefined.
+            'filters' => (object) $request->only('filter', 'sort'),
             'scope' => $viewingAll ? 'all' : 'mine',
             'can' => [
                 'view_all' => $isAdmin,

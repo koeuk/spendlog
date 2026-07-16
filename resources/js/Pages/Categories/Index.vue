@@ -136,7 +136,7 @@ function destroy() {
                 <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-neutral-100">
                     {{ __('Categories') }}
                 </h2>
-                <Button v-if="can.manage" size="sm" @click="openCreate">
+                <Button v-if="can.create" size="sm" @click="openCreate">
                     {{ __('Add category') }}
                 </Button>
             </div>
@@ -164,7 +164,7 @@ function destroy() {
                             <TableRow>
                                 <TableHead>{{ __('Name') }}</TableHead>
                                 <TableHead class="text-right">{{ __('Expenses') }}</TableHead>
-                                <TableHead v-if="can.manage" class="w-32 text-right">
+                                <TableHead v-if="canManageAny" class="w-32 text-right">
                                     {{ __('Actions') }}
                                 </TableHead>
                             </TableRow>
@@ -172,7 +172,7 @@ function destroy() {
                         <TableBody>
                             <TableRow v-if="!categories.length">
                                 <TableCell
-                                    :colspan="can.manage ? 3 : 2"
+                                    :colspan="canManageAny ? 3 : 2"
                                     class="py-10 text-center text-sm text-gray-500 dark:text-neutral-400"
                                 >
                                     {{ search ? __('No categories match your search.') : __('No categories yet.') }}
@@ -189,9 +189,10 @@ function destroy() {
                                 <TableCell class="text-right text-gray-500 dark:text-neutral-400">
                                     {{ category.expenses_count }}
                                 </TableCell>
-                                <TableCell v-if="can.manage" class="text-right">
+                                <TableCell v-if="canManageAny" class="text-right">
                                     <div class="flex justify-end gap-1">
                                         <Button
+                                            v-if="can.update"
                                             variant="ghost"
                                             size="sm"
                                             @click="openEdit(category)"
@@ -199,6 +200,7 @@ function destroy() {
                                             {{ __('Edit') }}
                                         </Button>
                                         <Button
+                                            v-if="can.delete"
                                             variant="ghost"
                                             size="sm"
                                             class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
