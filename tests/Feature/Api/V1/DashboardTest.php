@@ -140,7 +140,7 @@ class DashboardTest extends TestCase
         foreach (range(1, 10) as $day) {
             Expense::factory()->for($user)->for($category)->create([
                 'item' => "Day {$day}",
-                'spent_on' => "2026-07-".str_pad((string) $day, 2, '0', STR_PAD_LEFT),
+                'spent_on' => '2026-07-'.str_pad((string) $day, 2, '0', STR_PAD_LEFT),
             ]);
         }
 

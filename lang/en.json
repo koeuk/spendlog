@@ -6,7 +6,6 @@
     "Profile": "Profile",
     "Log Out": "Log Out",
     "Admin": "Admin",
-
     "Today": "Today",
     "This month": "This month",
     "Left to spend": "Left to spend",
@@ -25,7 +24,6 @@
     "No expenses yet, add your first one.": "No expenses yet, add your first one.",
     "No categories yet.": "No categories yet.",
     "Add an expense": "Add an expense",
-
     "Add expense": "Add expense",
     "Edit expense": "Edit expense",
     "Add category": "Add category",
@@ -33,7 +31,6 @@
     "Edit category": "Edit category",
     "Category budget": "Category budget",
     "Categories are shared by everyone logging expenses.": "Categories are shared by everyone logging expenses.",
-
     "Item": "Item",
     "Price": "Price",
     "Category": "Category",
@@ -46,7 +43,6 @@
     "Choose": "Choose",
     "Pick a date": "Pick a date",
     "Optional — click again to clear.": "Optional — click again to clear.",
-
     "Add": "Add",
     "Save": "Save",
     "Create": "Create",
@@ -56,18 +52,14 @@
     "Set": "Set",
     "Clear": "Clear",
     "Actions": "Actions",
-
     "Mine": "Mine",
     "Everyone": "Everyone",
     "All users": "All users",
-
     "Newer": "Newer",
     "Older": "Older",
     "Page :current of :last": "Page :current of :last",
-
     ":amount left": ":amount left",
     ":amount over budget": ":amount over budget",
-
     "Expense added successfully.": "Expense added successfully.",
     "Expense updated successfully.": "Expense updated successfully.",
     "Expense deleted successfully.": "Expense deleted successfully.",
@@ -80,5 +72,6 @@
     "You cannot log an expense in the future.": "You cannot log an expense in the future.",
     "Please pick a category.": "Please pick a category.",
     "That category no longer exists.": "That category no longer exists.",
-    "The month must look like 2026-07.": "The month must look like 2026-07."
+    "The month must look like 2026-07.": "The month must look like 2026-07.",
+    "of :amount": "of :amount"
 }

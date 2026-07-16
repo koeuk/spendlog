@@ -1,0 +1,250 @@
+# SpendLog API v1
+
+Token-authenticated JSON API for mobile and third-party clients. The Inertia
+frontend is unaffected — it keeps using session auth.
+
+- **Base URL**: `/api/v1`
+- **Interactive reference**: `/docs/api` (open in `local`; admin-only elsewhere)
+- **OpenAPI document**: `/docs/api.json`, or `php artisan scramble:export`
+
+The reference at `/docs/api` is generated from the code, so it cannot go stale.
+This file exists for the things a schema does not convey: conventions, and a
+worked example per endpoint.
+
+## Conventions
+
+**Identifiers are UUIDs.** Every table has a `bigint` `id` for foreign keys and
+joins, and a `uuid` as its public route key. `id` is hidden from JSON and never
+leaves the server. Passing an `id` where a UUID belongs 404s before the query
+runs. If a value came from a request it is a `uuid`; if it is going into a
+foreign key it is an `id`.
+
+**Money is a string.** `"12.50"`, never `12.5`. The columns are `decimal(10,2)`
+and a JSON float would drop the trailing zero and drift on sums. Parse it with a
+decimal type on the client, not a float. Percentages are *not* money and stay
+numeric (`percent: 106`).
+
+**Dates.** `spent_on` is a calendar day (`"2026-07-16"`), budgets are months
+(`"2026-07"`), timestamps are ISO 8601 UTC (`"2026-07-16T10:00:00+00:00"`).
+
+**Errors** are consistent JSON: `422` validation (with `errors`), `401`
+unauthenticated, `403` forbidden or missing token ability, `404` unknown UUID,
+`409` conflict, `429` throttled.
+
+**Rate limits.** 60 requests/minute per token. `login` and `register` allow 5 per
+minute per email+IP, plus 20 per minute per IP.
+
+## Authentication
+
+Two independent gates, and **both** must pass:
+
+- **Token abilities** limit what the *client* may attempt.
+- **Policies** limit what the *user* may do.
+
+A mobile token cannot write categories even when its owner is an admin; an admin
+token with `categories:write` still fails for a non-admin user. Abilities:
+`expenses:read`, `expenses:write`, `categories:read`, `categories:write`,
+`budgets:read`, `budgets:write`, `dashboard:read`.
+
+New tokens get everything **except** `categories:write` — category management is
+an admin desk job, and a lost phone should not rewrite the taxonomy every user's
+expenses hang off. A client may request a *narrower* token; anything it asks for
+is intersected with what the user may grant, so asking for more never widens it.
+
+### `POST /api/v1/login`
+
+```bash
+curl -X POST https://spendlog.test/api/v1/login \
+  -H 'Accept: application/json' \
+  -d 'email=sam@example.com' \
+  -d 'password=secret' \
+  -d 'device_name=iPhone 15'
+```
+
+```json
+{
+  "token": "3|kR9x...",
+  "user": { "uuid": "0198f...", "name": "Sam", "email": "sam@example.com", "is_admin": false }
+}
+```
+
+Ask for a read-only token with `abilities[]=expenses:read`. A wrong password and
+an unknown email return the identical `422`, on purpose — a distinguishable
+response is a free user-enumeration oracle.
+
+Send the token on every other call: `Authorization: Bearer 3|kR9x...`
+
+### `POST /api/v1/register`
+
+Fields: `name`, `email`, `password`, `password_confirmation`, `device_name`.
+Returns `201` with the same shape as login. The new user always gets the `user`
+role — a `role` in the payload is ignored, not honoured.
+
+### `GET /api/v1/me` · `POST /api/v1/logout`
+
+`logout` revokes **only the calling token**, so signing out on a phone leaves
+other devices signed in.
+
+## Expenses
+
+### `GET /api/v1/expenses`
+
+Paginated, newest first. Scoped to the caller's own rows.
+
+| Query | Meaning |
+|---|---|
+| `filter[item]` | partial match |
+| `filter[category]` | category UUID |
+| `filter[from]`, `filter[to]` | date range on `spent_on` |
+| `sort` | `spent_on`, `price`, `item` (prefix `-` to reverse) |
+| `per_page` | default 50, clamped to 100 |
+| `scope=all` | **admin only**, lists everyone and adds `owner` |
+
+`filter[user]` exists only while an admin is viewing everyone; for anyone else it
+is a `400`, not a silent empty result.
+
+```json
+{
+  "data": [{
+    "uuid": "0198f...",
+    "item": "Coffee",
+    "price": "4.50",
+    "spent_on": "2026-07-16",
+    "category": { "uuid": "0198a...", "name": "Food", "color": "amber", "icon": "utensils" },
+    "created_at": "2026-07-16T10:00:00+00:00"
+  }],
+  "links": { "next": "..." },
+  "meta": { "current_page": 1, "per_page": 50, "total": 1 }
+}
+```
+
+### `POST /api/v1/expenses` → `201`
+
+```bash
+curl -X POST https://spendlog.test/api/v1/expenses \
+  -H 'Authorization: Bearer 3|kR9x...' -H 'Accept: application/json' \
+  -d 'item=Coffee' -d 'price=4.50' \
+  -d 'category_uuid=0198a...' -d 'spent_on=2026-07-16'
+```
+
+`spent_on` cannot be in the future. `user_id` in the payload is ignored — the
+owner always comes from the token.
+
+### `GET|PATCH|DELETE /api/v1/expenses/{uuid}`
+
+`PATCH` takes the same fields as `POST`. `DELETE` returns `204`. Touching someone
+else's expense is a `403`; admins may edit anyone's.
+
+## Categories
+
+Readable by everyone, writable by admins only.
+
+### `GET /api/v1/categories`
+
+`filter[name]`, `filter[color]`, `sort=name|expenses`. Each row carries
+`expenses_count`.
+
+### `POST /api/v1/categories` → `201`
+
+```bash
+curl -X POST https://spendlog.test/api/v1/categories \
+  -H 'Authorization: Bearer 3|kR9x...' -H 'Accept: application/json' \
+  -d 'name=Travel' -d 'color=blue' -d 'icon=plane'
+```
+
+`color` and `icon` are enums — see `App\Enums\CategoryColor` / `CategoryIcon`, or
+the generated schema. Anything else is a `422`.
+
+### `DELETE /api/v1/categories/{uuid}`
+
+`204`, or **`409`** when expenses or budgets still reference it:
+
+```json
+{ "message": "\"Food\" is still in use and cannot be deleted." }
+```
+
+The foreign keys restrict rather than cascade, so deleting a busy category is a
+conflict, not a 500 — and never leaks SQL.
+
+## Budgets
+
+A budget is one `(category, month)` slot. **Omit `category_uuid` for the overall
+budget** covering every category.
+
+### `POST /api/v1/budgets` → `201` created, `200` updated
+
+Upserts the slot, so it is idempotent — there is no separate update route and the
+client never needs to know whether a row exists.
+
+```bash
+curl -X POST https://spendlog.test/api/v1/budgets \
+  -H 'Authorization: Bearer 3|kR9x...' -H 'Accept: application/json' \
+  -d 'category_uuid=0198a...' -d 'month=2026-07' -d 'amount=250'
+```
+
+`month` is `YYYY-MM`. A full date is a `422`.
+
+### `GET /api/v1/budgets`
+
+The stored budgets, optionally `?month=2026-07`. For spend-vs-budget figures use
+the summary — that is what the Budgets screen renders.
+
+### `GET /api/v1/budgets/summary?month=2026-07`
+
+```json
+{
+  "data": {
+    "month": "2026-07",
+    "overall": { "spent": "106.00", "budget": "100.00", "remaining": "-6.00",
+                 "percent": 106, "bar_percent": 100, "status": "over" },
+    "categories": [{ "uuid": "0198a...", "name": "Food", "spent": "106.00", "budget": "100.00",
+                     "remaining": "-6.00", "percent": 106, "bar_percent": 100, "status": "over" }]
+  }
+}
+```
+
+`status` is `ok` | `warning` (≥80%) | `over` (>100%) | `none` (no budget set).
+`budget: null` means no budget, which is different from `"0.00"`. `bar_percent`
+is capped at 100 so a bar cannot overflow its track; `percent` keeps the truth.
+
+### `DELETE /api/v1/budgets/{uuid}` → `204`
+
+## Dashboard
+
+### `GET /api/v1/dashboard`
+
+Everything a home screen needs in one call, rather than four round trips:
+today's total, the month summary (as above), the by-category `breakdown` ranked
+by spend with each `share` of the month, and the 8 most recent expenses.
+
+```json
+{
+  "data": {
+    "today": { "date": "2026-07-16", "total": "12.50" },
+    "summary": { "month": "2026-07", "overall": { }, "categories": [] },
+    "breakdown": [{ "uuid": "0198a...", "name": "Food", "color": "amber",
+                    "spent": "75.00", "share": 75 }],
+    "recent": [{ "uuid": "0198f...", "item": "Coffee", "price": "4.50" }]
+  }
+}
+```
+
+`breakdown` is empty when nothing was spent — the shares would be meaningless.
+
+## Configuration
+
+| Variable | Purpose |
+|---|---|
+| `CORS_ALLOWED_ORIGINS` | Comma-separated client origins. Defaults to `*`, which is tolerable because auth is bearer-token rather than cookie — pin it in production anyway. |
+
+## Notes for maintainers
+
+The API and the Inertia pages are two transports over one core, but only
+partially so today: `App\Services\BudgetSummary` is genuinely shared, while
+create/update/delete logic is currently written out in both stacks. Extracting
+that into Actions (Phase 9.1) is what stops the two from drifting.
+
+`BudgetSummary` returns money as floats because the Vue pages consume it that
+way. `App\Http\Resources\BudgetSummaryResource` normalises it to strings at the
+API boundary; if that service ever switches to strings, the resource is where to
+delete the workaround.

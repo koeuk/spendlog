@@ -144,7 +144,7 @@ const isEmpty = computed(() => props.days.length === 0);
     <AuthenticatedLayout>
         <template #header>
             <div class="flex flex-wrap items-center justify-between gap-3">
-                <h2 class="text-xl font-semibold leading-tight text-gray-800">
+                <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-neutral-100">
                     {{ __('Expenses') }}
                 </h2>
 
@@ -152,7 +152,7 @@ const isEmpty = computed(() => props.days.length === 0);
                     <!-- Admin only: switch between own expenses and everyone's -->
                     <div
                         v-if="can.view_all"
-                        class="inline-flex rounded-md border border-gray-200 bg-white p-0.5"
+                        class="inline-flex rounded-md border border-gray-200 dark:border-neutral-800 bg-white p-0.5"
                     >
                         <button
                             type="button"
@@ -160,7 +160,7 @@ const isEmpty = computed(() => props.days.length === 0);
                             :class="
                                 !viewingAll
                                     ? 'bg-gray-900 text-white'
-                                    : 'text-gray-600 hover:bg-gray-50'
+                                    : 'text-gray-600 dark:text-neutral-400 hover:bg-gray-50 dark:hover:bg-neutral-800'
                             "
                             @click="setScope('mine')"
                         >
@@ -172,7 +172,7 @@ const isEmpty = computed(() => props.days.length === 0);
                             :class="
                                 viewingAll
                                     ? 'bg-gray-900 text-white'
-                                    : 'text-gray-600 hover:bg-gray-50'
+                                    : 'text-gray-600 dark:text-neutral-400 hover:bg-gray-50 dark:hover:bg-neutral-800'
                             "
                             @click="setScope('all')"
                         >
@@ -183,7 +183,7 @@ const isEmpty = computed(() => props.days.length === 0);
                     <select
                         v-if="can.view_all && viewingAll"
                         :value="userFilter"
-                        class="rounded-md border-gray-200 py-1 text-xs text-gray-700 focus:border-gray-400 focus:ring-0"
+                        class="rounded-md border-gray-200 dark:border-neutral-800 py-1 text-xs text-gray-700 dark:text-neutral-300 focus:border-gray-400 focus:ring-0"
                         @change="applyUserFilter($event.target.value)"
                     >
                         <option value="">{{ __('All users') }}</option>
@@ -205,7 +205,7 @@ const isEmpty = computed(() => props.days.length === 0);
                     v-else-if="isEmpty"
                     class="rounded-lg bg-white p-10 text-center shadow-sm"
                 >
-                    <p class="text-sm text-gray-600">
+                    <p class="text-sm text-gray-600 dark:text-neutral-400">
                         {{ __('No expenses yet, add your first one.') }}
                     </p>
                     <Button class="mt-4" size="sm" @click="openCreate">
@@ -216,20 +216,20 @@ const isEmpty = computed(() => props.days.length === 0);
                 <div
                     v-for="day in navigating ? [] : days"
                     :key="day.date"
-                    class="overflow-hidden rounded-lg bg-white shadow-sm"
+                    class="overflow-hidden rounded-lg bg-white shadow-sm dark:bg-neutral-900"
                 >
                     <div
-                        class="flex items-center justify-between border-b border-gray-100 px-4 py-3"
+                        class="flex items-center justify-between border-b border-gray-100 dark:border-neutral-800 px-4 py-3"
                     >
-                        <h3 class="text-sm font-semibold text-gray-800">
+                        <h3 class="text-sm font-semibold text-gray-800 dark:text-neutral-100">
                             {{ formatDay(day.date) }}
                         </h3>
-                        <span class="text-sm font-semibold text-gray-800">
+                        <span class="text-sm font-semibold text-gray-800 dark:text-neutral-100">
                             {{ money.format(day.total) }}
                         </span>
                     </div>
 
-                    <ul class="divide-y divide-gray-100">
+                    <ul class="divide-y divide-gray-100 dark:divide-neutral-800">
                         <li
                             v-for="expense in day.expenses"
                             :key="expense.uuid"
@@ -252,10 +252,10 @@ const isEmpty = computed(() => props.days.length === 0);
                             </span>
 
                             <div class="min-w-0 flex-1">
-                                <p class="truncate text-sm font-medium text-gray-900">
+                                <p class="truncate text-sm font-medium text-gray-900 dark:text-neutral-100">
                                     {{ expense.item }}
                                 </p>
-                                <p class="truncate text-xs text-gray-500">
+                                <p class="truncate text-xs text-gray-500 dark:text-neutral-400">
                                     {{ expense.category }}
                                     <template v-if="expense.owner">
                                         · {{ expense.owner }}
@@ -263,7 +263,7 @@ const isEmpty = computed(() => props.days.length === 0);
                                 </p>
                             </div>
 
-                            <span class="text-sm tabular-nums text-gray-900">
+                            <span class="text-sm tabular-nums text-gray-900 dark:text-neutral-100">
                                 {{ money.format(expense.price) }}
                             </span>
 
@@ -280,7 +280,7 @@ const isEmpty = computed(() => props.days.length === 0);
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    class="text-red-600 hover:text-red-700"
+                                    class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
                                     :disabled="deleting === expense.uuid"
                                     @click="destroy(expense)"
                                 >
@@ -298,13 +298,13 @@ const isEmpty = computed(() => props.days.length === 0);
                     <Link
                         v-if="pagination.prev_page_url"
                         :href="pagination.prev_page_url"
-                        class="text-sm text-gray-600 hover:text-gray-900"
+                        class="text-sm text-gray-600 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-neutral-100"
                     >
                         &larr; {{ __('Newer') }}
                     </Link>
                     <span v-else />
 
-                    <span class="text-xs text-gray-500">
+                    <span class="text-xs text-gray-500 dark:text-neutral-400">
                         Page {{ pagination.current_page }} of
                         {{ pagination.last_page }}
                     </span>
@@ -312,7 +312,7 @@ const isEmpty = computed(() => props.days.length === 0);
                     <Link
                         v-if="pagination.next_page_url"
                         :href="pagination.next_page_url"
-                        class="text-sm text-gray-600 hover:text-gray-900"
+                        class="text-sm text-gray-600 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-neutral-100"
                     >
                         {{ __('Older') }} &rarr;
                     </Link>

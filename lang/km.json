@@ -6,7 +6,6 @@
     "Profile": "ប្រវត្តិរូប",
     "Log Out": "ចាកចេញ",
     "Admin": "អ្នកគ្រប់គ្រង",
-
     "Today": "ថ្ងៃនេះ",
     "This month": "ខែនេះ",
     "Left to spend": "នៅសល់សម្រាប់ចំណាយ",
@@ -25,7 +24,6 @@
     "No expenses yet, add your first one.": "មិនទាន់មានចំណាយទេ សូមបញ្ចូលមួយដំបូង។",
     "No categories yet.": "មិនទាន់មានប្រភេទទេ។",
     "Add an expense": "បញ្ចូលចំណាយ",
-
     "Add expense": "បញ្ចូលចំណាយ",
     "Edit expense": "កែចំណាយ",
     "Add category": "បញ្ចូលប្រភេទ",
@@ -33,7 +31,6 @@
     "Edit category": "កែប្រភេទ",
     "Category budget": "ថវិកាតាមប្រភេទ",
     "Categories are shared by everyone logging expenses.": "ប្រភេទត្រូវបានប្រើរួមគ្នាដោយអ្នកកត់ត្រាចំណាយទាំងអស់។",
-
     "Item": "ទំនិញ",
     "Price": "តម្លៃ",
     "Category": "ប្រភេទ",
@@ -46,7 +43,6 @@
     "Choose": "ជ្រើសរើស",
     "Pick a date": "ជ្រើសរើសកាលបរិច្ឆេទ",
     "Optional — click again to clear.": "ស្រេចចិត្ត — ចុចម្តងទៀតដើម្បីលុប។",
-
     "Add": "បញ្ចូល",
     "Save": "រក្សាទុក",
     "Create": "បង្កើត",
@@ -56,18 +52,14 @@
     "Set": "កំណត់",
     "Clear": "សម្អាត",
     "Actions": "សកម្មភាព",
-
     "Mine": "របស់ខ្ញុំ",
     "Everyone": "ទាំងអស់គ្នា",
     "All users": "អ្នកប្រើប្រាស់ទាំងអស់",
-
     "Newer": "ថ្មីជាង",
     "Older": "ចាស់ជាង",
     "Page :current of :last": "ទំព័រ :current ក្នុងចំណោម :last",
-
     ":amount left": "នៅសល់ :amount",
     ":amount over budget": "លើសថវិកា :amount",
-
     "Expense added successfully.": "បានបញ្ចូលចំណាយដោយជោគជ័យ។",
     "Expense updated successfully.": "បានកែចំណាយដោយជោគជ័យ។",
     "Expense deleted successfully.": "បានលុបចំណាយដោយជោគជ័យ។",
@@ -80,5 +72,6 @@
     "You cannot log an expense in the future.": "អ្នកមិនអាចកត់ត្រាចំណាយនាពេលអនាគតបានទេ។",
     "Please pick a category.": "សូមជ្រើសរើសប្រភេទ។",
     "That category no longer exists.": "ប្រភេទនេះលែងមានទៀតហើយ។",
-    "The month must look like 2026-07.": "ខែត្រូវតែមានទម្រង់ដូច 2026-07។"
+    "The month must look like 2026-07.": "ខែត្រូវតែមានទម្រង់ដូច 2026-07។",
+    "of :amount": "ក្នុងចំណោម :amount"
 }

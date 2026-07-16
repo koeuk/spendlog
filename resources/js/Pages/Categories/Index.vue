@@ -85,7 +85,7 @@ function destroy(category) {
     <AuthenticatedLayout>
         <template #header>
             <div class="flex items-center justify-between gap-4">
-                <h2 class="text-xl font-semibold leading-tight text-gray-800">
+                <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-neutral-100">
                     {{ __('Categories') }}
                 </h2>
                 <Button v-if="can.manage" size="sm" @click="openCreate">
@@ -96,7 +96,7 @@ function destroy(category) {
 
         <div class="py-8">
             <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-                <div class="overflow-hidden rounded-lg bg-white shadow-sm">
+                <div class="overflow-hidden rounded-lg bg-white shadow-sm dark:bg-neutral-900">
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -111,7 +111,7 @@ function destroy(category) {
                             <TableRow v-if="!categories.length">
                                 <TableCell
                                     :colspan="can.manage ? 3 : 2"
-                                    class="py-10 text-center text-sm text-gray-500"
+                                    class="py-10 text-center text-sm text-gray-500 dark:text-neutral-400"
                                 >
                                     {{ __('No categories yet.') }}
                                 </TableCell>
@@ -124,7 +124,7 @@ function destroy(category) {
                                         :icon="category.icon"
                                     />
                                 </TableCell>
-                                <TableCell class="text-right text-gray-500">
+                                <TableCell class="text-right text-gray-500 dark:text-neutral-400">
                                     {{ category.expenses_count }}
                                 </TableCell>
                                 <TableCell v-if="can.manage" class="text-right">
@@ -139,7 +139,7 @@ function destroy(category) {
                                         <Button
                                             variant="ghost"
                                             size="sm"
-                                            class="text-red-600 hover:text-red-700"
+                                            class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
                                             :disabled="deleting === category.uuid"
                                             @click="destroy(category)"
                                         >
@@ -176,7 +176,7 @@ function destroy(category) {
                                 autocomplete="off"
                                 placeholder="e.g. Groceries"
                             />
-                            <p v-if="form.errors.name" class="mt-1 text-sm text-red-600">
+                            <p v-if="form.errors.name" class="mt-1 text-sm text-red-600 dark:text-red-400">
                                 {{ form.errors.name }}
                             </p>
                         </div>

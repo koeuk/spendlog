@@ -18,7 +18,7 @@ function switchTo(locale) {
 </script>
 
 <template>
-    <div class="inline-flex rounded-md border border-gray-200 bg-white p-0.5">
+    <div class="inline-flex rounded-md border border-gray-200 bg-white p-0.5 dark:border-neutral-700 dark:bg-neutral-800">
         <button
             v-for="locale in locales"
             :key="locale.value"
@@ -26,8 +26,8 @@ function switchTo(locale) {
             class="rounded px-2 py-1 text-xs font-medium transition"
             :class="
                 locale.value === current
-                    ? 'bg-gray-900 text-white'
-                    : 'text-gray-600 hover:bg-gray-50'
+                    ? 'bg-gray-900 text-white dark:bg-neutral-100 dark:text-neutral-900'
+                    : 'text-gray-600 hover:bg-gray-50 dark:text-neutral-400 dark:hover:bg-neutral-700'
             "
             :aria-pressed="locale.value === current"
             :title="locale.label"
