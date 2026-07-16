@@ -7,6 +7,223 @@ endpoints:
   -
     custom: []
     httpMethods:
+      - POST
+    uri: api/v1/login
+    metadata:
+      custom: []
+      groupName: Authentication
+      groupDescription: |-
+
+        Token auth for mobile and third-party clients. The Inertia frontend keeps
+        using session auth and is unaffected.
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Log in'
+      description: |-
+        Issues a personal access token for a device.
+
+        A wrong password and an unknown email return the identical 422 — a
+        distinguishable response would be a free user-enumeration oracle.
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      email:
+        custom: []
+        name: email
+        description: "The account's email."
+        required: true
+        example: sam@example.com
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      password:
+        custom: []
+        name: password
+        description: ''
+        required: true
+        example: secret
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      device_name:
+        custom: []
+        name: device_name
+        description: 'Names the token so it can be revoked on its own later.'
+        required: true
+        example: 'iPhone 15'
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      abilities:
+        custom: []
+        name: abilities
+        description: 'Ask for a narrower token than the default. Intersected with what the user may grant, so it can never widen.'
+        required: false
+        example:
+          - 'expenses:read'
+        type: 'string[]'
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+    cleanBodyParameters:
+      email: sam@example.com
+      password: secret
+      device_name: 'iPhone 15'
+      abilities:
+        - 'expenses:read'
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"token": "3|kR9xLm...", "user": {"uuid": "0198f...", "name": "Sam", "email": "sam@example.com", "is_admin": false, "email_verified_at": "2026-07-16T10:00:00+00:00", "created_at": "2026-07-16T10:00:00+00:00"}}'
+        headers: []
+        description: ''
+      -
+        custom: []
+        status: 422
+        content: '{"message": "These credentials do not match our records.", "errors": {"email": ["These credentials do not match our records."]}}'
+        headers: []
+        description: ''
+      -
+        custom: []
+        status: 429
+        content: '{"message": "Too many attempts."}'
+        headers: []
+        description: ''
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: api/v1/register
+    metadata:
+      custom: []
+      groupName: Authentication
+      groupDescription: |-
+
+        Token auth for mobile and third-party clients. The Inertia frontend keeps
+        using session auth and is unaffected.
+      subgroup: ''
+      subgroupDescription: ''
+      title: Register
+      description: |-
+        Creates an account and returns a token, mirroring the web register flow
+        (including the verification email).
+
+        The new user always gets the `user` role — a `role` in the payload is
+        ignored, not honoured.
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      name:
+        custom: []
+        name: name
+        description: ''
+        required: true
+        example: Sam
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      email:
+        custom: []
+        name: email
+        description: 'Must not already be registered.'
+        required: true
+        example: sam@example.com
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      password:
+        custom: []
+        name: password
+        description: ''
+        required: true
+        example: Password123!
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      device_name:
+        custom: []
+        name: device_name
+        description: ''
+        required: true
+        example: 'iPhone 15'
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      password_confirmation:
+        custom: []
+        name: password_confirmation
+        description: 'Must match password.'
+        required: true
+        example: Password123!
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+    cleanBodyParameters:
+      name: Sam
+      email: sam@example.com
+      password: Password123!
+      device_name: 'iPhone 15'
+      password_confirmation: Password123!
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 201
+        content: '{"token": "3|kR9xLm...", "user": {"uuid": "0198f...", "name": "Sam", "email": "sam@example.com", "is_admin": false}}'
+        headers: []
+        description: ''
+      -
+        custom: []
+        status: 422
+        content: '{"message": "The email has already been taken.", "errors": {"email": ["The email has already been taken."]}}'
+        headers: []
+        description: ''
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
       - GET
     uri: api/v1/me
     metadata:

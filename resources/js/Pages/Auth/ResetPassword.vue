@@ -55,9 +55,9 @@ const submit = () => {
                 readonly
                 autocomplete="username"
                 :aria-invalid="!!form.errors.email"
-                :class="[PILL_INPUT, 'cursor-not-allowed bg-neutral-50 text-neutral-500']"
+                :class="[PILL_INPUT, 'cursor-not-allowed bg-neutral-50 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-500']"
             />
-            <p v-if="form.errors.email" class="mt-1.5 px-5 text-xs font-medium text-red-600">
+            <p v-if="form.errors.email" class="mt-1.5 px-5 text-xs font-medium text-red-600 dark:text-red-400">
                 {{ form.errors.email }}
             </p>
 
@@ -86,7 +86,7 @@ const submit = () => {
                     <component :is="showPassword ? Eye : EyeOff" class="size-[18px]" />
                 </Button>
             </div>
-            <p v-if="form.errors.password" class="mt-1.5 px-5 text-xs font-medium text-red-600">
+            <p v-if="form.errors.password" class="mt-1.5 px-5 text-xs font-medium text-red-600 dark:text-red-400">
                 {{ form.errors.password }}
             </p>
 
@@ -103,7 +103,7 @@ const submit = () => {
             />
             <p
                 v-if="form.errors.password_confirmation"
-                class="mt-1.5 px-5 text-xs font-medium text-red-600"
+                class="mt-1.5 px-5 text-xs font-medium text-red-600 dark:text-red-400"
             >
                 {{ form.errors.password_confirmation }}
             </p>

@@ -36,7 +36,7 @@ const verificationLinkSent = computed(
 
         <div
             v-if="verificationLinkSent"
-            class="mb-4 rounded-2xl bg-[#eaf5e6] px-4 py-3 text-center text-sm font-medium text-[#2f6b3d]"
+            class="mb-4 rounded-2xl bg-[#eaf5e6] px-4 py-3 text-center text-sm font-medium text-[#2f6b3d] dark:bg-[#16281a] dark:text-[#8fd4a0]"
         >
             A new verification link is on its way.
         </div>
@@ -52,7 +52,7 @@ const verificationLinkSent = computed(
                 :href="route('logout')"
                 method="post"
                 as="button"
-                class="text-sm font-medium text-neutral-500 underline-offset-4 hover:text-neutral-900 hover:underline"
+                class="text-sm font-medium text-neutral-500 underline-offset-4 hover:text-neutral-900 hover:underline dark:text-neutral-400 dark:hover:text-neutral-100"
             >
                 Log out
             </Link>

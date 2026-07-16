@@ -17,9 +17,11 @@ class CategoryFactory extends Factory
      */
     public function definition(): array
     {
+        // `name` is translatable (spatie), so a bare string is stored under the
+        // current locale. Written as an explicit map instead, so a factory row
+        // matches what the request layer actually persists.
         return [
-            // Unique because categories.name carries a unique index.
-            'name' => fake()->unique()->words(2, true),
+            'name' => ['en' => fake()->unique()->words(2, true)],
             'color' => fake()->randomElement(CategoryColor::cases()),
             'icon' => fake()->randomElement(CategoryIcon::cases()),
         ];

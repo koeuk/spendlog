@@ -20,18 +20,32 @@ class CategoryController extends Controller
     {
         Gate::authorize('viewAny', Category::class);
 
+        $locale = app()->getLocale();
+
         $categories = QueryBuilder::for(Category::class)
             ->allowedFilters(
-                AllowedFilter::partial('name'),
+                // name is JSON, so filter/sort target the active locale's key
+                // rather than the column as a whole.
+                AllowedFilter::partial("name->{$locale}"),
                 AllowedFilter::exact('color'),
             )
             ->allowedSorts(
-                'name',
+                AllowedSort::field('name', "name->{$locale}"),
                 AllowedSort::field('expenses', 'expenses_count'),
             )
             ->defaultSort('name')
             ->withCount('expenses')
-            ->get();
+            ->get()
+            ->map(fn (Category $category) => [
+                'uuid' => $category->uuid,
+                // The raw JSON field: {"en": "Food", "km": "អាហារ"}. This page
+                // both displays and edits it, so it ships every locale and the
+                // frontend picks one — no second, resolved copy of the name.
+                'name' => $category->getTranslations('name'),
+                'color' => $category->color?->value,
+                'icon' => $category->icon?->value,
+                'expenses_count' => $category->expenses_count,
+            ]);
 
         return Inertia::render('Categories/Index', [
             'categories' => $categories,
@@ -49,7 +63,7 @@ class CategoryController extends Controller
         DB::beginTransaction();
 
         try {
-            Category::create($request->validated());
+            Category::create($request->categoryAttributes());
 
             DB::commit();
 
@@ -68,7 +82,7 @@ class CategoryController extends Controller
         DB::beginTransaction();
 
         try {
-            $category->update($request->validated());
+            $category->update($request->categoryAttributes());
 
             DB::commit();
 

@@ -35,7 +35,7 @@ const submit = () => {
 
         <div
             v-if="status"
-            class="mb-4 rounded-2xl bg-[#eaf5e6] px-4 py-3 text-center text-sm font-medium text-[#2f6b3d]"
+            class="mb-4 rounded-2xl bg-[#eaf5e6] px-4 py-3 text-center text-sm font-medium text-[#2f6b3d] dark:bg-[#16281a] dark:text-[#8fd4a0]"
         >
             {{ status }}
         </div>
@@ -53,7 +53,7 @@ const submit = () => {
                 :aria-invalid="!!form.errors.email"
                 :class="PILL_INPUT"
             />
-            <p v-if="form.errors.email" class="mt-1.5 px-5 text-xs font-medium text-red-600">
+            <p v-if="form.errors.email" class="mt-1.5 px-5 text-xs font-medium text-red-600 dark:text-red-400">
                 {{ form.errors.email }}
             </p>
 
@@ -65,7 +65,7 @@ const submit = () => {
         <template #footer>
             <Link
                 :href="route('login')"
-                class="text-sm font-medium text-neutral-500 underline-offset-4 hover:text-neutral-900 hover:underline"
+                class="text-sm font-medium text-neutral-500 underline-offset-4 hover:text-neutral-900 hover:underline dark:text-neutral-400 dark:hover:text-neutral-100"
             >
                 Back to log in
             </Link>

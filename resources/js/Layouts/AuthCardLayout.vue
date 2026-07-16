@@ -1,5 +1,6 @@
 <script setup>
 import { Link } from '@inertiajs/vue3';
+import ThemeToggle from '@/Components/ThemeToggle.vue';
 
 /**
  * The centred shell for the short auth detours — verify email, forgot/reset
@@ -12,14 +13,16 @@ defineProps({
 </script>
 
 <template>
-    <div class="grid min-h-screen place-items-center bg-white px-4 py-10 font-display text-neutral-900">
+    <div class="relative grid min-h-screen place-items-center bg-white px-4 py-10 font-display text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
+        <div class="absolute right-4 top-4"><ThemeToggle /></div>
+
         <div class="w-full max-w-[420px] text-center">
             <Link
                 href="/"
                 class="anim inline-flex items-center gap-2 text-sm font-bold tracking-tight"
                 style="--d: 0ms"
             >
-                <span class="grid size-7 place-items-center rounded-lg bg-neutral-900 text-[13px] font-extrabold text-white">
+                <span class="grid size-7 place-items-center rounded-lg bg-neutral-900 text-[13px] font-extrabold text-white dark:bg-neutral-100 dark:text-neutral-900">
                     S
                 </span>
                 SpendLog
@@ -27,7 +30,7 @@ defineProps({
 
             <div
                 v-if="$slots.icon"
-                class="anim mx-auto mt-8 grid size-14 place-items-center rounded-2xl bg-[#f1f7ef]"
+                class="anim mx-auto mt-8 grid size-14 place-items-center rounded-2xl bg-[#f1f7ef] dark:bg-[#16281a]"
                 style="--d: 60ms"
             >
                 <slot name="icon" />
@@ -43,7 +46,7 @@ defineProps({
 
             <p
                 v-if="$slots.description"
-                class="anim mx-auto mt-3 max-w-[360px] text-sm leading-relaxed text-neutral-500"
+                class="anim mx-auto mt-3 max-w-[360px] text-sm leading-relaxed text-neutral-500 dark:text-neutral-400"
                 style="--d: 160ms"
             >
                 <slot name="description" />

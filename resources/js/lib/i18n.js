@@ -22,6 +22,28 @@ export function trans(key, replace = {}) {
 }
 
 /**
+ * Resolves a translatable JSON field — {"en": "Food", "km": "អាហារ"} — to the
+ * active locale, mirroring spatie/laravel-translatable's fallback to English.
+ *
+ * Tolerates a plain string so a non-translated field still renders.
+ *
+ * @param {Record<string, string>|string|null} field
+ */
+export function localized(field) {
+    if (!field) {
+        return '';
+    }
+
+    if (typeof field === 'string') {
+        return field;
+    }
+
+    const locale = usePage().props.locale;
+
+    return field[locale] || field.en || Object.values(field)[0] || '';
+}
+
+/**
  * Registers __() globally so templates can call it without importing.
  */
 export const i18n = {

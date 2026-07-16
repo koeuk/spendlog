@@ -59,7 +59,7 @@ const submit = () => {
                     <component :is="showPassword ? Eye : EyeOff" class="size-[18px]" />
                 </Button>
             </div>
-            <p v-if="form.errors.password" class="mt-1.5 px-5 text-xs font-medium text-red-600">
+            <p v-if="form.errors.password" class="mt-1.5 px-5 text-xs font-medium text-red-600 dark:text-red-400">
                 {{ form.errors.password }}
             </p>
 

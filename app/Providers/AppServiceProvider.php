@@ -29,9 +29,10 @@ class AppServiceProvider extends ServiceProvider
 
         $this->configureRateLimiting();
 
-        // Scramble serves /docs/api openly in local and 403s everywhere else
-        // unless this gate says otherwise. Admins only: the document lists every
-        // endpoint and payload shape, which is a map worth not handing out.
+        // Consulted by App\Http\Middleware\RestrictDocsAccess, which guards
+        // Scribe's /docs route. Admins only: the page lists every endpoint and
+        // payload shape and carries a Try It Out button that fires real
+        // requests — a map worth not handing out.
         Gate::define('viewApiDocs', fn (?User $user) => (bool) $user?->isAdmin());
     }
 

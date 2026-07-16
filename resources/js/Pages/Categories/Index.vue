@@ -4,6 +4,7 @@ import { Head, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import CategoryBadge from '@/Components/CategoryBadge.vue';
 import CategoryStylePicker from '@/Components/CategoryStylePicker.vue';
+import { localized } from '@/lib/i18n';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
@@ -32,7 +33,11 @@ const props = defineProps({
 const showDialog = ref(false);
 const editing = ref(null);
 
-const form = useForm({ name: '', color: 'slate', icon: null });
+const form = useForm({
+    name: { en: '', km: '' },
+    color: 'slate',
+    icon: null,
+});
 
 function openCreate() {
     editing.value = null;
@@ -43,7 +48,11 @@ function openCreate() {
 
 function openEdit(category) {
     editing.value = category;
-    form.name = category.name;
+    // name is the raw JSON field, so both inputs read straight from it.
+    form.name = {
+        en: category.name?.en ?? '',
+        km: category.name?.km ?? '',
+    };
     form.color = category.color;
     form.icon = category.icon;
     form.clearErrors();
@@ -119,7 +128,7 @@ function destroy(category) {
                             <TableRow v-for="category in categories" :key="category.uuid">
                                 <TableCell>
                                     <CategoryBadge
-                                        :name="category.name"
+                                        :name="localized(category.name)"
                                         :color="category.color"
                                         :icon="category.icon"
                                     />
@@ -168,16 +177,33 @@ function destroy(category) {
 
                     <div class="grid gap-4 py-4">
                         <div>
-                            <Label for="name">{{ __('Name') }}</Label>
+                            <Label for="name_en">{{ __('Name') }} (EN)</Label>
                             <Input
-                                id="name"
-                                v-model="form.name"
+                                id="name_en"
+                                v-model="form.name.en"
                                 class="mt-1"
                                 autocomplete="off"
                                 placeholder="e.g. Groceries"
                             />
-                            <p v-if="form.errors.name" class="mt-1 text-sm text-red-600 dark:text-red-400">
-                                {{ form.errors.name }}
+                            <p v-if="form.errors['name.en']" class="mt-1 text-sm text-red-600 dark:text-red-400">
+                                {{ form.errors['name.en'] }}
+                            </p>
+                        </div>
+
+                        <div>
+                            <Label for="name_km">
+                                {{ __('Name') }} (KM)
+                                <span class="font-normal text-gray-500">{{ __('(optional)') }}</span>
+                            </Label>
+                            <Input
+                                id="name_km"
+                                v-model="form.name.km"
+                                class="mt-1"
+                                autocomplete="off"
+                                placeholder="ឧ. គ្រឿងទេស"
+                            />
+                            <p v-if="form.errors['name.km']" class="mt-1 text-sm text-red-600 dark:text-red-400">
+                                {{ form.errors['name.km'] }}
                             </p>
                         </div>
 

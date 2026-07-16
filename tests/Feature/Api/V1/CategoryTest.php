@@ -65,11 +65,11 @@ class CategoryTest extends TestCase
         Sanctum::actingAs($user, [TokenAbility::CategoriesWrite->value]);
 
         $this->postJson('/api/v1/categories', [
-            'name' => 'Sneaky',
+            'name' => ['en' => 'Sneaky'],
             'color' => CategoryColor::Red->value,
         ])->assertForbidden();
 
-        $this->assertDatabaseMissing('categories', ['name' => 'Sneaky']);
+        $this->assertSame(0, Category::query()->whereJsonContains('name->en', 'Sneaky')->count());
     }
 
     /**
@@ -80,11 +80,11 @@ class CategoryTest extends TestCase
         Sanctum::actingAs($this->admin(), [TokenAbility::CategoriesRead->value]);
 
         $this->postJson('/api/v1/categories', [
-            'name' => 'Blocked',
+            'name' => ['en' => 'Blocked'],
             'color' => CategoryColor::Red->value,
         ])->assertForbidden();
 
-        $this->assertDatabaseMissing('categories', ['name' => 'Blocked']);
+        $this->assertSame(0, Category::query()->whereJsonContains('name->en', 'Blocked')->count());
     }
 
     public function test_an_admin_with_the_ability_can_create_a_category(): void
@@ -92,12 +92,16 @@ class CategoryTest extends TestCase
         Sanctum::actingAs($this->admin(), [TokenAbility::CategoriesWrite->value]);
 
         $this->postJson('/api/v1/categories', [
-            'name' => 'Travel',
+            'name' => ['en' => 'Travel', 'km' => 'ការធ្វើដំណើរ'],
             'color' => CategoryColor::Blue->value,
             'icon' => CategoryIcon::Plane->value,
-        ])->assertStatus(201)->assertJsonPath('data.name', 'Travel');
+        ])->assertStatus(201)
+            // `name` is resolved for the active locale; the raw map rides along
+            // so a client can round trip an edit.
+            ->assertJsonPath('data.name', 'Travel')
+            ->assertJsonPath('data.name_translations.km', 'ការធ្វើដំណើរ');
 
-        $this->assertDatabaseHas('categories', ['name' => 'Travel']);
+        $this->assertSame(1, Category::query()->whereJsonContains('name->en', 'Travel')->count());
     }
 
     public function test_store_rejects_a_colour_outside_the_enum(): void
@@ -105,7 +109,7 @@ class CategoryTest extends TestCase
         Sanctum::actingAs($this->admin(), [TokenAbility::CategoriesWrite->value]);
 
         $this->postJson('/api/v1/categories', [
-            'name' => 'Bad',
+            'name' => ['en' => 'Bad'],
             'color' => 'chartreuse',
         ])->assertStatus(422)->assertJsonValidationErrors('color');
     }
@@ -116,10 +120,12 @@ class CategoryTest extends TestCase
 
         Sanctum::actingAs($this->admin(), [TokenAbility::CategoriesWrite->value]);
 
+        // Uniqueness is per locale, checked with whereJsonContains rather than
+        // Rule::unique, which cannot reach inside a JSON column.
         $this->postJson('/api/v1/categories', [
-            'name' => 'Food',
+            'name' => ['en' => 'Food'],
             'color' => CategoryColor::Red->value,
-        ])->assertStatus(422)->assertJsonValidationErrors('name');
+        ])->assertStatus(422)->assertJsonValidationErrors('name.en');
     }
 
     /**
@@ -133,9 +139,21 @@ class CategoryTest extends TestCase
         Sanctum::actingAs($this->admin(), [TokenAbility::CategoriesWrite->value]);
 
         $this->patchJson("/api/v1/categories/{$category->uuid}", [
-            'name' => 'Food',
+            'name' => ['en' => 'Food'],
             'color' => CategoryColor::Green->value,
         ])->assertOk()->assertJsonPath('data.color', CategoryColor::Green->value);
+    }
+
+    public function test_store_requires_an_english_name(): void
+    {
+        Sanctum::actingAs($this->admin(), [TokenAbility::CategoriesWrite->value]);
+
+        // English is the fallback locale, so a Khmer-only category would render
+        // as nothing for an English reader.
+        $this->postJson('/api/v1/categories', [
+            'name' => ['km' => 'ការធ្វើដំណើរ'],
+            'color' => CategoryColor::Blue->value,
+        ])->assertStatus(422)->assertJsonValidationErrors('name.en');
     }
 
     public function test_an_unused_category_can_be_deleted(): void

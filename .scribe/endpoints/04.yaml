@@ -129,6 +129,101 @@ endpoints:
   -
     custom: []
     httpMethods:
+      - POST
+    uri: api/v1/budgets
+    metadata:
+      custom: []
+      groupName: Budgets
+      groupDescription: |-
+
+        A budget is one `(category, month)` slot. **Omit `category_uuid` for the
+        overall budget** covering every category.
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Set a budget'
+      description: |-
+        Upserts the `(category, month)` slot, so this is idempotent — there is no
+        separate update route and the client never needs to know whether a row
+        already exists. Returns 201 when the slot was empty, 200 when it was not.
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      category_uuid:
+        custom: []
+        name: category_uuid
+        description: 'Omit entirely for the overall budget covering every category.'
+        required: false
+        example: 0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: true
+        deprecated: false
+      month:
+        custom: []
+        name: month
+        description: 'YYYY-MM. A full date is a 422.'
+        required: true
+        example: 2026-07
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      amount:
+        custom: []
+        name: amount
+        description: 'Max 99999999.99.'
+        required: true
+        example: 250.0
+        type: number
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+    cleanBodyParameters:
+      category_uuid: 0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+      month: 2026-07
+      amount: 250.0
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"data": {"uuid": "0198b...", "amount": "400.00", "month": "2026-07", "category": {"uuid": "0198a...", "name": "Food"}}}'
+        headers: []
+        description: 'slot already set'
+      -
+        custom: []
+        status: 201
+        content: '{"data": {"uuid": "0198b...", "amount": "250.00", "month": "2026-07", "category": {"uuid": "0198a...", "name": "Food"}}}'
+        headers: []
+        description: 'slot was empty'
+      -
+        custom: []
+        status: 422
+        content: '{"message": "The month must look like 2026-07.", "errors": {"month": ["The month must look like 2026-07."]}}'
+        headers: []
+        description: 'month was a full date'
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
       - DELETE
     uri: 'api/v1/budgets/{uuid}'
     metadata:
@@ -154,7 +249,7 @@ endpoints:
         name: uuid
         description: ''
         required: true
-        example: 019f6aa5-bbe1-7246-ae71-5f168344590e
+        example: 6ff8f7f6-1eb3-3525-be4a-3932c805afed
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -172,7 +267,7 @@ endpoints:
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      uuid: 019f6aa5-bbe1-7246-ae71-5f168344590e
+      uuid: 6ff8f7f6-1eb3-3525-be4a-3932c805afed
       budget: 0198b1c2-d3e4-7f5a-8b9c-0d1e2f3a4b5c
     queryParameters: []
     cleanQueryParameters: []

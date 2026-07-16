@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { Eye, EyeOff } from 'lucide-vue-next';
 import AuthArtwork from '@/Components/AuthArtwork.vue';
+import ThemeToggle from '@/Components/ThemeToggle.vue';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
@@ -33,16 +34,18 @@ const slides = [
 <template>
     <Head title="Register" />
 
-    <div class="min-h-screen bg-white p-3 font-display text-neutral-900 lg:p-4">
+    <div class="min-h-screen bg-white p-3 font-display text-neutral-900 lg:p-4 dark:bg-neutral-950 dark:text-neutral-100">
         <div class="grid min-h-[calc(100vh-1.5rem)] gap-4 lg:min-h-[calc(100vh-2rem)] lg:grid-cols-2">
-            <div class="flex items-center justify-center px-4 py-10 sm:px-8">
+            <div class="relative flex items-center justify-center px-4 py-10 sm:px-8">
+                <div class="absolute right-4 top-4 sm:right-6"><ThemeToggle /></div>
+
                 <div class="w-full max-w-[380px]">
                     <Link
                         href="/"
                         class="anim mb-10 inline-flex items-center gap-2 text-sm font-bold tracking-tight"
                         style="--d: 0ms"
                     >
-                        <span class="grid size-7 place-items-center rounded-lg bg-neutral-900 text-[13px] font-extrabold text-white">
+                        <span class="grid size-7 place-items-center rounded-lg bg-neutral-900 text-[13px] font-extrabold text-white dark:bg-neutral-100 dark:text-neutral-900">
                             S
                         </span>
                         SpendLog
@@ -55,7 +58,7 @@ const slides = [
                         Start your log.
                     </h1>
 
-                    <p class="anim mt-3 text-sm leading-relaxed text-neutral-500" style="--d: 120ms">
+                    <p class="anim mt-3 text-sm leading-relaxed text-neutral-500 dark:text-neutral-400" style="--d: 120ms">
                         Free, and about a minute to set up. We'll email you a link
                         to confirm your address.
                     </p>
@@ -74,7 +77,7 @@ const slides = [
                                 :aria-invalid="!!form.errors.name"
                                 :class="PILL_INPUT"
                             />
-                            <p v-if="form.errors.name" class="mt-1.5 px-5 text-xs font-medium text-red-600">
+                            <p v-if="form.errors.name" class="mt-1.5 px-5 text-xs font-medium text-red-600 dark:text-red-400">
                                 {{ form.errors.name }}
                             </p>
                         </div>
@@ -91,7 +94,7 @@ const slides = [
                                 :aria-invalid="!!form.errors.email"
                                 :class="PILL_INPUT"
                             />
-                            <p v-if="form.errors.email" class="mt-1.5 px-5 text-xs font-medium text-red-600">
+                            <p v-if="form.errors.email" class="mt-1.5 px-5 text-xs font-medium text-red-600 dark:text-red-400">
                                 {{ form.errors.email }}
                             </p>
                         </div>
@@ -115,13 +118,13 @@ const slides = [
                                     size="icon"
                                     :aria-label="showPassword ? 'Hide password' : 'Show password'"
                                     :aria-pressed="showPassword"
-                                    class="absolute right-1.5 top-1.5 size-[42px] rounded-full text-neutral-400 hover:bg-neutral-50 hover:text-neutral-700"
+                                    class="absolute right-1.5 top-1.5 size-[42px] rounded-full text-neutral-400 hover:bg-neutral-50 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
                                     @click="showPassword = !showPassword"
                                 >
                                     <component :is="showPassword ? Eye : EyeOff" class="size-[18px]" />
                                 </Button>
                             </div>
-                            <p v-if="form.errors.password" class="mt-1.5 px-5 text-xs font-medium text-red-600">
+                            <p v-if="form.errors.password" class="mt-1.5 px-5 text-xs font-medium text-red-600 dark:text-red-400">
                                 {{ form.errors.password }}
                             </p>
                         </div>
@@ -142,7 +145,7 @@ const slides = [
                             />
                             <p
                                 v-if="form.errors.password_confirmation"
-                                class="mt-1.5 px-5 text-xs font-medium text-red-600"
+                                class="mt-1.5 px-5 text-xs font-medium text-red-600 dark:text-red-400"
                             >
                                 {{ form.errors.password_confirmation }}
                             </p>
@@ -158,11 +161,11 @@ const slides = [
                         </Button>
                     </form>
 
-                    <p class="anim mt-12 text-center text-sm font-medium text-neutral-500" style="--d: 420ms">
+                    <p class="anim mt-12 text-center text-sm font-medium text-neutral-500 dark:text-neutral-400" style="--d: 420ms">
                         Already a member?
                         <Link
                             :href="route('login')"
-                            class="font-semibold text-[#4b9d5f] underline-offset-4 hover:underline"
+                            class="font-semibold text-[#4b9d5f] underline-offset-4 hover:underline dark:text-[#6cc182]"
                         >
                             Log in
                         </Link>
