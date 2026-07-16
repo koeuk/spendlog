@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\CategoryColor;
+use App\Enums\CategoryIcon;
 use App\Models\Concerns\HasUuidRouteKey;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,6 +20,8 @@ class Category extends Model
      */
     protected $fillable = [
         'name',
+        'color',
+        'icon',
     ];
 
     /**
@@ -28,6 +32,19 @@ class Category extends Model
     protected $hidden = [
         'id',
     ];
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'color' => CategoryColor::class,
+            'icon' => CategoryIcon::class,
+        ];
+    }
 
     public function expenses(): HasMany
     {

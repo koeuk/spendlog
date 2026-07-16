@@ -30,7 +30,7 @@ const props = defineProps({
 const showDialog = ref(false);
 const editing = ref(null);
 
-const form = useForm({ name: '' });
+const form = useForm({ name: '', color: 'slate', icon: null });
 
 function openCreate() {
     editing.value = null;
@@ -42,6 +42,8 @@ function openCreate() {
 function openEdit(category) {
     editing.value = category;
     form.name = category.name;
+    form.color = category.color;
+    form.icon = category.icon;
     form.clearErrors();
     showDialog.value = true;
 }
@@ -114,7 +116,24 @@ function destroy(category) {
                             </TableRow>
                             <TableRow v-for="category in categories" :key="category.uuid">
                                 <TableCell class="font-medium">
-                                    {{ category.name }}
+                                    <span class="flex items-center gap-2.5">
+                                        <span
+                                            class="flex size-7 shrink-0 items-center justify-center rounded-full ring-1 ring-inset"
+                                            :class="categoryColor(category.color).badge"
+                                        >
+                                            <component
+                                                :is="categoryIcon(category.icon)"
+                                                v-if="categoryIcon(category.icon)"
+                                                class="size-4"
+                                            />
+                                            <span
+                                                v-else
+                                                class="size-2 rounded-full"
+                                                :class="categoryColor(category.color).dot"
+                                            />
+                                        </span>
+                                        {{ category.name }}
+                                    </span>
                                 </TableCell>
                                 <TableCell class="text-right text-gray-500">
                                     {{ category.expenses_count }}
@@ -158,18 +177,72 @@ function destroy(category) {
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div class="py-4">
-                        <Label for="name">Name</Label>
-                        <Input
-                            id="name"
-                            v-model="form.name"
-                            class="mt-1"
-                            autocomplete="off"
-                            placeholder="e.g. Groceries"
-                        />
-                        <p v-if="form.errors.name" class="mt-2 text-sm text-red-600">
-                            {{ form.errors.name }}
-                        </p>
+                    <div class="space-y-5 py-4">
+                        <div>
+                            <Label for="name">Name</Label>
+                            <Input
+                                id="name"
+                                v-model="form.name"
+                                class="mt-1"
+                                autocomplete="off"
+                                placeholder="e.g. Groceries"
+                            />
+                            <p v-if="form.errors.name" class="mt-2 text-sm text-red-600">
+                                {{ form.errors.name }}
+                            </p>
+                        </div>
+
+                        <div>
+                            <Label>Colour</Label>
+                            <div class="mt-2 flex flex-wrap gap-2">
+                                <button
+                                    v-for="name in CATEGORY_COLOR_NAMES"
+                                    :key="name"
+                                    type="button"
+                                    class="size-7 rounded-full ring-offset-2 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
+                                    :class="[
+                                        categoryColor(name).dot,
+                                        form.color === name
+                                            ? 'ring-2 ring-gray-900'
+                                            : 'ring-1 ring-black/10 hover:ring-gray-400',
+                                    ]"
+                                    :aria-label="name"
+                                    :aria-pressed="form.color === name"
+                                    @click="form.color = name"
+                                />
+                            </div>
+                            <p v-if="form.errors.color" class="mt-2 text-sm text-red-600">
+                                {{ form.errors.color }}
+                            </p>
+                        </div>
+
+                        <div>
+                            <Label>
+                                Icon
+                                <span class="font-normal text-gray-500">(optional)</span>
+                            </Label>
+                            <div class="mt-2 grid grid-cols-8 gap-1.5">
+                                <button
+                                    v-for="name in CATEGORY_ICON_NAMES"
+                                    :key="name"
+                                    type="button"
+                                    class="flex aspect-square items-center justify-center rounded-md border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
+                                    :class="
+                                        form.icon === name
+                                            ? 'border-gray-900 bg-gray-900 text-white'
+                                            : 'border-gray-200 text-gray-600 hover:border-gray-400 hover:bg-gray-50'
+                                    "
+                                    :aria-label="name"
+                                    :aria-pressed="form.icon === name"
+                                    @click="toggleIcon(name)"
+                                >
+                                    <component :is="categoryIcon(name)" class="size-4" />
+                                </button>
+                            </div>
+                            <p v-if="form.errors.icon" class="mt-2 text-sm text-red-600">
+                                {{ form.errors.icon }}
+                            </p>
+                        </div>
                     </div>
 
                     <DialogFooter>
