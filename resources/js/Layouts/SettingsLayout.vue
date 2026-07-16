@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
-import { Palette, ShieldCheck, UserRound } from 'lucide-vue-next';
+import { Palette, ShieldCheck, SwatchBook, UserRound } from 'lucide-vue-next';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { CARD, EYEBROW, MUTED, SEGMENT_ON, SEGMENT_OFF } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
@@ -15,14 +15,17 @@ const page = usePage();
 
 const isAdmin = computed(() => Boolean(page.props.auth?.is_admin));
 
-// Branding is admin-only server-side too — this just keeps it out of the way
-// for everyone else.
+// The admin pages are admin-only server-side too — this just keeps them out of
+// the way for everyone else.
 const items = computed(() =>
     [
         { key: 'profile', label: trans('Profile'), href: route('profile.edit'), icon: UserRound, pattern: 'profile.*' },
         { key: 'password', label: trans('Password'), href: route('password.edit'), icon: ShieldCheck, pattern: 'password.edit' },
         isAdmin.value
             ? { key: 'branding', label: trans('Appearance'), href: route('branding.edit'), icon: Palette, pattern: 'branding.*' }
+            : null,
+        isAdmin.value
+            ? { key: 'colors', label: trans('Colours'), href: route('colors.edit'), icon: SwatchBook, pattern: 'colors.*' }
             : null,
     ].filter(Boolean),
 );

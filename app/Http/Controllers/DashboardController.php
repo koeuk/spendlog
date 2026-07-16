@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Expense;
 use App\Models\User;
 use App\Services\BudgetSummary;
+use App\Services\SpendingTrend;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -15,7 +16,10 @@ class DashboardController extends Controller
     /** How many expenses the "recent" list shows. */
     private const RECENT_LIMIT = 8;
 
-    public function __construct(private readonly BudgetSummary $summary) {}
+    public function __construct(
+        private readonly BudgetSummary $summary,
+        private readonly SpendingTrend $trend,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -33,6 +37,8 @@ class DashboardController extends Controller
             ],
             'summary' => $summary,
             'breakdown' => $this->breakdown($summary),
+            // All three granularities at once — the toggle is then instant.
+            'trend' => $this->trend->forUser($user, $today),
             'recent' => $this->recent($user),
         ]);
     }

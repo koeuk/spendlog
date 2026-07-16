@@ -49,6 +49,9 @@ Route::middleware('auth')->group(function () {
         // Admin only — enforced in the controller, not just hidden in the UI.
         Route::get('/branding', [SettingsController::class, 'branding'])->name('branding.edit');
         Route::post('/branding', [SettingsController::class, 'updateBranding'])->name('branding.update');
+
+        Route::get('/colors', [SettingsController::class, 'colors'])->name('colors.edit');
+        Route::post('/colors', [SettingsController::class, 'updateColors'])->name('colors.update');
     });
 });
 

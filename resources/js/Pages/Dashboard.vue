@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import BudgetProgress from '@/Components/BudgetProgress.vue';
+import SpendingTrendChart from '@/Components/SpendingTrendChart.vue';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
 import { CARD, CARD_TINT, EYEBROW, FIGURE, MUTED } from '@/lib/appStyles';
 import { ArrowRight } from 'lucide-vue-next';
@@ -11,6 +12,7 @@ const props = defineProps({
     today: { type: Object, required: true },
     summary: { type: Object, required: true },
     breakdown: { type: Array, required: true },
+    trend: { type: Object, required: true },
     recent: { type: Array, required: true },
 });
 
@@ -128,6 +130,11 @@ const statusText = {
                         <ArrowRight class="size-4" />
                     </Link>
                 </div>
+            </div>
+
+            <!-- Trend: how this period is tracking, at three zoom levels -->
+            <div :class="[CARD, 'anim p-6 sm:p-7']" style="--d: 150ms">
+                <SpendingTrendChart :trend="trend" />
             </div>
 
             <!-- Breakdown + budgets -->

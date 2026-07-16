@@ -1,17 +1,13 @@
 <script setup>
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
 import { Link, useForm, usePage } from '@inertiajs/vue3';
+import { Button } from '@/Components/ui/button';
+import { Input } from '@/Components/ui/input';
+import { Label } from '@/Components/ui/label';
+import { MUTED } from '@/lib/appStyles';
 
 defineProps({
-    mustVerifyEmail: {
-        type: Boolean,
-    },
-    status: {
-        type: String,
-    },
+    mustVerifyEmail: { type: Boolean },
+    status: { type: String },
 });
 
 const user = usePage().props.auth.user;
@@ -23,90 +19,96 @@ const form = useForm({
 </script>
 
 <template>
-    <section>
-        <header>
-            <h2 class="text-lg font-medium text-gray-900 dark:text-neutral-100">
-                Profile Information
-            </h2>
-
-            <p class="mt-1 text-sm text-gray-600 dark:text-neutral-400">
-                Update your account's profile information and email address.
+    <!--
+        No header here: SettingsLayout already titles the panel, and a second
+        "Profile Information" under "Profile" is the same word twice.
+    -->
+    <form class="space-y-5" @submit.prevent="form.patch(route('profile.update'))">
+        <div>
+            <Label for="name">{{ __('Name') }}</Label>
+            <Input
+                id="name"
+                v-model="form.name"
+                type="text"
+                required
+                autofocus
+                autocomplete="name"
+                class="mt-1"
+                :aria-invalid="!!form.errors.name"
+            />
+            <p v-if="form.errors.name" class="mt-1 text-sm text-red-600 dark:text-red-400">
+                {{ form.errors.name }}
             </p>
-        </header>
+        </div>
 
-        <form
-            @submit.prevent="form.patch(route('profile.update'))"
-            class="mt-6 space-y-6"
+        <div>
+            <Label for="email">{{ __('Email') }}</Label>
+            <Input
+                id="email"
+                v-model="form.email"
+                type="email"
+                required
+                autocomplete="username"
+                class="mt-1"
+                :aria-invalid="!!form.errors.email"
+            />
+            <p class="mt-1 text-xs" :class="MUTED">
+                {{ __('Changing this signs you out of nothing, but you will need to verify the new address.') }}
+            </p>
+            <p v-if="form.errors.email" class="mt-1 text-sm text-red-600 dark:text-red-400">
+                {{ form.errors.email }}
+            </p>
+        </div>
+
+        <div
+            v-if="mustVerifyEmail && user.email_verified_at === null"
+            class="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
         >
-            <div>
-                <InputLabel for="name" value="Name" />
+            <p>
+                {{ __('Your email address is unverified.') }}
+                <Link
+                    :href="route('verification.send')"
+                    method="post"
+                    as="button"
+                    class="font-semibold underline underline-offset-4 hover:no-underline"
+                >
+                    {{ __('Re-send the verification email.') }}
+                </Link>
+            </p>
 
-                <TextInput
-                    id="name"
-                    type="text"
-                    class="mt-1 block w-full"
-                    v-model="form.name"
-                    required
-                    autofocus
-                    autocomplete="name"
-                />
+            <p
+                v-if="status === 'verification-link-sent'"
+                class="mt-2 font-medium text-[#2f6b3d] dark:text-[#8fd4a0]"
+            >
+                {{ __('A new verification link has been sent to your email address.') }}
+            </p>
+        </div>
 
-                <InputError class="mt-2" :message="form.errors.name" />
-            </div>
+        <div class="flex items-center gap-3 pt-1">
+            <Button type="submit" :disabled="form.processing">
+                {{ form.processing ? __('Saving…') : __('Save') }}
+            </Button>
 
-            <div>
-                <InputLabel for="email" value="Email" />
-
-                <TextInput
-                    id="email"
-                    type="email"
-                    class="mt-1 block w-full"
-                    v-model="form.email"
-                    required
-                    autocomplete="username"
-                />
-
-                <InputError class="mt-2" :message="form.errors.email" />
-            </div>
-
-            <div v-if="mustVerifyEmail && user.email_verified_at === null">
-                <p class="mt-2 text-sm text-gray-800 dark:text-neutral-100">
-                    Your email address is unverified.
-                    <Link
-                        :href="route('verification.send')"
-                        method="post"
-                        as="button"
-                        class="rounded-md text-sm text-gray-600 dark:text-neutral-400 underline hover:text-gray-900 dark:hover:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                    >
-                        Click here to re-send the verification email.
-                    </Link>
+            <!--
+                Announced politely so a screen reader hears the save land; the
+                visual "Saved." alone would be silent to it.
+            -->
+            <Transition
+                enter-active-class="transition ease-out duration-200"
+                enter-from-class="opacity-0 translate-x-1"
+                leave-active-class="transition ease-in duration-150"
+                leave-to-class="opacity-0"
+            >
+                <p
+                    v-if="form.recentlySuccessful"
+                    class="text-sm"
+                    :class="MUTED"
+                    role="status"
+                    aria-live="polite"
+                >
+                    {{ __('Saved.') }}
                 </p>
-
-                <div
-                    v-show="status === 'verification-link-sent'"
-                    class="mt-2 text-sm font-medium text-green-600"
-                >
-                    A new verification link has been sent to your email address.
-                </div>
-            </div>
-
-            <div class="flex items-center gap-4">
-                <PrimaryButton :disabled="form.processing">Save</PrimaryButton>
-
-                <Transition
-                    enter-active-class="transition ease-in-out"
-                    enter-from-class="opacity-0"
-                    leave-active-class="transition ease-in-out"
-                    leave-to-class="opacity-0"
-                >
-                    <p
-                        v-if="form.recentlySuccessful"
-                        class="text-sm text-gray-600 dark:text-neutral-400"
-                    >
-                        Saved.
-                    </p>
-                </Transition>
-            </div>
-        </form>
-    </section>
+            </Transition>
+        </div>
+    </form>
 </template>
