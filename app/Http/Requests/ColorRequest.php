@@ -9,7 +9,6 @@ use Illuminate\Validation\Rule;
 
 class ColorRequest extends FormRequest
 {
-
     /**
      * Authorization is handled by the admin gate in the controller.
      */
@@ -33,7 +32,6 @@ class ColorRequest extends FormRequest
             'body_color' => ['required', 'string', Rule::enum(BodyColor::class)],
         ];
     }
-
 
     /**
      * Browsers send #RRGGBB from <input type="color"> in lower case, but a typed

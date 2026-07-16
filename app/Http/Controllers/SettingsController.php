@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Enums\BodyColor;
-use App\Enums\Permission;
 use App\Enums\ButtonColor;
+use App\Enums\Permission;
 use App\Http\Requests\BrandingRequest;
 use App\Http\Requests\ColorRequest;
 use App\Models\AppSetting;

@@ -24,4 +24,18 @@ enum CategoryIcon: string
     case Zap = 'zap';
     case PiggyBank = 'piggy-bank';
     case Fuel = 'fuel';
+    case ShoppingCart = 'shopping-cart';
+    case Pill = 'pill';
+    case Stethoscope = 'stethoscope';
+    case FileText = 'file-text';
+    case Film = 'film';
+    case Music = 'music';
+    case Gamepad2 = 'gamepad-2';
+    case PawPrint = 'paw-print';
+    case Bus = 'bus';
+    case TrainFront = 'train-front';
+    case Hotel = 'hotel';
+    case Briefcase = 'briefcase';
+    case Landmark = 'landmark';
+    case CreditCard = 'credit-card';
 }
