@@ -6,6 +6,7 @@ import AuthArtwork from '@/Components/AuthArtwork.vue';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
+import { PILL_BUTTON, PILL_INPUT } from '@/lib/authStyles';
 
 const form = useForm({
     name: '',
@@ -27,9 +28,6 @@ const slides = [
     'Your categories, your colours, your budgets.',
     'Start today — tomorrow you will already have a trend.',
 ];
-
-const pill =
-    'h-[54px] rounded-full border-neutral-200 bg-white px-5 text-sm shadow-none transition placeholder:text-neutral-400 hover:border-neutral-300 focus-visible:border-neutral-900 focus-visible:ring-neutral-900/10';
 </script>
 
 <template>
@@ -74,7 +72,7 @@ const pill =
                                 autocomplete="name"
                                 placeholder="Name"
                                 :aria-invalid="!!form.errors.name"
-                                :class="pill"
+                                :class="PILL_INPUT"
                             />
                             <p v-if="form.errors.name" class="mt-1.5 px-5 text-xs font-medium text-red-600">
                                 {{ form.errors.name }}
@@ -91,7 +89,7 @@ const pill =
                                 autocomplete="username"
                                 placeholder="Email"
                                 :aria-invalid="!!form.errors.email"
-                                :class="pill"
+                                :class="PILL_INPUT"
                             />
                             <p v-if="form.errors.email" class="mt-1.5 px-5 text-xs font-medium text-red-600">
                                 {{ form.errors.email }}
@@ -109,7 +107,7 @@ const pill =
                                     autocomplete="new-password"
                                     placeholder="Password"
                                     :aria-invalid="!!form.errors.password"
-                                    :class="[pill, 'pr-12']"
+                                    :class="[PILL_INPUT, 'pr-12']"
                                 />
                                 <Button
                                     type="button"
@@ -140,7 +138,7 @@ const pill =
                                 autocomplete="new-password"
                                 placeholder="Confirm password"
                                 :aria-invalid="!!form.errors.password_confirmation"
-                                :class="pill"
+                                :class="PILL_INPUT"
                             />
                             <p
                                 v-if="form.errors.password_confirmation"

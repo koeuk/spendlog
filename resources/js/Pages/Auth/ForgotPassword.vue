@@ -1,15 +1,14 @@
 <script setup>
-import GuestLayout from '@/Layouts/GuestLayout.vue';
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
+import { KeyRound } from 'lucide-vue-next';
+import AuthCardLayout from '@/Layouts/AuthCardLayout.vue';
+import { Button } from '@/Components/ui/button';
+import { Input } from '@/Components/ui/input';
+import { Label } from '@/Components/ui/label';
+import { PILL_BUTTON, PILL_INPUT } from '@/lib/authStyles';
 
 defineProps({
-    status: {
-        type: String,
-    },
+    status: { type: String },
 });
 
 const form = useForm({
@@ -22,47 +21,54 @@ const submit = () => {
 </script>
 
 <template>
-    <GuestLayout>
-        <Head title="Forgot Password" />
+    <Head title="Forgot password" />
 
-        <div class="mb-4 text-sm text-gray-600">
-            Forgot your password? No problem. Just let us know your email
-            address and we will email you a password reset link that will allow
-            you to choose a new one.
-        </div>
+    <AuthCardLayout heading="Forgot your password?">
+        <template #icon>
+            <KeyRound class="size-6 text-[#4b9d5f]" aria-hidden="true" />
+        </template>
+
+        <template #description>
+            No problem. Tell us your email address and we'll send you a link to
+            choose a new one.
+        </template>
 
         <div
             v-if="status"
-            class="mb-4 text-sm font-medium text-green-600"
+            class="mb-4 rounded-2xl bg-[#eaf5e6] px-4 py-3 text-center text-sm font-medium text-[#2f6b3d]"
         >
             {{ status }}
         </div>
 
         <form @submit.prevent="submit">
-            <div>
-                <InputLabel for="email" value="Email" />
+            <Label for="email" class="sr-only">Email</Label>
+            <Input
+                id="email"
+                v-model="form.email"
+                type="email"
+                required
+                autofocus
+                autocomplete="username"
+                placeholder="Email"
+                :aria-invalid="!!form.errors.email"
+                :class="PILL_INPUT"
+            />
+            <p v-if="form.errors.email" class="mt-1.5 px-5 text-xs font-medium text-red-600">
+                {{ form.errors.email }}
+            </p>
 
-                <TextInput
-                    id="email"
-                    type="email"
-                    class="mt-1 block w-full"
-                    v-model="form.email"
-                    required
-                    autofocus
-                    autocomplete="username"
-                />
-
-                <InputError class="mt-2" :message="form.errors.email" />
-            </div>
-
-            <div class="mt-4 flex items-center justify-end">
-                <PrimaryButton
-                    :class="{ 'opacity-25': form.processing }"
-                    :disabled="form.processing"
-                >
-                    Email Password Reset Link
-                </PrimaryButton>
-            </div>
+            <Button type="submit" :disabled="form.processing" :class="[PILL_BUTTON, 'mt-4']">
+                {{ form.processing ? 'Sending…' : 'Email password reset link' }}
+            </Button>
         </form>
-    </GuestLayout>
+
+        <template #footer>
+            <Link
+                :href="route('login')"
+                class="text-sm font-medium text-neutral-500 underline-offset-4 hover:text-neutral-900 hover:underline"
+            >
+                Back to log in
+            </Link>
+        </template>
+    </AuthCardLayout>
 </template>

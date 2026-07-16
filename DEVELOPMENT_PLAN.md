@@ -45,11 +45,11 @@
 - [✅] Admin manages categories (already covered in Phase 3)
 - [✅] Add simple admin toggle/badge in the UI (Mine/Everyone toggle + ADMIN badge in the nav)
 
-## Phase 8: Polish
-- [ ] Add empty states ("No expenses yet, add your first one") — done on Expenses/Categories, pending elsewhere
-- [ ] Implement loading skeletons
-- [ ] Add toast notifications on create/update/delete (shadcn-vue Sonner/Toast) — flash props already shared server-side
-- [ ] Mobile-responsive check (quick-add should work well on phone since that's likely how you'll log daily spending)
+## Phase 8: Polish ✅
+- [✅] Add empty states ("No expenses yet, add your first one") — Expenses, Categories, Dashboard
+- [✅] Implement loading skeletons (GET visits only, via useNavigating — Expenses list + Budgets)
+- [✅] Add toast notifications on create/update/delete (Sonner, fed by the shared flash props)
+- [✅] Mobile-responsive check at 390px — no horizontal overflow on any page; quick-add modal verified
 
 ## Phase 9: API Layer (Future Integration)
 
