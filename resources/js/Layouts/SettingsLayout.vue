@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import { Palette, ShieldCheck, UserRound } from 'lucide-vue-next';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { CARD, EYEBROW, MUTED, SEGMENT_ON, SEGMENT_OFF } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
 
 defineProps({
@@ -34,58 +35,55 @@ function isActive(pattern) {
 <template>
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-neutral-100">
-                {{ __('Settings') }}
-            </h2>
+            <div>
+                <p :class="EYEBROW">{{ __('Account') }}</p>
+                <h1 class="mt-1 text-3xl font-extrabold tracking-[-0.03em] sm:text-4xl">
+                    {{ __('Settings') }}
+                </h1>
+            </div>
         </template>
 
-        <div class="py-8">
-            <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-                <div class="flex flex-col gap-8 lg:flex-row">
-                    <!-- Sidebar -->
-                    <aside class="lg:w-56 lg:shrink-0">
-                        <nav class="flex gap-1 overflow-x-auto lg:flex-col lg:overflow-visible">
-                            <Link
-                                v-for="item in items"
-                                :key="item.key"
-                                :href="item.href"
-                                :aria-current="isActive(item.pattern) ? 'page' : undefined"
-                                class="flex shrink-0 items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition"
-                                :class="
-                                    isActive(item.pattern)
-                                        ? 'bg-gray-900 text-white dark:bg-neutral-100 dark:text-neutral-900'
-                                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
-                                "
-                            >
-                                <component :is="item.icon" class="size-4 shrink-0" aria-hidden="true" />
-                                {{ item.label }}
-                            </Link>
-                        </nav>
-                    </aside>
+        <!-- Width and gutters come from the layout's one container, so the
+             column never resizes when navigating between pages. -->
+        <div class="flex flex-col gap-4 lg:flex-row lg:gap-6">
+            <!--
+                The nav scrolls horizontally on narrow screens rather than
+                stacking: three pills above the panel would push the content
+                the user came for below the fold on a phone.
+            -->
+            <aside class="anim lg:w-52 lg:shrink-0" style="--d: 0ms">
+                <nav class="flex gap-1 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
+                    <Link
+                        v-for="item in items"
+                        :key="item.key"
+                        :href="item.href"
+                        :aria-current="isActive(item.pattern) ? 'page' : undefined"
+                        class="flex shrink-0 items-center gap-2.5 px-3.5 py-2.5 text-sm font-semibold transition"
+                        :class="isActive(item.pattern) ? SEGMENT_ON : SEGMENT_OFF"
+                    >
+                        <component :is="item.icon" class="size-4 shrink-0" aria-hidden="true" />
+                        {{ item.label }}
+                    </Link>
+                </nav>
+            </aside>
 
-                    <!-- Panel -->
-                    <div class="min-w-0 flex-1">
-                        <div class="rounded-lg bg-white p-6 shadow-sm sm:p-8 dark:bg-neutral-900">
-                            <header>
-                                <h3 class="text-lg font-semibold text-gray-900 dark:text-neutral-100">
-                                    {{ heading }}
-                                </h3>
-                                <p
-                                    v-if="description"
-                                    class="mt-1 text-sm text-gray-500 dark:text-neutral-400"
-                                >
-                                    {{ description }}
-                                </p>
-                            </header>
+            <div class="min-w-0 flex-1 space-y-3">
+                <div :class="[CARD, 'anim p-6 sm:p-8']" style="--d: 60ms">
+                    <header>
+                        <h2 class="text-lg font-bold tracking-[-0.02em]">
+                            {{ heading }}
+                        </h2>
+                        <p v-if="description" class="mt-1 text-sm" :class="MUTED">
+                            {{ description }}
+                        </p>
+                    </header>
 
-                            <div class="mt-6">
-                                <slot />
-                            </div>
-                        </div>
-
-                        <slot name="after" />
+                    <div class="mt-6">
+                        <slot />
                     </div>
                 </div>
+
+                <slot name="after" />
             </div>
         </div>
     </AuthenticatedLayout>

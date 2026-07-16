@@ -3,6 +3,7 @@ import { Head } from '@inertiajs/vue3';
 import SettingsLayout from '@/Layouts/SettingsLayout.vue';
 import UpdateProfileInformationForm from '@/Pages/Profile/Partials/UpdateProfileInformationForm.vue';
 import DeleteUserForm from '@/Pages/Profile/Partials/DeleteUserForm.vue';
+import { CARD } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
 
 defineProps({
@@ -29,7 +30,7 @@ defineProps({
             it sits in its own card rather than a stray button in this form.
         -->
         <template #after>
-            <div class="mt-4 rounded-lg bg-white p-6 shadow-sm sm:p-8 dark:bg-neutral-900">
+            <div :class="[CARD, 'anim p-6 sm:p-8']" style="--d: 120ms">
                 <DeleteUserForm class="max-w-xl" />
             </div>
         </template>

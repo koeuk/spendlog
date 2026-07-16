@@ -1,0 +1,45 @@
+<?php
+
+namespace App\Enums;
+
+/**
+ * The five offered page backgrounds.
+ *
+ * Not a storage constraint — body_color accepts any hex, because the picker also
+ * takes a custom value. These are the presets the UI offers, kept here so the
+ * default in the migration and the swatches on the page cannot drift apart.
+ *
+ * All five are near-white on purpose. The page is a backdrop for glass cards
+ * that carry their own translucent fill; a saturated body colour would show
+ * through every one of them and fight the category colours the charts depend on.
+ */
+enum BodyColor: string
+{
+    case White = '#ffffff';
+    case Cream = '#faf8f4';
+    case Mist = '#f5f7f9';
+    case Sage = '#f3f7f3';
+    case Blush = '#fbf5f6';
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::White => 'White',
+            self::Cream => 'Cream',
+            self::Mist => 'Mist',
+            self::Sage => 'Sage',
+            self::Blush => 'Blush',
+        };
+    }
+
+    /**
+     * @return array<int, array{value: string, label: string}>
+     */
+    public static function presets(): array
+    {
+        return array_map(
+            fn (self $color) => ['value' => $color->value, 'label' => $color->label()],
+            self::cases(),
+        );
+    }
+}

@@ -15,6 +15,27 @@ export const APP_PAGE =
     'relative isolate min-h-screen bg-white font-display text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100';
 
 /**
+ * The hover lift, shared by every card so they all rise the same way.
+ *
+ * Thin on purpose: a tight 1px offset with a short blur reads as the card
+ * peeling a millimetre off the page. A wide, soft shadow (shadow-md and up)
+ * pushes it much further away than a hover should imply, and under a
+ * translucent pane the spill is visible *through* the neighbouring card.
+ *
+ * The scale is deliberately tiny. These cards run up to ~1100px wide, so even
+ * 1% would grow one by 11px and shove its text sideways; 0.4% is a breath.
+ *
+ * transform-gpu keeps the scale on the compositor — without it, scaling a
+ * backdrop-blur surface re-rasterises the blur every frame.
+ */
+const CARD_LIFT =
+    'transform-gpu transition-[box-shadow,transform] duration-200 ease-out ' +
+    'hover:scale-[1.004] hover:shadow-[0_1px_3px_0_rgba(15,23,42,0.07),0_1px_2px_-1px_rgba(15,23,42,0.05)] ' +
+    'dark:hover:shadow-[0_1px_3px_0_rgba(0,0,0,0.5),0_1px_2px_-1px_rgba(0,0,0,0.4)] ' +
+    // Scale is motion; honour the OS setting and leave the shadow to do the job.
+    'motion-reduce:transition-none motion-reduce:hover:scale-100';
+
+/**
  * The glass surface.
  *
  * Frosted glass is only frosted if something shows through it — on a flat white
@@ -32,13 +53,17 @@ export const APP_PAGE =
  * also animate the backdrop filter, which is expensive on every card at once.
  */
 export const CARD =
-    'rounded-[28px] border border-neutral-200/80 bg-white/60 backdrop-blur-xl backdrop-saturate-150 transition-shadow duration-200 ease-out hover:shadow-md ' +
+    `rounded-[28px] border border-neutral-200/80 bg-white/60 backdrop-blur-xl backdrop-saturate-150 ${CARD_LIFT} ` +
     'dark:border-white/10 dark:bg-neutral-900/50';
 
-/** The tinted glass — same green wash as the login artwork panel, made liquid. */
+/**
+ * The tinted glass — same green wash as the login artwork panel, made liquid.
+ * Rests on its edge and lifts on hover exactly like CARD; a hero that sat under
+ * a permanent drop shadow would break the rule the rest of the page follows.
+ */
 export const CARD_TINT =
-    'rounded-[28px] border border-white/50 bg-[#eaf5e6]/70 shadow-[0_8px_32px_-8px_rgba(75,157,95,0.18),inset_0_1px_0_0_rgba(255,255,255,0.7)] backdrop-blur-xl backdrop-saturate-150 ' +
-    'dark:border-[#6cc182]/15 dark:bg-[#16281a]/60 dark:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.6),inset_0_1px_0_0_rgba(255,255,255,0.05)]';
+    `rounded-[28px] border border-[#4b9d5f]/20 bg-[#eaf5e6]/70 backdrop-blur-xl backdrop-saturate-150 ${CARD_LIFT} ` +
+    'dark:border-[#6cc182]/15 dark:bg-[#16281a]/60';
 
 /**
  * A lighter pane for nested surfaces (modals, popovers) that sit above a card
