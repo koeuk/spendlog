@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\CategoryRequest;
 use App\Http\Resources\CategoryResource;
 use App\Models\Category;
+use App\Support\TranslatableQuery;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -43,11 +44,13 @@ class CategoryController extends Controller
 
         $categories = QueryBuilder::for(Category::class)
             ->allowedFilters(
-                AllowedFilter::partial('name'),
+                // name is translatable JSON: a plain partial() would match the
+                // locale keys themselves, so filter[name]=en returned every row.
+                TranslatableQuery::filter('name'),
                 AllowedFilter::exact('color'),
             )
             ->allowedSorts(
-                'name',
+                TranslatableQuery::sort('name'),
                 AllowedSort::field('expenses', 'expenses_count'),
             )
             ->defaultSort('name')

@@ -1,9 +1,10 @@
 <script setup>
-import { ref } from 'vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { ref, watch } from 'vue';
+import { Head, router, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import CategoryBadge from '@/Components/CategoryBadge.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
+import SearchInput from '@/Components/SearchInput.vue';
 import { CARD } from '@/lib/appStyles';
 import CategoryStylePicker from '@/Components/CategoryStylePicker.vue';
 import LocaleTabs from '@/Components/LocaleTabs.vue';
@@ -31,6 +32,20 @@ import {
 const props = defineProps({
     categories: { type: Array, required: true },
     can: { type: Object, required: true },
+    filters: { type: Object, default: () => ({}) },
+});
+
+// Seeded from the URL so a shared or reloaded link shows its own search term.
+const search = ref(props.filters?.filter?.name ?? '');
+
+watch(search, (value) => {
+    router.get(
+        route('categories.index'),
+        value ? { filter: { name: value } } : {},
+        // preserveState keeps the box focused mid-typing; replace keeps every
+        // keystroke out of the back button.
+        { preserveState: true, preserveScroll: true, replace: true },
+    );
 });
 
 const showDialog = ref(false);

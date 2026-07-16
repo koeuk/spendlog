@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\CategoryRequest;
 use App\Models\Category;
+use App\Support\TranslatableQuery;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -20,17 +21,16 @@ class CategoryController extends Controller
     {
         Gate::authorize('viewAny', Category::class);
 
-        $locale = app()->getLocale();
-
         $categories = QueryBuilder::for(Category::class)
             ->allowedFilters(
-                // name is JSON, so filter/sort target the active locale's key
-                // rather than the column as a whole.
-                AllowedFilter::partial("name->{$locale}"),
+                // Keyed 'name' rather than "name->{locale}": the query string is
+                // then the same in every language, and a Khmer name stays
+                // findable while the UI is in English.
+                TranslatableQuery::filter('name'),
                 AllowedFilter::exact('color'),
             )
             ->allowedSorts(
-                AllowedSort::field('name', "name->{$locale}"),
+                TranslatableQuery::sort('name'),
                 AllowedSort::field('expenses', 'expenses_count'),
             )
             ->defaultSort('name')

@@ -22,6 +22,8 @@ class EnsureUserIsActive
         $user = $request->user();
 
         if ($user && ! $user->status->canSignIn()) {
+            $message = $user->status->signInError();
+
             Auth::guard('web')->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
@@ -31,7 +33,7 @@ class EnsureUserIsActive
 
             return redirect()
                 ->route('login')
-                ->withErrors(['email' => __('Your account has been suspended. Please contact an administrator.')]);
+                ->withErrors(['email' => $message]);
         }
 
         return $next($request);

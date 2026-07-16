@@ -86,7 +86,16 @@ const dirtyCount = computed(() => form.permissions.length);
 
 <template>
     <Sheet v-model:open="open">
-        <SheetContent side="right" class="flex w-full flex-col gap-0 p-0 sm:max-w-md">
+        <!--
+            The width override has to carry the same data-[side=right] scope the
+            component's own class uses. A plain `sm:max-w-md` loses: the base sets
+            `data-[side=right]:sm:max-w-sm`, and an attribute-scoped selector
+            outranks a bare class no matter which is written last.
+        -->
+        <SheetContent
+            side="right"
+            class="flex w-full flex-col gap-0 p-0 data-[side=right]:sm:max-w-md"
+        >
             <SheetHeader class="border-b border-neutral-100 p-6 dark:border-neutral-800">
                 <SheetTitle>{{ __('Permissions') }}</SheetTitle>
                 <SheetDescription>

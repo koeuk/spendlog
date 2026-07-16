@@ -1,11 +1,12 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { Ban, CircleCheck, KeyRound, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-vue-next';
+import { KeyRound, MoreHorizontal, Pencil, Plus, ShieldCheck, Trash2 } from 'lucide-vue-next';
 import SettingsLayout from '@/Layouts/SettingsLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import Pagination from '@/Components/Pagination.vue';
 import UserPermissionsSheet from '@/Components/UserPermissionsSheet.vue';
+import UserStatusDialog from '@/Components/UserStatusDialog.vue';
 import { Button } from '@/Components/ui/button';
 import {
     DropdownMenu,
@@ -95,13 +96,8 @@ const permissionsFor = ref(null);
 
 const busy = ref(null);
 
-function toggleStatus(user) {
-    busy.value = user.uuid;
-    router.patch(route('users.status', user.uuid), {}, {
-        preserveScroll: true,
-        onFinish: () => (busy.value = null),
-    });
-}
+// The row whose status dialog is open, or null.
+const statusFor = ref(null);
 
 // Holds the row itself so the prompt can name what is about to go, and say how
 // many expenses go with it.
@@ -232,13 +228,10 @@ const passwordHint = computed(() =>
 
                                     <DropdownMenuItem
                                         v-if="user.can.suspend"
-                                        @select="toggleStatus(user)"
+                                        @select="statusFor = user"
                                     >
-                                        <component
-                                            :is="user.status === 'suspended' ? CircleCheck : Ban"
-                                            class="size-4"
-                                        />
-                                        {{ user.status === 'suspended' ? __('Activate') : __('Suspend') }}
+                                        <ShieldCheck class="size-4" />
+                                        {{ __('Change status') }}
                                     </DropdownMenuItem>
 
                                     <template v-if="user.can.delete">
@@ -264,6 +257,12 @@ const passwordHint = computed(() =>
 
             <Pagination :meta="pagination" />
         </div>
+
+        <UserStatusDialog
+            :user="statusFor"
+            :statuses="statuses"
+            @close="statusFor = null"
+        />
 
         <UserPermissionsSheet
             :user="permissionsFor"

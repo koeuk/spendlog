@@ -57,12 +57,14 @@ class LoginRequest extends FormRequest
          * were already correct.
          */
         if (! Auth::user()->status->canSignIn()) {
+            // The status supplies its own wording — "suspended" is wrong for an
+            // account that was archived or never handed over.
+            $message = Auth::user()->status->signInError();
+
             Auth::logout();
             RateLimiter::hit($this->throttleKey());
 
-            throw ValidationException::withMessages([
-                'email' => trans('Your account has been suspended. Please contact an administrator.'),
-            ]);
+            throw ValidationException::withMessages(['email' => $message]);
         }
 
         RateLimiter::clear($this->throttleKey());
