@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 @import 'tailwindcss';
+@import "tw-animate-css";
 @plugin '@tailwindcss/forms';
 
 /* Both are outside the auto-detected sources (gitignored / in vendor). */
@@ -98,6 +98,7 @@
     --radius-md: calc(var(--radius) - 2px);
     --radius-lg: var(--radius);
     --radius-xl: calc(var(--radius) + 4px);
+    --font-heading: var(--font-sans);
 }
 
 @layer base {
@@ -107,5 +108,14 @@
 
     body {
         @apply bg-background text-foreground;
+    }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    }
+  body {
+    @apply bg-background text-foreground;
     }
 }

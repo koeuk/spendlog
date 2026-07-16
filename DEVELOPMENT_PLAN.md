@@ -2,31 +2,31 @@
 
 ## Phase 1: Foundation (Setup + Auth) ✅
 - [✅] Create Laravel project (used `composer create-project` — Laravel 13)
-- [x] Install Breeze with Vue + Inertia: `php artisan breeze:install vue`
-- [x] Set up shadcn-vue: `npx shadcn-vue@latest init`
-- [x] ~~Add role column to users migration~~ → replaced with **spatie/laravel-permission**
-- [x] Run migrations, create a test admin user via seeder
-- [x] Confirm login/register/logout works end-to-end (verified over HTTP)
+- [✅] Install Breeze with Vue + Inertia: `php artisan breeze:install vue`
+- [✅] Set up shadcn-vue: `npx shadcn-vue@latest init`
+- [✅] ~~Add role column to users migration~~ → replaced with **spatie/laravel-permission**
+- [✅] Run migrations, create a test admin user via seeder
+- [✅] Confirm login/register/logout works end-to-end (verified over HTTP)
 
 ## Phase 2: Database & Models ✅
-- [x] Create migrations: categories, expenses, budgets
-- [x] Create models: Category, Expense, Budget with relationships
-- [x] Add fillable, casts (price → decimal, month/spent_on → date)
-- [x] Seed a few default categories (Food, Transport, Bills, Shopping, Other)
+- [✅] Create migrations: categories, expenses, budgets
+- [✅] Create models: Category, Expense, Budget with relationships
+- [✅] Add fillable, casts (price → decimal, month/spent_on → date)
+- [✅] Seed a few default categories (Food, Transport, Bills, Shopping, Other)
 
 ## Phase 3: Categories CRUD (Admin-managed) ✅
-- [x] Create CategoryController — index, store, update, destroy
-- [x] Implement Policy: only admin can create/edit/delete (verified: non-admin → 403)
-- [x] Build simple page: Pages/Categories/Index.vue — list + create/edit modal (Dialog, Input, Button)
-- [x] Category color + icon picker in the modal (10 colours, 16 lucide icons; verified rendering)
+- [✅] Create CategoryController — index, store, update, destroy
+- [✅] Implement Policy: only admin can create/edit/delete (verified: non-admin → 403)
+- [✅] Build simple page: Pages/Categories/Index.vue — list + create/edit modal (Dialog, Input, Button)
+- [✅] Category color + icon picker in the modal (10 colours, 16 lucide icons; verified rendering)
 
 ## Phase 4: Expenses CRUD (Core Feature) ✅
-- [x] Create ExpenseController — index (grouped by date), store, update, destroy
-- [x] Implement route model binding + ownership check (verified: cross-user edit/delete → 403, admin allowed)
-- [x] Build Pages/Expenses/Index.vue — daily-grouped list
-- [x] Create ExpenseForm.vue component — item, price, category dropdown, date picker (Select, Popover+Calendar)
-- [x] Implement quick-add flow: modal, not a separate page
-- [x] Show category color/icon on expense rows + in the category dropdown
+- [✅] Create ExpenseController — index (grouped by date), store, update, destroy
+- [✅] Implement route model binding + ownership check (verified: cross-user edit/delete → 403, admin allowed)
+- [✅] Build Pages/Expenses/Index.vue — daily-grouped list
+- [✅] Create ExpenseForm.vue component — item, price, category dropdown, date picker (Select, Popover+Calendar)
+- [✅] Implement quick-add flow: modal, not a separate page
+- [✅] Show category color/icon on expense rows + in the category dropdown
 
 ## Phase 5: Budgets
 - [ ] Create BudgetController — set/update monthly budget (overall or per category)
@@ -41,7 +41,7 @@
 
 ## Phase 7: Admin Extras
 - [ ] Enable admin to view all users' expenses (filter by user)
-- [x] Admin manages categories (already covered in Phase 3)
+- [✅] Admin manages categories (already covered in Phase 3)
 - [ ] Add simple admin toggle/badge in the UI to distinguish views
 
 ## Phase 8: Polish
