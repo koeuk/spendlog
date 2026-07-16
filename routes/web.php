@@ -59,6 +59,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
         Route::patch('/users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::put('/users/{user}/permissions', [UserController::class, 'updatePermissions'])->name('users.permissions');
         Route::patch('/users/{user}/status', [UserController::class, 'toggleStatus'])->name('users.status');
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 

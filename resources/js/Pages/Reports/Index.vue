@@ -3,13 +3,7 @@ import { computed, ref } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import SpendingTrendChart from '@/Components/SpendingTrendChart.vue';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/Components/ui/select';
+import PeriodPicker from '@/Components/PeriodPicker.vue';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
 import { ACTIVE, CARD, CARD_TINT, EYEBROW, FIGURE, MUTED } from '@/lib/appStyles';
 import { ArrowDownRight, ArrowUpRight, FileSpreadsheet, FileText } from 'lucide-vue-next';
@@ -150,29 +144,14 @@ const change = computed(() => {
                     </template>
 
 <!-- All time is one span, so a one-option picker would be furniture. -->
-
-<Select
+                    <PeriodPicker
                         v-if="options.length > 1"
+                        :options="options"
                         :model-value="anchor"
                         :disabled="loading"
+                        :label="__('Period')"
                         @update:model-value="load(granularity, $event)"
-                    >
-                        <SelectTrigger
-                            class="h-9 w-auto min-w-32 gap-1.5 rounded-full border-neutral-200 bg-white/70 px-3 text-xs font-semibold shadow-none dark:border-neutral-700 dark:bg-neutral-800/70"
-                            :aria-label="__('Period')"
-                        >
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem
-                                v-for="option in options"
-                                :key="option.value"
-                                :value="option.value"
-                            >
-                                {{ option.label }}
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
+                    />
 
                     <div
                         class="inline-flex rounded-full border border-neutral-200 bg-white/70 p-0.5 dark:border-neutral-700 dark:bg-neutral-800/70"

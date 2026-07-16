@@ -26,12 +26,12 @@ function toggleIcon(name) {
                     v-for="name in CATEGORY_COLOR_NAMES"
                     :key="name"
                     type="button"
-                    class="size-7 rounded-full ring-offset-2 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
+                    class="size-7 rounded-full ring-offset-2 ring-offset-background transition focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     :class="[
                         categoryColor(name).dot,
                         form.color === name
-                            ? 'ring-2 ring-gray-900'
-                            : 'ring-1 ring-black/10 hover:ring-gray-400',
+                            ? 'ring-2 ring-foreground'
+                            : 'ring-1 ring-border hover:ring-foreground/40',
                     ]"
                     :aria-label="name"
                     :aria-pressed="form.color === name"
@@ -46,18 +46,18 @@ function toggleIcon(name) {
         <div>
             <Label>
                 Icon
-                <span class="font-normal text-gray-500">(optional)</span>
+                <span class="font-normal text-muted-foreground">(optional)</span>
             </Label>
             <div class="mt-2 grid grid-cols-8 gap-1.5">
                 <button
                     v-for="name in CATEGORY_ICON_NAMES"
                     :key="name"
                     type="button"
-                    class="flex aspect-square items-center justify-center rounded-md border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
+                    class="flex aspect-square items-center justify-center rounded-md border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     :class="
                         form.icon === name
-                            ? 'border-gray-900 bg-gray-900 text-white'
-                            : 'border-gray-200 text-gray-600 hover:border-gray-400 hover:bg-gray-50'
+                            ? 'border-primary bg-primary text-primary-foreground'
+                            : 'border-border text-muted-foreground hover:border-foreground/40 hover:bg-accent hover:text-accent-foreground'
                     "
                     :aria-label="name"
                     :aria-pressed="form.icon === name"

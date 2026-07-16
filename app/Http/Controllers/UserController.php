@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Permission as PermissionEnum;
 use App\Enums\RoleName;
 use App\Enums\UserStatus;
 use App\Http\Requests\UserRequest;
@@ -11,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -36,6 +38,10 @@ class UserController extends Controller
                 'status_label' => $user->status->label(),
                 'status_classes' => $user->status->badgeClasses(),
                 'expenses_count' => $user->expenses_count,
+                // Split, because the drawer treats them differently: role ones
+                // are inherited and read-only, direct ones are what it writes.
+                'role_permissions' => $user->getPermissionsViaRoles()->pluck('name')->values(),
+                'direct_permissions' => $user->permissions->pluck('name')->values(),
                 'verified' => $user->hasVerifiedEmail(),
                 // Marks the row as the viewer's own, so the UI can say why the
                 // actions are missing instead of just hiding them.
@@ -47,6 +53,7 @@ class UserController extends Controller
                     'delete' => $me->can('delete', $user),
                     'suspend' => $me->can('suspend', $user),
                     'change_role' => $me->can('changeRole', $user),
+                    'manage_permissions' => $me->can('managePermissions', $user),
                 ],
             ]);
 
@@ -57,6 +64,9 @@ class UserController extends Controller
                 RoleName::cases(),
             ),
             'statuses' => UserStatus::options(),
+            // Grouped server-side so the drawer, the seeder and the policies all
+            // read the same catalogue.
+            'permission_groups' => PermissionEnum::grouped(),
             'can' => ['create' => $me->can('create', User::class)],
         ]);
     }
@@ -154,6 +164,39 @@ class UserController extends Controller
                     ? __(':name has been suspended.', ['name' => $user->name])
                     : __(':name is active again.', ['name' => $user->name]),
             );
+        } catch (\Exception $e) {
+            DB::rollback();
+
+            return back()->withError($e->getMessage());
+        }
+    }
+
+    /**
+     * Direct permissions only — the ones a role grants stay with the role.
+     */
+    public function updatePermissions(Request $request, User $user): RedirectResponse
+    {
+        Gate::authorize('managePermissions', $user);
+
+        $validated = $request->validate([
+            'permissions' => ['present', 'array'],
+            'permissions.*' => [Rule::enum(PermissionEnum::class)],
+        ]);
+
+        // Anything the role already grants is dropped: storing it as a direct
+        // grant too would keep it after the role changed, which is not what
+        // ticking an inherited box appears to promise.
+        $viaRole = $user->getPermissionsViaRoles()->pluck('name')->all();
+        $direct = array_values(array_diff($validated['permissions'], $viaRole));
+
+        DB::beginTransaction();
+
+        try {
+            $user->syncPermissions($direct);
+
+            DB::commit();
+
+            return back()->withSuccess(__('Permissions updated for :name.', ['name' => $user->name]));
         } catch (\Exception $e) {
             DB::rollback();
 

@@ -7,6 +7,7 @@ use App\Enums\ButtonColor;
 use App\Enums\RoleName;
 use App\Models\AppSetting;
 use App\Models\User;
+use App\Support\Color;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -198,20 +199,27 @@ class ColorsTest extends TestCase
      * The blade pre-paint script reads this, so a broken shape here is a blank
      * page rather than a wrong colour.
      */
-    public function test_css_variables_are_bare_hsl_triplets_with_a_computed_label(): void
+    public function test_css_variables_carry_a_derived_palette_with_a_computed_label(): void
     {
         $this->actingAs($this->admin())
             ->post('/settings/colors', $this->payload([
-                'button_color' => '#ffffff',
-                'body_color' => '#faf8f4',
+                'button_color' => ButtonColor::Amber->value,
+                'body_color' => BodyColor::Sage->value,
             ]));
 
         $vars = AppSetting::current()->cssVariables();
 
-        $this->assertSame('0 0% 100%', $vars['primary']);
-        // White button ⇒ dark label, not the default white-on-white.
-        $this->assertSame('0 0% 3.9%', $vars['primaryForeground']);
-        $this->assertMatchesRegularExpression('/^[\d.]+ [\d.]+% [\d.]+%$/', $vars['background']);
+        // Dark amber ⇒ a near-white label, computed rather than chosen.
+        $this->assertSame('0 0% 98%', $vars['primaryForeground']);
+
+        // The whole theme, not just the page — that is the point of the palette.
+        foreach (['card', 'border', 'muted-foreground', 'foreground'] as $token) {
+            $this->assertArrayHasKey($token, $vars['palette']);
+        }
+
+        foreach ($vars['palette'] as $token => $triplet) {
+            $this->assertMatchesRegularExpression('/^[\d.]+ [\d.]+% [\d.]+%$/', $triplet, $token);
+        }
     }
 
     /**
@@ -228,8 +236,9 @@ class ColorsTest extends TestCase
 
         $this->assertNull($vars['primary']);
         $this->assertNull($vars['primaryForeground']);
-        // The background is a single value and does still apply.
-        $this->assertSame('0 0% 100%', $vars['background']); // app.css: --background: 0 0% 100%
+        // And at the default background there is nothing to derive either: the
+        // stock tokens already are that theme.
+        $this->assertNull($vars['palette']);
     }
 
     /**
@@ -248,26 +257,38 @@ class ColorsTest extends TestCase
         $this->assertSame('0 0% 98%', $vars['primaryForeground']);
     }
 
-    public function test_the_rendered_page_leaves_primary_alone_at_the_default(): void
+    public function test_the_rendered_page_leaves_the_stock_theme_alone_at_the_defaults(): void
     {
         $html = $this->actingAs($this->admin())->get('/dashboard')->getContent();
 
-        // The stash is always parked; the override is not.
-        $this->assertStringContainsString('--brand-background', $html);
+        // Nothing to override: the stock tokens already are this theme.
         $this->assertStringContainsString('"primary":null', $html);
+        $this->assertStringContainsString('"palette":null', $html);
+    }
+
+    public function test_the_rendered_page_carries_the_palette_once_a_background_is_chosen(): void
+    {
+        $this->actingAs($this->admin())
+            ->post('/settings/colors', $this->payload(['body_color' => BodyColor::Sage->value]));
+
+        $html = $this->actingAs($this->admin())->get('/dashboard')->getContent();
+
+        // Applied inline before first paint, so the page never flashes the stock
+        // palette on the way to the admin's.
+        $this->assertStringContainsString('__brandPalette', $html);
+        $this->assertStringContainsString('"card"', $html);
     }
 
     public function test_the_rendered_page_applies_the_colours_before_first_paint(): void
     {
         $this->actingAs($this->admin())
-            ->post('/settings/colors', $this->payload(['button_color' => '#0000ff']));
+            ->post('/settings/colors', $this->payload(['button_color' => ButtonColor::Blue->value]));
 
         $html = $this->actingAs($this->admin())->get('/dashboard')->getContent();
 
         // Inline on <html> in a head script, so it beats the stylesheet tokens
         // and lands before the first paint rather than a frame later.
         $this->assertStringContainsString('--primary', $html);
-        $this->assertStringContainsString('240 100% 50%', $html);
-        $this->assertStringContainsString('--brand-background', $html);
+        $this->assertStringContainsString(Color::toHslTriplet(ButtonColor::Blue->value), $html);
     }
 }

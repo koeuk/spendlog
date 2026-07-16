@@ -123,5 +123,7 @@
     "PDF": "PDF",
     "Excel": "Excel",
     "All time": "All time",
-    "All": "All"
+    "All": "All",
+    "Search month or year": "Search month or year",
+    "No period found.": "No period found."
 }

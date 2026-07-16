@@ -123,5 +123,7 @@
     "PDF": "PDF",
     "Excel": "Excel",
     "All time": "គ្រប់ពេលវេលា",
-    "All": "ទាំងអស់"
+    "All": "ទាំងអស់",
+    "Search month or year": "ស្វែងរកខែ ឬឆ្នាំ",
+    "No period found.": "រកមិនឃើញអំឡុងពេលទេ។"
 }

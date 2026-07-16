@@ -1,10 +1,18 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { Ban, CircleCheck, Pencil, Plus, Trash2 } from 'lucide-vue-next';
+import { Ban, CircleCheck, KeyRound, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-vue-next';
 import SettingsLayout from '@/Layouts/SettingsLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
+import UserPermissionsSheet from '@/Components/UserPermissionsSheet.vue';
 import { Button } from '@/Components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/Components/ui/dropdown-menu';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
 import {
@@ -29,6 +37,7 @@ const props = defineProps({
     users: { type: Array, required: true },
     roles: { type: Array, required: true },
     statuses: { type: Array, required: true },
+    permission_groups: { type: Object, required: true },
     can: { type: Object, required: true },
 });
 
@@ -79,6 +88,9 @@ function submit() {
     }
 }
 
+// The row whose permissions drawer is open, or null.
+const permissionsFor = ref(null);
+
 const busy = ref(null);
 
 function toggleStatus(user) {
@@ -105,6 +117,16 @@ function destroy() {
         onSuccess: () => (confirming.value = null),
         onFinish: () => (busy.value = null),
     });
+}
+
+// An empty menu is worse than no menu — the policy can hide every entry.
+function hasActions(user) {
+    return (
+        user.can.update ||
+        user.can.manage_permissions ||
+        user.can.suspend ||
+        user.can.delete
+    );
 }
 
 const passwordHint = computed(() =>
@@ -170,57 +192,80 @@ const passwordHint = computed(() =>
                         <td class="px-2 py-3 text-end tabular-nums" :class="MUTED">
                             {{ user.expenses_count }}
                         </td>
-                        <td class="px-2 py-3">
-                            <div class="flex items-center justify-end gap-0.5">
-                                <Button
-                                    v-if="user.can.update"
-                                    variant="ghost"
-                                    size="icon-sm"
-                                    :aria-label="__('Edit')"
-                                    :title="__('Edit')"
-                                    @click="openEdit(user)"
-                                >
-                                    <Pencil class="size-4" />
-                                </Button>
+                        <td class="px-2 py-3 text-end">
+                            <!--
+                                One menu rather than a row of icons: four glyphs
+                                per row read as noise, and the actions differ per
+                                row anyway (the policy hides some), so a fixed
+                                strip of buttons never lines up between rows.
+                            -->
+                            <DropdownMenu v-if="hasActions(user)">
+                                <DropdownMenuTrigger as-child>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon-sm"
+                                        :disabled="busy === user.uuid"
+                                        :aria-label="__('Actions for :name', { name: user.name })"
+                                    >
+                                        <MoreHorizontal class="size-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
 
-                                <!--
-                                    Absent rather than disabled when not allowed:
-                                    the policy blocks acting on yourself and on the
-                                    last admin, and a dead button invites clicking.
-                                -->
-                                <Button
-                                    v-if="user.can.suspend"
-                                    variant="ghost"
-                                    size="icon-sm"
-                                    :disabled="busy === user.uuid"
-                                    :aria-label="user.status === 'suspended' ? __('Activate') : __('Suspend')"
-                                    :title="user.status === 'suspended' ? __('Activate') : __('Suspend')"
-                                    @click="toggleStatus(user)"
-                                >
-                                    <component
-                                        :is="user.status === 'suspended' ? CircleCheck : Ban"
-                                        class="size-4"
-                                    />
-                                </Button>
+                                <DropdownMenuContent align="end" class="w-48">
+                                    <DropdownMenuItem
+                                        v-if="user.can.update"
+                                        @select="openEdit(user)"
+                                    >
+                                        <Pencil class="size-4" />
+                                        {{ __('Edit') }}
+                                    </DropdownMenuItem>
 
-                                <Button
-                                    v-if="user.can.delete"
-                                    variant="ghost"
-                                    size="icon-sm"
-                                    class="text-red-600 hover:text-red-700 dark:text-red-400"
-                                    :disabled="busy === user.uuid"
-                                    :aria-label="__('Delete')"
-                                    :title="__('Delete')"
-                                    @click="confirming = user"
-                                >
-                                    <Trash2 class="size-4" />
-                                </Button>
-                            </div>
+                                    <DropdownMenuItem
+                                        v-if="user.can.manage_permissions"
+                                        @select="permissionsFor = user"
+                                    >
+                                        <KeyRound class="size-4" />
+                                        {{ __('Permissions') }}
+                                    </DropdownMenuItem>
+
+                                    <DropdownMenuItem
+                                        v-if="user.can.suspend"
+                                        @select="toggleStatus(user)"
+                                    >
+                                        <component
+                                            :is="user.status === 'suspended' ? CircleCheck : Ban"
+                                            class="size-4"
+                                        />
+                                        {{ user.status === 'suspended' ? __('Activate') : __('Suspend') }}
+                                    </DropdownMenuItem>
+
+                                    <template v-if="user.can.delete">
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                            class="text-red-600 focus:text-red-700 dark:text-red-400"
+                                            @select="confirming = user"
+                                        >
+                                            <Trash2 class="size-4" />
+                                            {{ __('Delete') }}
+                                        </DropdownMenuItem>
+                                    </template>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+
+                            <!-- Your own row: every action is blocked by policy,
+                                 so say why instead of showing an empty menu. -->
+                            <span v-else class="text-xs" :class="MUTED">—</span>
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
+
+        <UserPermissionsSheet
+            :user="permissionsFor"
+            :groups="permission_groups"
+            @close="permissionsFor = null"
+        />
 
         <ConfirmDialog
             :open="confirming !== null"
