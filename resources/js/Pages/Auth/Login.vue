@@ -143,7 +143,7 @@ const slides = [
                         <Button
                             type="submit"
                             :disabled="form.processing"
-                            class="anim mt-6 h-[54px] w-full rounded-full text-sm font-semibold active:translate-y-0 active:scale-[0.99]"
+                            :class="[PILL_BUTTON, 'anim mt-6']"
                             style="--d: 360ms"
                         >
                             {{ form.processing ? 'Logging in…' : 'Login' }}

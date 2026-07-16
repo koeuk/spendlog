@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BudgetRequest;
 use App\Http\Resources\BudgetResource;
+use App\Http\Resources\BudgetSummaryResource;
 use App\Models\Budget;
 use App\Services\BudgetSummary;
 use Carbon\CarbonImmutable;
@@ -39,11 +40,13 @@ class BudgetController extends Controller
      */
     public function summary(Request $request): JsonResponse
     {
+        $summary = $this->summary->forMonth(
+            $request->user(),
+            $this->resolveMonth($request->query('month')),
+        );
+
         return response()->json([
-            'data' => $this->summary->forMonth(
-                $request->user(),
-                $this->resolveMonth($request->query('month')),
-            ),
+            'data' => new BudgetSummaryResource($summary),
         ]);
     }
 

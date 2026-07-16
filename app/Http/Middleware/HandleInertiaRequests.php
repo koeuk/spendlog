@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\Locale;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -39,6 +40,34 @@ class HandleInertiaRequests extends Middleware
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
             ],
+            'locale' => fn () => app()->getLocale(),
+            'locales' => fn () => collect(Locale::cases())
+                ->map(fn (Locale $locale) => [
+                    'value' => $locale->value,
+                    'label' => $locale->label(),
+                    'short' => $locale->shortLabel(),
+                ])
+                ->all(),
+            // The whole active-locale dictionary; it is a few KB and lets the
+            // frontend resolve __() without a round trip per string.
+            'translations' => fn () => $this->translations(app()->getLocale()),
         ];
+    }
+
+    /**
+     * Reads lang/{locale}.json — the same file PHP's __() uses, so a key never
+     * means two different things on the two sides.
+     *
+     * @return array<string, string>
+     */
+    private function translations(string $locale): array
+    {
+        $path = lang_path("{$locale}.json");
+
+        if (! is_file($path)) {
+            return [];
+        }
+
+        return json_decode(file_get_contents($path), true) ?: [];
     }
 }

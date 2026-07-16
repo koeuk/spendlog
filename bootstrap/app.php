@@ -21,6 +21,13 @@ return Application::configure(basePath: dirname(__DIR__))
         // Applies the 'api' limiter to every /api route. Not on by default in
         // Laravel 11+, so without this the API would be unthrottled.
         $middleware->throttleApi();
+
+        // Sanctum ships these but registers no aliases in Laravel 11+, so
+        // 'abilities:...' on a route resolves to nothing without this.
+        $middleware->alias([
+            'abilities' => \Laravel\Sanctum\Http\Middleware\CheckAbilities::class,
+            'ability' => \Laravel\Sanctum\Http\Middleware\CheckForAnyAbility::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

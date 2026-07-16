@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\BudgetSummaryResource;
 use App\Http\Resources\ExpenseResource;
 use App\Models\Expense;
 use App\Models\User;
@@ -36,7 +37,7 @@ class DashboardController extends Controller
                     'date' => $today->toDateString(),
                     'total' => $this->todayTotal($user, $today),
                 ],
-                'summary' => $summary,
+                'summary' => new BudgetSummaryResource($summary),
                 'breakdown' => $this->breakdown($summary),
                 'recent' => ExpenseResource::collection($this->recent($user)),
             ],
