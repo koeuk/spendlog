@@ -4,6 +4,8 @@ import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import BudgetProgress from '@/Components/BudgetProgress.vue';
 import CategoryBadge from '@/Components/CategoryBadge.vue';
+import { useNavigating } from '@/composables/useNavigating';
+import { Skeleton } from '@/Components/ui/skeleton';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
@@ -22,6 +24,8 @@ const props = defineProps({
     prev_month: { type: String, required: true },
     next_month: { type: String, required: true },
 });
+
+const { navigating } = useNavigating();
 
 const money = new Intl.NumberFormat('en-US', {
     style: 'currency',

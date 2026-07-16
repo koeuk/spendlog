@@ -1,4 +1,6 @@
 import '../css/app.css';
+// vue-sonner ships its own stylesheet; without it toasts mount but stay invisible.
+import 'vue-sonner/style.css';
 
 import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';

@@ -3,6 +3,8 @@ import { computed, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import ExpenseForm from '@/Components/ExpenseForm.vue';
+import ExpenseListSkeleton from '@/Components/ExpenseListSkeleton.vue';
+import { useNavigating } from '@/composables/useNavigating';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
 import { Button } from '@/Components/ui/button';
 import {
@@ -24,6 +26,8 @@ const props = defineProps({
 });
 
 const viewingAll = computed(() => props.scope === 'all');
+
+const { navigating } = useNavigating();
 
 function setScope(scope) {
     router.get(
@@ -194,8 +198,10 @@ const isEmpty = computed(() => props.days.length === 0);
 
         <div class="py-8">
             <div class="mx-auto max-w-3xl space-y-4 px-4 sm:px-6 lg:px-8">
+                <ExpenseListSkeleton v-if="navigating" />
+
                 <div
-                    v-if="isEmpty"
+                    v-else-if="isEmpty"
                     class="rounded-lg bg-white p-10 text-center shadow-sm"
                 >
                     <p class="text-sm text-gray-600">
@@ -207,7 +213,7 @@ const isEmpty = computed(() => props.days.length === 0);
                 </div>
 
                 <div
-                    v-for="day in days"
+                    v-for="day in navigating ? [] : days"
                     :key="day.date"
                     class="overflow-hidden rounded-lg bg-white shadow-sm"
                 >
