@@ -13,7 +13,9 @@ return new class extends Migration
             $table->uuid('uuid')->unique();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('category_id')->constrained()->restrictOnDelete();
-            $table->string('item');
+            // Translatable JSON — {"en": "Lunch", "km": "…"} — like categories.name.
+            // Resolved and searched per-locale via App\Support\TranslatableQuery.
+            $table->json('item');
             $table->decimal('price', 10, 2);
             $table->date('spent_on');
             $table->timestamps();

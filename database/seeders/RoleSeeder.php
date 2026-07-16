@@ -4,18 +4,31 @@ namespace Database\Seeders;
 
 use App\Enums\Permission as PermissionEnum;
 use App\Enums\RoleName;
+use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
+/**
+ * Roles are templates, not live grants.
+ *
+ * A role deliberately holds no permissions. Everything is stored on the user, and
+ * a role only decides the starting set — applied when the account is created or
+ * its role changes.
+ *
+ * Why: spatie has no "deny". If the role granted expenses.create, then
+ * hasPermissionTo() returns true no matter what the user's own permissions say —
+ * so unticking it for one person would be impossible, and a checkbox that cannot
+ * take anything away is a lie. Storing per user makes every box mean what it
+ * appears to mean.
+ *
+ * The cost, stated plainly: adding a case to the enum no longer reaches existing
+ * accounts. Re-run this seeder to top them up — it only ever adds.
+ */
 class RoleSeeder extends Seeder
 {
-    /**
-     * Idempotent on purpose: this runs on every deploy, and syncPermissions()
-     * means a permission removed from the enum is also revoked from the role,
-     * rather than lingering in the database forever.
-     */
     public function run(): void
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
@@ -27,14 +40,42 @@ class RoleSeeder extends Seeder
         foreach (RoleName::cases() as $roleName) {
             $role = Role::findOrCreate($roleName->value, 'web');
 
-            $role->syncPermissions(match ($roleName) {
-                RoleName::Admin => PermissionEnum::forAdmin(),
-                RoleName::User => PermissionEnum::forUser(),
-            });
+            // Explicitly emptied: a role that still granted permissions would
+            // override anything unticked on the user.
+            $role->syncPermissions([]);
         }
 
-        // The registrar caches the whole permission map; without this the app
-        // keeps answering from the pre-seed picture for the rest of the request.
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        $this->backfillUsers();
+    }
+
+    /**
+     * Give every existing account its role's defaults, on top of whatever it
+     * already has.
+     *
+     * Additive on purpose. A sync would wipe permissions granted to one person
+     * through the drawer, and this runs on every deploy.
+     */
+    private function backfillUsers(): void
+    {
+        DB::transaction(function () {
+            User::with('roles', 'permissions')->chunkById(100, function ($users) {
+                foreach ($users as $user) {
+                    $roleName = $user->roles->first()?->name;
+
+                    if (! $roleName || ! ($role = RoleName::tryFrom($roleName))) {
+                        continue;
+                    }
+
+                    $defaults = PermissionEnum::defaultsFor($role);
+                    $current = $user->permissions->pluck('name')->all();
+
+                    $user->syncPermissions(array_values(array_unique([...$current, ...$defaults])));
+                }
+            });
+        });
+
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 }

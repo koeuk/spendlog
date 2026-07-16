@@ -17,12 +17,12 @@ import { MUTED } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
 
 /**
- * Per-user permissions, over the top of whatever their role already grants.
+ * This user's permissions. Every box is live.
  *
- * Two sources, shown differently on purpose:
- *   - role permissions are inherited and read-only here; unticking one would
- *     really mean "change the role", which belongs in the edit dialog;
- *   - direct permissions are this user's own, and are what the checkboxes write.
+ * The role only decided the starting set when the account was created — it grants
+ * nothing at run time, so unticking here genuinely takes the permission away.
+ * (If the role still granted it, hasPermissionTo() would keep returning true and
+ * the checkbox would be decoration.)
  */
 const props = defineProps({
     // The user row, or null when closed.
@@ -55,23 +55,14 @@ watch(
     { immediate: true },
 );
 
-const inherited = computed(() => props.user?.role_permissions ?? []);
-
-function isInherited(value) {
-    return inherited.value.includes(value);
-}
-
 function toggle(value, checked) {
     form.permissions = checked
         ? [...new Set([...form.permissions, value])]
         : form.permissions.filter((p) => p !== value);
 }
 
-// Inherited ones read as ticked but are not part of the payload: they come from
-// the role, and writing them as direct grants would silently pin them in place
-// even after the role changed.
 function isChecked(value) {
-    return isInherited(value) || form.permissions.includes(value);
+    return form.permissions.includes(value);
 }
 
 function submit() {
@@ -81,7 +72,10 @@ function submit() {
     });
 }
 
-const dirtyCount = computed(() => form.permissions.length);
+const grantedCount = computed(() => form.permissions.length);
+const totalCount = computed(() =>
+    Object.values(props.groups).reduce((n, items) => n + items.length, 0),
+);
 </script>
 
 <template>
@@ -110,7 +104,7 @@ const dirtyCount = computed(() => form.permissions.length);
                 >
                     <Info class="mt-0.5 size-3.5 shrink-0" />
                     <p>
-                        {{ __('Greyed items come with the :role role. To change those, change the role instead.', { role: user.role }) }}
+                        {{ __('Ticked by default from the :role role. Change any of them for this person only — the role is just the starting point.', { role: user.role }) }}
                     </p>
                 </div>
 
@@ -124,7 +118,6 @@ const dirtyCount = computed(() => form.permissions.length);
                             <Checkbox
                                 :id="`perm_${item.value}`"
                                 :model-value="isChecked(item.value)"
-                                :disabled="isInherited(item.value)"
                                 class="mt-0.5"
                                 @update:model-value="toggle(item.value, $event)"
                             />
@@ -132,15 +125,8 @@ const dirtyCount = computed(() => form.permissions.length);
                                 <Label
                                     :for="`perm_${item.value}`"
                                     class="cursor-pointer text-sm font-medium"
-                                    :class="isInherited(item.value) ? 'text-neutral-400 dark:text-neutral-500' : ''"
                                 >
                                     {{ item.label }}
-                                    <span
-                                        v-if="isInherited(item.value)"
-                                        class="ms-1 text-[10px] font-semibold uppercase tracking-wide"
-                                    >
-                                        {{ __('from role') }}
-                                    </span>
                                 </Label>
                                 <p class="text-xs" :class="MUTED">{{ item.description }}</p>
                             </div>
@@ -152,7 +138,7 @@ const dirtyCount = computed(() => form.permissions.length);
             <SheetFooter class="border-t border-neutral-100 p-6 dark:border-neutral-800">
                 <div class="flex w-full items-center justify-between gap-3">
                     <span class="text-xs" :class="MUTED">
-                        {{ __(':count extra granted', { count: dirtyCount }) }}
+                        {{ __(':count of :total granted', { count: grantedCount, total: totalCount }) }}
                     </span>
                     <div class="flex gap-2">
                         <Button type="button" variant="outline" @click="emit('close')">

@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\UserStatus;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -18,6 +19,8 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            // Every sign-in reads this, and the admin user list filters on it.
+            $table->string('status', 20)->default(UserStatus::Active->value)->index();
             $table->rememberToken();
             $table->timestamps();
         });

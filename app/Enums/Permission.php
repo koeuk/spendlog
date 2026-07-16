@@ -143,8 +143,7 @@ enum Permission: string
     }
 
     /**
-     * Everything. A new permission is therefore granted to admins by adding the
-     * case, with no seeder edit to forget.
+     * Everything.
      *
      * @return array<int, string>
      */
@@ -157,9 +156,9 @@ enum Permission: string
      * What every signed-in person needs to use the app for themselves.
      *
      * This is not "nothing to see here" — it is load-bearing. The plain verbs are
-     * now required by the policies, so a role without them cannot add an expense
-     * or open the dashboard. Adding a case above without adding it here (when it
-     * belongs to self-service) silently breaks every non-admin.
+     * required by the policies, so a user without them cannot add an expense or
+     * open the dashboard. Adding a case above without adding it here (when it
+     * belongs to self-service) silently breaks every new non-admin.
      *
      * @return array<int, string>
      */
@@ -187,6 +186,22 @@ enum Permission: string
             self::ProfileUpdate->value,
             self::PasswordUpdate->value,
         ];
+    }
+
+    /**
+     * The starting set for a role.
+     *
+     * A role is a template here, not a live grant: permissions are stored on the
+     * user, so they can be edited per person afterwards. See RoleSeeder for why.
+     *
+     * @return array<int, string>
+     */
+    public static function defaultsFor(RoleName $role): array
+    {
+        return match ($role) {
+            RoleName::Admin => self::forAdmin(),
+            RoleName::User => self::forUser(),
+        };
     }
 
     /**

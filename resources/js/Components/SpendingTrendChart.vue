@@ -1,14 +1,8 @@
 <script setup>
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/Components/ui/select';
 import { computed, ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { ChartColumn, ChartSpline } from 'lucide-vue-next';
+import PeriodPicker from '@/Components/PeriodPicker.vue';
 import { monotonePath } from '@/lib/curve';
 import { EYEBROW, FIGURE, MUTED } from '@/lib/appStyles';
 
@@ -221,33 +215,18 @@ const tooltipTop = computed(() => {
 
             <!-- Filters in one row above the plot: which period, then how it is drawn. -->
             <div v-if="showControls" class="flex flex-wrap items-center gap-2">
-<!--
-                    Ours rather than a native <select>: the OS popup is drawn
-                    outside the page and ignores the theme, so it lands as a white
-                    system menu on a dark chart. Trade-off noted: on a phone this
-                    loses the native picker wheel.
-                -->
-                <Select
+<!-- Same searchable picker as the report: 24 months is a list you
+                     scan, not one you read. It also hides itself for All time,
+                     where there is only one span to pick. -->
+                <PeriodPicker
+                    v-if="trend.options.length > 1"
+                    :options="trend.options"
                     :model-value="trend.anchor"
                     :disabled="loading"
+                    :label="__('Period')"
+                    class="[&>button]:h-8"
                     @update:model-value="load(trend.granularity, $event)"
-                >
-                    <SelectTrigger
-                        class="h-8 w-auto min-w-32 gap-1.5 rounded-full border-neutral-200 bg-white/70 px-3 text-xs font-semibold shadow-none dark:border-neutral-700 dark:bg-neutral-800/70"
-                        :aria-label="__('Period')"
-                    >
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem
-                            v-for="option in trend.options"
-                            :key="option.value"
-                            :value="option.value"
-                        >
-                            {{ option.label }}
-                        </SelectItem>
-                    </SelectContent>
-                </Select>
+                />
 
                 <div
                     class="inline-flex rounded-full border border-neutral-200 bg-white/70 p-0.5 dark:border-neutral-700 dark:bg-neutral-800/70"

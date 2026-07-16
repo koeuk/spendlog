@@ -44,9 +44,8 @@ class UserController extends Controller
                 'status_label' => $user->status->label(),
                 'status_classes' => $user->status->badgeClasses(),
                 'expenses_count' => $user->expenses_count,
-                // Split, because the drawer treats them differently: role ones
-                // are inherited and read-only, direct ones are what it writes.
-                'role_permissions' => $user->getPermissionsViaRoles()->pluck('name')->values(),
+                // Their whole set. Roles grant nothing at run time, so this is
+                // the complete picture — no second list to merge in.
                 'direct_permissions' => $user->permissions->pluck('name')->values(),
                 'verified' => $user->hasVerifiedEmail(),
                 // Marks the row as the viewer's own, so the UI can say why the
@@ -90,7 +89,12 @@ class UserController extends Controller
 
             // Assigned explicitly, never mass-assigned — otherwise the request
             // body could hand out admin.
-            $user->syncRoles([$request->validated('role')]);
+            $role = RoleName::from($request->validated('role'));
+            $user->syncRoles([$role->value]);
+
+            // The role is a template: it grants nothing by itself, so the new
+            // account would have no access at all without this.
+            $user->syncPermissions(PermissionEnum::defaultsFor($role));
 
             DB::commit();
 
@@ -115,7 +119,9 @@ class UserController extends Controller
         // A role change and a suspension are separately gated: 'update' allows
         // editing a name, but neither of these — both can strand the install
         // without an admin, or lock the current one out.
-        if ($role !== ($user->roles->first()?->name ?? RoleName::User->value)) {
+        $roleChanged = $role !== ($user->roles->first()?->name ?? RoleName::User->value);
+
+        if ($roleChanged) {
             Gate::authorize('changeRole', $user);
         }
 
@@ -135,7 +141,14 @@ class UserController extends Controller
             }
 
             $user->save();
-            $user->syncRoles([$role]);
+
+            if ($roleChanged) {
+                $user->syncRoles([$role]);
+
+                // Reset to the new role's defaults. Keeping the old set would
+                // leave an ex-admin holding admin permissions with a user badge.
+                $user->syncPermissions(PermissionEnum::defaultsFor(RoleName::from($role)));
+            }
 
             DB::commit();
 
@@ -193,7 +206,7 @@ class UserController extends Controller
     }
 
     /**
-     * Direct permissions only — the ones a role grants stay with the role.
+     * The user's whole permission set, as ticked.
      */
     public function updatePermissions(Request $request, User $user): RedirectResponse
     {
@@ -204,16 +217,12 @@ class UserController extends Controller
             'permissions.*' => [Rule::enum(PermissionEnum::class)],
         ]);
 
-        // Anything the role already grants is dropped: storing it as a direct
-        // grant too would keep it after the role changed, which is not what
-        // ticking an inherited box appears to promise.
-        $viaRole = $user->getPermissionsViaRoles()->pluck('name')->all();
-        $direct = array_values(array_diff($validated['permissions'], $viaRole));
-
         DB::beginTransaction();
 
         try {
-            $user->syncPermissions($direct);
+            // Exactly what was ticked. Nothing is filtered out against the role:
+            // roles grant nothing at run time, so this list IS their access.
+            $user->syncPermissions($validated['permissions']);
 
             DB::commit();
 
