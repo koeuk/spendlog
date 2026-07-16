@@ -8,6 +8,7 @@ use App\Enums\RoleName;
 use App\Models\AppSetting;
 use App\Models\User;
 use App\Support\Color;
+use App\Support\Palette;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -113,10 +114,26 @@ class ColorsTest extends TestCase
     }
 
     /**
-     * The set is the rule now: anything off it is refused, including colours a
-     * free picker would once have taken.
+     * Ten offered backgrounds, and every one has to derive a theme whose text is
+     * readable — the swatch is the promise.
      */
-    public function test_a_colour_outside_the_offered_set_is_refused(): void
+    public function test_every_background_preset_derives_a_readable_theme(): void
+    {
+        $this->assertCount(10, BodyColor::cases());
+
+        foreach (BodyColor::cases() as $preset) {
+            $this->assertTrue(
+                Palette::supports($preset->value),
+                "{$preset->name} ({$preset->value}) cannot carry a readable theme",
+            );
+        }
+    }
+
+    /**
+     * The background is the list — every token in the theme is derived from it,
+     * so an unusable value breaks the page rather than one control.
+     */
+    public function test_a_background_outside_the_offered_set_is_refused(): void
     {
         foreach (['#e8f0ff', '#000000', '#123456'] as $offList) {
             $this->actingAs($this->admin())
@@ -124,13 +141,58 @@ class ColorsTest extends TestCase
                 ->assertSessionHasErrors('body_color');
         }
 
-        foreach (['#ff0000', '#d92626', 'red', '#fff'] as $offList) {
+        $this->assertSame(BodyColor::White->value, AppSetting::current()->body_color);
+    }
+
+    /**
+     * The button is not: its swatches are a shortcut, so a brand colour that is
+     * not on the list is still fair game.
+     */
+    public function test_a_custom_button_colour_outside_the_presets_is_accepted(): void
+    {
+        $this->actingAs($this->admin())
+            ->post('/settings/colors', $this->payload(['button_color' => '#004d7a']))
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame('#004d7a', AppSetting::current()->button_color);
+    }
+
+    /**
+     * ...but only if a label can sit on it. A label is near-black or near-white,
+     * so a fill contrasting with neither cannot be labelled at all — #ad661f tops
+     * out at 4.43:1 against *both* ends. That is a refusal, not a preference: no
+     * choice of label rescues it.
+     */
+    public function test_a_button_colour_that_can_carry_no_label_is_refused(): void
+    {
+        // Measured, not guessed. A saturated red like #d92626 looks like it
+        // belongs here and does not — it labels fine at 4.73:1. The band that
+        // fails is narrow, so these are the values that actually sit in it.
+        foreach (['#d92680', '#ad661f', '#767676'] as $unlabellable) {
             $this->actingAs($this->admin())
-                ->post('/settings/colors', $this->payload(['button_color' => $offList]))
+                ->post('/settings/colors', $this->payload(['button_color' => $unlabellable]))
                 ->assertSessionHasErrors('button_color');
         }
 
-        $this->assertSame(BodyColor::White->value, AppSetting::current()->body_color);
+        $this->assertSame('#171717', AppSetting::current()->button_color);
+    }
+
+    public function test_a_saturated_colour_that_can_carry_a_label_is_accepted(): void
+    {
+        // The guard is about readability, not saturation — it must not refuse a
+        // strong brand colour just for being strong.
+        $this->actingAs($this->admin())
+            ->post('/settings/colors', $this->payload(['button_color' => '#d92626']))
+            ->assertSessionHasNoErrors();
+    }
+
+    public function test_a_malformed_button_colour_is_refused(): void
+    {
+        foreach (['red', '#fff', '#12345', 'rgb(0,0,0)', '#4b9d5f; } html { display: none }', ''] as $bad) {
+            $this->actingAs($this->admin())
+                ->post('/settings/colors', $this->payload(['button_color' => $bad]))
+                ->assertSessionHasErrors('button_color');
+        }
     }
 
     /**

@@ -28,6 +28,13 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
 class ReportController extends Controller
 {
     /**
+     * The page sizes the picker offers. An allow-list, not a max: per_page goes
+     * straight into a LIMIT, and ?per_page=100000 is a cheap way to make the
+     * server build a hundred thousand rows.
+     */
+    private const PER_PAGE = [20, 50, 100, 150, 200];
+
+    /**
      * Hex twins of the Tailwind classes in categoryStyles.js — the PDF has no
      * stylesheet to resolve a class name against.
      */
@@ -60,7 +67,7 @@ class ReportController extends Controller
             'series' => $series,
             'breakdown' => $breakdown,
             'stats' => $this->stats($user, $start, $end, $granularity, $anchor, $breakdown),
-            'expenses' => $this->expenses($user, $start, $end),
+            'expenses' => $this->expenses($user, $start, $end, $this->perPage($request)),
         ]);
     }
 
@@ -146,7 +153,14 @@ class ReportController extends Controller
      *
      * @return array<string, mixed>
      */
-    private function expenses(User $user, CarbonImmutable $start, CarbonImmutable $end): array
+    private function perPage(Request $request): int
+    {
+        $perPage = (int) $request->query('per_page', self::PER_PAGE[0]);
+
+        return in_array($perPage, self::PER_PAGE, true) ? $perPage : self::PER_PAGE[0];
+    }
+
+    private function expenses(User $user, CarbonImmutable $start, CarbonImmutable $end, int $perPage): array
     {
         $paginator = Expense::query()
             ->with('category:id,uuid,name,color,icon')
@@ -154,7 +168,7 @@ class ReportController extends Controller
             ->whereBetween('spent_on', [$start->toDateString(), $end->toDateString()])
             ->orderByDesc('spent_on')
             ->orderByDesc('id')
-            ->paginate(25, ['*'], 'page')
+            ->paginate($perPage, ['*'], 'page')
             ->withQueryString();
 
         return [
@@ -173,6 +187,10 @@ class ReportController extends Controller
             'current_page' => $paginator->currentPage(),
             'last_page' => $paginator->lastPage(),
             'total' => $paginator->total(),
+            'from' => $paginator->firstItem(),
+            'to' => $paginator->lastItem(),
+            'per_page' => $paginator->perPage(),
+            'per_page_options' => self::PER_PAGE,
             'prev_page_url' => $paginator->previousPageUrl(),
             'next_page_url' => $paginator->nextPageUrl(),
         ];

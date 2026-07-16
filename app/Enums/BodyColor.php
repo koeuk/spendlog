@@ -17,18 +17,28 @@ enum BodyColor: string
 {
     case White = '#ffffff';
     case Cream = '#faf8f4';
-    case Mist = '#f5f7f9';
-    case Sage = '#f3f7f3';
+    case Sand = '#f7f4ee';
     case Blush = '#fbf5f6';
+    case Rose = '#f9f2f4';
+    case Sage = '#f3f7f3';
+    case Mint = '#f0f7f4';
+    case Mist = '#f5f7f9';
+    case Sky = '#f1f6fb';
+    case Lilac = '#f6f4fa';
 
     public function label(): string
     {
         return match ($this) {
             self::White => 'White',
             self::Cream => 'Cream',
-            self::Mist => 'Mist',
-            self::Sage => 'Sage',
+            self::Sand => 'Sand',
             self::Blush => 'Blush',
+            self::Rose => 'Rose',
+            self::Sage => 'Sage',
+            self::Mint => 'Mint',
+            self::Mist => 'Mist',
+            self::Sky => 'Sky',
+            self::Lilac => 'Lilac',
         };
     }
 

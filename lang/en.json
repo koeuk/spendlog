@@ -125,5 +125,8 @@
     "All time": "All time",
     "All": "All",
     "Search month or year": "Search month or year",
-    "No period found.": "No period found."
+    "No period found.": "No period found.",
+    "Per page": "Per page",
+    "per page": "per page",
+    "Showing :from–:to of :total": "Showing :from–:to of :total"
 }

@@ -38,4 +38,18 @@ enum CategoryIcon: string
     case Briefcase = 'briefcase';
     case Landmark = 'landmark';
     case CreditCard = 'credit-card';
+    case Carrot = 'carrot';
+    case Salad = 'salad';
+    case Beef = 'beef';
+    case Fish = 'fish';
+    case Pizza = 'pizza';
+    case Sandwich = 'sandwich';
+    case Milk = 'milk';
+    case Beer = 'beer';
+    case Wine = 'wine';
+    case Luggage = 'luggage';
+    case Map = 'map';
+    case Tent = 'tent';
+    case TreePalm = 'tree-palm';
+    case Ship = 'ship';
 }

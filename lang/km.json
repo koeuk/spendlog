@@ -125,5 +125,8 @@
     "All time": "គ្រប់ពេលវេលា",
     "All": "ទាំងអស់",
     "Search month or year": "ស្វែងរកខែ ឬឆ្នាំ",
-    "No period found.": "រកមិនឃើញអំឡុងពេលទេ។"
+    "No period found.": "រកមិនឃើញអំឡុងពេលទេ។",
+    "Per page": "ក្នុងមួយទំព័រ",
+    "per page": "ក្នុងមួយទំព័រ",
+    "Showing :from–:to of :total": "កំពុងបង្ហាញ :from–:to ក្នុងចំណោម :total"
 }
