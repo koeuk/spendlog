@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\BodyColor;
 use App\Http\Requests\BrandingRequest;
 use App\Models\AppSetting;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -41,7 +42,12 @@ class SettingsController extends Controller
                 'app_name' => $settings->app_name,
                 'logo' => $settings->logoUrl(),
                 'favicon' => $settings->faviconUrl(),
+                'button_color' => $settings->button_color,
+                'body_color' => $settings->body_color,
             ],
+            // Sent rather than mirrored in JS: the swatches, the migration
+            // default and the enum then cannot drift apart.
+            'body_presets' => BodyColor::presets(),
         ]);
     }
 
@@ -52,6 +58,8 @@ class SettingsController extends Controller
         $settings = AppSetting::current();
 
         $settings->app_name = $request->validated('app_name');
+        $settings->button_color = $request->validated('button_color');
+        $settings->body_color = $request->validated('body_color');
 
         $this->applyImage($request, $settings, 'logo', 'logo_path');
         $this->applyImage($request, $settings, 'favicon', 'favicon_path');

@@ -37,9 +37,28 @@ const isDark = computed(() =>
 );
 
 function apply() {
-    document.documentElement.classList.toggle('dark', isDark.value);
+    const root = document.documentElement;
+
+    root.classList.toggle('dark', isDark.value);
     // Lets the browser theme form controls and scrollbars to match.
-    document.documentElement.style.colorScheme = isDark.value ? 'dark' : 'light';
+    root.style.colorScheme = isDark.value ? 'dark' : 'light';
+
+    /*
+     * The admin's body colour is light-mode only, and the pre-paint script in
+     * app.blade.php sets it as inline style on <html>. Inline style outranks any
+     * stylesheet rule, so adding the .dark class is not enough on its own —
+     * without removing it here, switching to dark would keep the light page.
+     *
+     * --brand-background is the stash that script always leaves, so toggling back
+     * to light restores the admin's colour rather than the stock white.
+     */
+    const brandBackground = root.style.getPropertyValue('--brand-background');
+
+    if (isDark.value) {
+        root.style.removeProperty('--background');
+    } else if (brandBackground) {
+        root.style.setProperty('--background', brandBackground);
+    }
 }
 
 function setTheme(next) {

@@ -20,6 +20,15 @@
         {{--
             Runs before first paint, so a dark-mode user never sees a white
             flash while the Vite bundle loads. Mirrors resources/js/composables/useTheme.js.
+
+            The admin's colours are applied here too, for the same reason — set
+            from a mounted component they would land a frame late and the whole
+            page would flick from the default palette to the branded one.
+
+            Written as inline style on <html>, not a <style> block: an element's
+            own style always beats a stylesheet rule, so this wins over both the
+            :root tokens and the .dark overrides in app.css — and in dev, where
+            Vite injects CSS via JS after this tag, a <style> block would lose.
         --}}
         <script>
             (function () {
@@ -29,6 +38,28 @@
                         && window.matchMedia('(prefers-color-scheme: dark)').matches);
                     document.documentElement.classList.toggle('dark', dark);
                     document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+
+                    var t = @json($branding->cssVariables());
+                    var s = document.documentElement.style;
+
+                    // The brand button reads in either theme.
+                    s.setProperty('--primary', t.primary);
+                    s.setProperty('--primary-foreground', t.primaryForeground);
+
+                    // Always parked here, even in dark mode, and never read by a
+                    // token directly. It is the stash useTheme reads from when the
+                    // user toggles back to light — without it, someone who loads
+                    // the page in dark and switches to light would get the stock
+                    // white instead of the admin's colour, with no way to recover
+                    // it short of a reload.
+                    s.setProperty('--brand-background', t.background);
+
+                    // The body colour is a light-mode choice only: the presets are
+                    // all near-white, and forcing one in dark mode would put pale
+                    // text on a pale page.
+                    if (!dark) {
+                        s.setProperty('--background', t.background);
+                    }
                 } catch (e) {}
             })();
         </script>

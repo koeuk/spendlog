@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Color;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
@@ -25,6 +26,8 @@ class AppSetting extends Model
         'app_name',
         'logo_path',
         'favicon_path',
+        'button_color',
+        'body_color',
     ];
 
     /**
@@ -54,16 +57,65 @@ class AppSetting extends Model
      */
     public static function current(): self
     {
-        $attributes = Cache::rememberForever(
-            self::CACHE_KEY,
-            fn () => static::query()
-                ->firstOrCreate([], ['app_name' => config('app.name', 'SpendLog')])
-                ->getRawOriginal(),
-        );
+        $attributes = Cache::rememberForever(self::CACHE_KEY, self::readRow(...));
+
+        // A cache written before a migration added a column rehydrates a model
+        // silently missing it, and the first read of that attribute returns null
+        // — which surfaces somewhere far away as a type error, not as "your cache
+        // is stale". Cheaper to notice here and rebuild once.
+        if (self::isStale($attributes)) {
+            Cache::forget(self::CACHE_KEY);
+            $attributes = Cache::rememberForever(self::CACHE_KEY, self::readRow(...));
+        }
 
         // newFromBuilder, not new: this row exists, so it must not be marked
         // dirty or re-inserted on a later save.
         return (new static)->newFromBuilder($attributes);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function readRow(): array
+    {
+        return static::query()
+            ->firstOrCreate([], ['app_name' => config('app.name', 'SpendLog')])
+            ->getRawOriginal();
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    private static function isStale(array $attributes): bool
+    {
+        foreach ((new static)->getFillable() as $column) {
+            if (! array_key_exists($column, $attributes)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * The design tokens this row overrides, as bare HSL triplets ready to drop
+     * into a CSS custom property.
+     *
+     * `background` is light-mode only. Dark mode keeps its own near-black: an
+     * admin picking Cream should not be able to switch dark mode off for
+     * everyone, and pale text on a pale page is unreadable, not just off-brand.
+     *
+     * @return array{primary: string, primaryForeground: string, background: string}
+     */
+    public function cssVariables(): array
+    {
+        return [
+            'primary' => Color::toHslTriplet($this->button_color),
+            // Computed, never chosen: a free colour picker otherwise lets an
+            // admin put white text on a pale button and lose the label.
+            'primaryForeground' => Color::readableForegroundTriplet($this->button_color),
+            'background' => Color::toHslTriplet($this->body_color),
+        ];
     }
 
     /** Null when unset — the frontend falls back to the built-in wordmark. */

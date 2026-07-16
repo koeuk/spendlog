@@ -27,9 +27,15 @@ export const APP_PAGE =
  *
  * transform-gpu keeps the scale on the compositor — without it, scaling a
  * backdrop-blur surface re-rasterises the blur every frame.
+ *
+ * The curve is the same cubic-bezier the .anim entrance uses: it moves most of
+ * the way early then settles, so the card glides in and out rather than easing
+ * off a linear ramp. 300ms in, and a slightly longer 400ms out — a lift that
+ * leaves as fast as it arrives feels snatched away.
  */
 const CARD_LIFT =
-    'transform-gpu transition-[box-shadow,transform] duration-200 ease-out ' +
+    'transform-gpu transition-[box-shadow,transform] duration-[400ms] ease-[cubic-bezier(0.22,1,0.36,1)] ' +
+    'hover:duration-300 ' +
     'hover:scale-[1.004] hover:shadow-[0_1px_3px_0_rgba(15,23,42,0.07),0_1px_2px_-1px_rgba(15,23,42,0.05)] ' +
     'dark:hover:shadow-[0_1px_3px_0_rgba(0,0,0,0.5),0_1px_2px_-1px_rgba(0,0,0,0.4)] ' +
     // Scale is motion; honour the OS setting and leave the shadow to do the job.
