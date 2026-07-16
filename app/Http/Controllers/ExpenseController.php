@@ -72,9 +72,19 @@ class ExpenseController extends Controller
             'users' => $viewingAll
                 ? User::query()->orderBy('name')->get(['uuid', 'name'])
                 : [],
+            // Mapped rather than passed straight through: Inertia serialises via
+            // toArray(), and spatie/laravel-translatable does not translate there —
+            // the raw {"en":…,"km":…} object would reach the category dropdown.
+            // Reading ->name goes through the accessor, which does translate.
             'categories' => Category::query()
                 ->orderBy('name')
-                ->get(['uuid', 'name', 'color', 'icon']),
+                ->get(['uuid', 'name', 'color', 'icon'])
+                ->map(fn (Category $category) => [
+                    'uuid' => $category->uuid,
+                    'name' => $category->name,
+                    'color' => $category->color?->value,
+                    'icon' => $category->icon?->value,
+                ]),
         ]);
     }
 

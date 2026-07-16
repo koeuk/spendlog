@@ -71,7 +71,11 @@ const maxDate = today(getLocalTimeZone());
             </p>
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
+        <!--
+            Three across once there is room: the dialog is as wide as the list
+            behind it, and a stack of full-width fields looks lost in it.
+        -->
+        <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
             <div>
                 <Label for="price">{{ __('Price') }}</Label>
                 <Input
@@ -121,27 +125,27 @@ const maxDate = today(getLocalTimeZone());
                     {{ form.errors.category_uuid }}
                 </p>
             </div>
-        </div>
 
-        <div>
-            <Label>{{ __('Date') }}</Label>
-            <Popover>
-                <PopoverTrigger as-child>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        class="mt-1 w-full justify-start font-normal"
-                    >
-                        {{ spentOnLabel }}
-                    </Button>
-                </PopoverTrigger>
-                <PopoverContent class="w-auto p-0">
-                    <Calendar v-model="spentOn" :max-value="maxDate" initial-focus />
-                </PopoverContent>
-            </Popover>
-            <p v-if="form.errors.spent_on" class="mt-1 text-sm text-red-600">
-                {{ form.errors.spent_on }}
-            </p>
+            <div class="col-span-2 sm:col-span-1">
+                <Label>{{ __('Date') }}</Label>
+                <Popover>
+                    <PopoverTrigger as-child>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            class="mt-1 w-full justify-start font-normal"
+                        >
+                            {{ spentOnLabel }}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent class="w-auto p-0">
+                        <Calendar v-model="spentOn" :max-value="maxDate" initial-focus />
+                    </PopoverContent>
+                </Popover>
+                <p v-if="form.errors.spent_on" class="mt-1 text-sm text-red-600">
+                    {{ form.errors.spent_on }}
+                </p>
+            </div>
         </div>
     </div>
 </template>

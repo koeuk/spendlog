@@ -198,7 +198,7 @@ const isEmpty = computed(() => props.days.length === 0);
         </template>
 
         <div class="py-8">
-            <div class="mx-auto max-w-3xl space-y-4 px-4 sm:px-6 lg:px-8">
+            <div class="mx-auto max-w-5xl space-y-4 px-4 sm:px-6 lg:px-8">
                 <ExpenseListSkeleton v-if="navigating" />
 
                 <div
@@ -322,7 +322,9 @@ const isEmpty = computed(() => props.days.length === 0);
         </div>
 
         <Dialog v-model:open="showDialog">
-            <DialogContent class="sm:max-w-md">
+            <!-- Deliberately narrower than the max-w-5xl content column: this is
+                 a short form, and a dialog as wide as the page reads as a page. -->
+            <DialogContent class="sm:max-w-3xl">
                 <form @submit.prevent="submit">
                     <DialogHeader>
                         <DialogTitle>

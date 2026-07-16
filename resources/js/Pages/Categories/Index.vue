@@ -104,7 +104,7 @@ function destroy(category) {
         </template>
 
         <div class="py-8">
-            <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+            <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
                 <div class="overflow-hidden rounded-lg bg-white shadow-sm dark:bg-neutral-900">
                     <Table>
                         <TableHeader>

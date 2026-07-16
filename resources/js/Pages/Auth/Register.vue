@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { Eye, EyeOff } from 'lucide-vue-next';
 import AuthArtwork from '@/Components/AuthArtwork.vue';
@@ -9,6 +9,7 @@ import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
 import { PILL_BUTTON, PILL_INPUT } from '@/lib/authStyles';
+import { trans } from '@/lib/i18n';
 
 const form = useForm({
     name: '',
@@ -25,11 +26,12 @@ const submit = () => {
     });
 };
 
-const slides = [
-    'Two taps to log a coffee. That is the whole idea.',
-    'Your categories, your colours, your budgets.',
-    'Start today — tomorrow you will already have a trend.',
-];
+// computed, not a plain array: the strings must re-resolve when the locale changes.
+const slides = computed(() => [
+    trans('Two taps to log a coffee. That is the whole idea.'),
+    trans('Your categories, your colours, your budgets.'),
+    trans('Start today — tomorrow you will already have a trend.'),
+]);
 </script>
 
 <template>
@@ -59,12 +61,11 @@ const slides = [
                         class="anim text-[2.6rem] font-extrabold leading-[1.05] tracking-[-0.03em] sm:text-5xl"
                         style="--d: 60ms"
                     >
-                        Start your log.
+                        {{ __('Start your log.') }}
                     </h1>
 
                     <p class="anim mt-3 text-sm leading-relaxed text-neutral-500 dark:text-neutral-400" style="--d: 120ms">
-                        Free, and about a minute to set up. We'll email you a link
-                        to confirm your address.
+                        {{ __("Free, and about a minute to set up. We'll email you a link to confirm your address.") }}
                     </p>
 
                     <form class="mt-8" @submit.prevent="submit">
@@ -77,7 +78,7 @@ const slides = [
                                 required
                                 autofocus
                                 autocomplete="name"
-                                placeholder="Name"
+                                :placeholder="__('Name')"
                                 :aria-invalid="!!form.errors.name"
                                 :class="PILL_INPUT"
                             />
@@ -94,7 +95,7 @@ const slides = [
                                 type="email"
                                 required
                                 autocomplete="username"
-                                placeholder="Email"
+                                :placeholder="__('Email')"
                                 :aria-invalid="!!form.errors.email"
                                 :class="PILL_INPUT"
                             />
@@ -112,7 +113,7 @@ const slides = [
                                     :type="showPassword ? 'text' : 'password'"
                                     required
                                     autocomplete="new-password"
-                                    placeholder="Password"
+                                    :placeholder="__('Password')"
                                     :aria-invalid="!!form.errors.password"
                                     :class="[PILL_INPUT, 'pr-12']"
                                 />
@@ -120,7 +121,7 @@ const slides = [
                                     type="button"
                                     variant="ghost"
                                     size="icon"
-                                    :aria-label="showPassword ? 'Hide password' : 'Show password'"
+                                    :aria-label="showPassword ? __('Hide password') : __('Show password')"
                                     :aria-pressed="showPassword"
                                     class="absolute right-1.5 top-1.5 size-[42px] rounded-full text-neutral-400 hover:bg-neutral-50 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
                                     @click="showPassword = !showPassword"
@@ -135,7 +136,7 @@ const slides = [
 
                         <div class="anim mt-3" style="--d: 300ms">
                             <Label for="password_confirmation" class="sr-only">
-                                Confirm password
+                                {{ __('Confirm password') }}
                             </Label>
                             <Input
                                 id="password_confirmation"
@@ -143,7 +144,7 @@ const slides = [
                                 :type="showPassword ? 'text' : 'password'"
                                 required
                                 autocomplete="new-password"
-                                placeholder="Confirm password"
+                                :placeholder="__('Confirm password')"
                                 :aria-invalid="!!form.errors.password_confirmation"
                                 :class="PILL_INPUT"
                             />
@@ -161,17 +162,17 @@ const slides = [
                             :class="[PILL_BUTTON, 'anim mt-6']"
                             style="--d: 360ms"
                         >
-                            {{ form.processing ? 'Creating account…' : 'Create account' }}
+                            {{ form.processing ? __('Creating account…') : __('Create account') }}
                         </Button>
                     </form>
 
                     <p class="anim mt-12 text-center text-sm font-medium text-neutral-500 dark:text-neutral-400" style="--d: 420ms">
-                        Already a member?
+                        {{ __('Already a member?') }}
                         <Link
                             :href="route('login')"
                             class="font-semibold text-[#4b9d5f] underline-offset-4 hover:underline dark:text-[#6cc182]"
                         >
-                            Log in
+                            {{ __('Log in') }}
                         </Link>
                     </p>
                 </div>

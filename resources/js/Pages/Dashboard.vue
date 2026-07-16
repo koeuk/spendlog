@@ -63,7 +63,7 @@ const statusText = {
         </template>
 
         <div class="py-8">
-            <div class="mx-auto max-w-3xl space-y-4 px-4 sm:px-6 lg:px-8">
+            <div class="mx-auto max-w-5xl space-y-4 px-4 sm:px-6 lg:px-8">
                 <!-- Totals -->
                 <div class="grid gap-4 sm:grid-cols-3">
                     <div class="rounded-lg bg-white p-5 shadow-sm dark:bg-neutral-900">
