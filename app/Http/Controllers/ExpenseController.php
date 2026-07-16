@@ -158,7 +158,10 @@ class ExpenseController extends Controller
                 'total' => (float) $group->sum('price'),
                 'expenses' => $group->map(fn (Expense $expense) => [
                     'uuid' => $expense->uuid,
+                    // Two shapes on purpose: the list renders the active locale,
+                    // while the edit dialog has to populate a field per locale.
                     'item' => $expense->item,
+                    'item_translations' => $expense->getTranslations('item'),
                     'price' => (float) $expense->price,
                     'spent_on' => $expense->spent_on->toDateString(),
                     'category_uuid' => $expense->category->uuid,

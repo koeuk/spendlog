@@ -8,10 +8,19 @@ use App\Models\Concerns\HasUuidRouteKey;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\Translatable\HasTranslations;
 
 class Expense extends Model
 {
-    use HasFactory, HasUuidRouteKey;
+    use HasFactory, HasTranslations, HasUuidRouteKey;
+
+    /**
+     * Reading $expense->item returns the active locale's value, falling back to
+     * the app fallback_locale when that locale is missing. Mirrors Category::$name.
+     *
+     * @var array<int, string>
+     */
+    public array $translatable = ['item'];
 
     /**
      * The attributes that are mass assignable.

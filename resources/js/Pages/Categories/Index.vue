@@ -3,8 +3,10 @@ import { ref } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import CategoryBadge from '@/Components/CategoryBadge.vue';
+import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import { CARD } from '@/lib/appStyles';
 import CategoryStylePicker from '@/Components/CategoryStylePicker.vue';
+import LocaleTabs from '@/Components/LocaleTabs.vue';
 import { localized } from '@/lib/i18n';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
@@ -78,10 +80,31 @@ function submit() {
 const deleting = ref(null);
 const deleteForm = useForm({});
 
-function destroy(category) {
+// The category awaiting confirmation. Holding the row itself, not just a flag,
+// lets the prompt name what is about to go.
+const confirming = ref(null);
+
+function confirmDestroy(category) {
+    confirming.value = category;
+}
+
+function destroy() {
+    const category = confirming.value;
+
+    if (!category) {
+        return;
+    }
+
     deleting.value = category.uuid;
+
     deleteForm.delete(route('categories.destroy', category.uuid), {
         preserveScroll: true,
+        // Closed here rather than on click: a category still in use comes back
+        // 409 with a flash explaining why, and dismissing the prompt first would
+        // leave the row sitting there with no visible reason.
+        onSuccess: () => {
+            confirming.value = null;
+        },
         onFinish: () => {
             deleting.value = null;
         },
@@ -158,7 +181,7 @@ function destroy(category) {
                                             size="sm"
                                             class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
                                             :disabled="deleting === category.uuid"
-                                            @click="destroy(category)"
+                                            @click="confirmDestroy(category)"
                                         >
                                             {{ __('Delete') }}
                                         </Button>
@@ -170,6 +193,24 @@ function destroy(category) {
                 </div>
             </div>
         </div>
+
+        <ConfirmDialog
+            :open="confirming !== null"
+            :title="__('Delete this category?')"
+            :description="
+                confirming
+                    ? __('&quot;:name&quot; will be removed for everyone. This cannot be undone.', {
+                          name: localized(confirming.name),
+                      })
+                    : ''
+            "
+            :confirm-label="__('Delete')"
+            :cancel-label="__('Cancel')"
+            :processing="deleting !== null"
+            :processing-label="__('Deleting…')"
+            @update:open="confirming = $event ? confirming : null"
+            @confirm="destroy"
+        />
 
         <Dialog v-model:open="showDialog">
             <DialogContent class="sm:max-w-md">
@@ -184,36 +225,26 @@ function destroy(category) {
                     </DialogHeader>
 
                     <div class="grid gap-4 py-4">
-                        <div>
-                            <Label for="name_en">{{ __('Name') }} (EN)</Label>
-                            <Input
-                                id="name_en"
-                                v-model="form.name.en"
-                                class="mt-1"
-                                autocomplete="off"
-                                placeholder="e.g. Groceries"
-                            />
-                            <p v-if="form.errors['name.en']" class="mt-1 text-sm text-red-600 dark:text-red-400">
-                                {{ form.errors['name.en'] }}
-                            </p>
-                        </div>
+                        <LocaleTabs
+                            :form="form"
+                            field="name"
+                            :placeholders="{ en: 'e.g. Groceries', km: 'ឧ. គ្រឿងទេស' }"
+                        >
+                            <template #label>
+                                <Label for="name_en">{{ __('Name') }}</Label>
+                            </template>
 
-                        <div>
-                            <Label for="name_km">
-                                {{ __('Name') }} (KM)
-                                <span class="font-normal text-gray-500">{{ __('(optional)') }}</span>
-                            </Label>
-                            <Input
-                                id="name_km"
-                                v-model="form.name.km"
-                                class="mt-1"
-                                autocomplete="off"
-                                placeholder="ឧ. គ្រឿងទេស"
-                            />
-                            <p v-if="form.errors['name.km']" class="mt-1 text-sm text-red-600 dark:text-red-400">
-                                {{ form.errors['name.km'] }}
-                            </p>
-                        </div>
+                            <template #default="{ locale, placeholder, isRequired }">
+                                <Input
+                                    :id="`name_${locale}`"
+                                    v-model="form.name[locale]"
+                                    autocomplete="off"
+                                    :placeholder="placeholder"
+                                    :required="isRequired"
+                                    :aria-invalid="!!form.errors[`name.${locale}`]"
+                                />
+                            </template>
+                        </LocaleTabs>
 
                         <CategoryStylePicker :form="form" />
                     </div>

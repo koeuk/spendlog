@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import ExpenseForm from '@/Components/ExpenseForm.vue';
 import { CARD } from '@/lib/appStyles';
 import ExpenseListSkeleton from '@/Components/ExpenseListSkeleton.vue';
@@ -62,7 +63,8 @@ const showDialog = ref(false);
 const editing = ref(null);
 
 const form = useForm({
-    item: '',
+    // One key per locale — item is a translatable JSON column, like category.name.
+    item: { en: '', km: '' },
     price: '',
     category_uuid: '',
     spent_on: todayString(),
@@ -78,7 +80,12 @@ function openCreate() {
 
 function openEdit(expense) {
     editing.value = expense;
-    form.item = expense.item;
+    // item_translations is the raw JSON; item alone is only the active locale,
+    // so editing from it would quietly drop the other language on save.
+    form.item = {
+        en: expense.item_translations?.en ?? '',
+        km: expense.item_translations?.km ?? '',
+    };
     form.price = String(expense.price);
     form.category_uuid = expense.category_uuid;
     form.spent_on = expense.spent_on;
@@ -106,10 +113,30 @@ function submit() {
 const deleting = ref(null);
 const deleteForm = useForm({});
 
-function destroy(expense) {
+// The expense awaiting confirmation. Holding the row itself, not just a flag,
+// lets the prompt name what is about to go.
+const confirming = ref(null);
+
+function confirmDestroy(expense) {
+    confirming.value = expense;
+}
+
+function destroy() {
+    const expense = confirming.value;
+
+    if (!expense) {
+        return;
+    }
+
     deleting.value = expense.uuid;
+
     deleteForm.delete(route('expenses.destroy', expense.uuid), {
         preserveScroll: true,
+        // Closed on success, not on click: a failed delete should leave the
+        // prompt up rather than vanish with the row still there.
+        onSuccess: () => {
+            confirming.value = null;
+        },
         onFinish: () => {
             deleting.value = null;
         },
@@ -285,7 +312,7 @@ const isEmpty = computed(() => props.days.length === 0);
                                     size="sm"
                                     class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
                                     :disabled="deleting === expense.uuid"
-                                    @click="destroy(expense)"
+                                    @click="confirmDestroy(expense)"
                                 >
                                     {{ __('Delete') }}
                                 </Button>
@@ -323,6 +350,25 @@ const isEmpty = computed(() => props.days.length === 0);
                 </div>
             </div>
         </div>
+
+        <ConfirmDialog
+            :open="confirming !== null"
+            :title="__('Delete this expense?')"
+            :description="
+                confirming
+                    ? __('&quot;:item&quot; (:price) will be removed. This cannot be undone.', {
+                          item: confirming.item,
+                          price: money.format(confirming.price),
+                      })
+                    : ''
+            "
+            :confirm-label="__('Delete')"
+            :cancel-label="__('Cancel')"
+            :processing="deleting !== null"
+            :processing-label="__('Deleting…')"
+            @update:open="confirming = $event ? confirming : null"
+            @confirm="destroy"
+        />
 
         <Dialog v-model:open="showDialog">
             <!-- Deliberately narrower than the max-w-5xl content column: this is

@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import BudgetProgress from '@/Components/BudgetProgress.vue';
+import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import { CARD } from '@/lib/appStyles';
 import CategoryBadge from '@/Components/CategoryBadge.vue';
 import { useNavigating } from '@/composables/useNavigating';
@@ -70,13 +71,34 @@ function submit() {
     });
 }
 
-function clearBudget(row) {
+// The budget awaiting confirmation, plus the label the prompt names. The
+// overall row has no category, so it needs a name of its own.
+const confirming = ref(null);
+const clearing = ref(false);
+
+function confirmClear(row, label) {
     if (!row.budget_uuid) {
         return;
     }
 
-    router.delete(route('budgets.destroy', row.budget_uuid), {
+    confirming.value = { row, label };
+}
+
+function clearBudget() {
+    if (!confirming.value) {
+        return;
+    }
+
+    clearing.value = true;
+
+    router.delete(route('budgets.destroy', confirming.value.row.budget_uuid), {
         preserveScroll: true,
+        onSuccess: () => {
+            confirming.value = null;
+        },
+        onFinish: () => {
+            clearing.value = false;
+        },
     });
 }
 </script>
@@ -134,7 +156,7 @@ function clearBudget(row) {
                                 variant="ghost"
                                 size="sm"
                                 class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
-                                @click="clearBudget(summary.overall)"
+                                @click="confirmClear(summary.overall, trans('Overall budget'))"
                             >
                                 {{ __('Clear') }}
                             </Button>
@@ -233,7 +255,7 @@ function clearBudget(row) {
                                         variant="ghost"
                                         size="sm"
                                         class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
-                                        @click="clearBudget(category)"
+                                        @click="confirmClear(category, category.name)"
                                     >
                                         {{ __('Clear') }}
                                     </Button>
@@ -278,6 +300,24 @@ function clearBudget(row) {
                 </div>
             </div>
         </div>
+
+        <ConfirmDialog
+            :open="confirming !== null"
+            :title="__('Clear this budget?')"
+            :description="
+                confirming
+                    ? __('The budget for &quot;:name&quot; will be removed for this month. Spending is not affected.', {
+                          name: confirming.label,
+                      })
+                    : ''
+            "
+            :confirm-label="__('Clear')"
+            :cancel-label="__('Cancel')"
+            :processing="clearing"
+            :processing-label="__('Clearing…')"
+            @update:open="confirming = $event ? confirming : null"
+            @confirm="clearBudget"
+        />
 
         <Dialog v-model:open="showDialog">
             <DialogContent class="sm:max-w-sm">

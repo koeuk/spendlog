@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\Locale;
 use App\Models\Category;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -18,7 +19,11 @@ class ExpenseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'item' => ['required', 'string', 'max:255'],
+            'item' => ['required', 'array'],
+            // English is the fallback locale, so it is the one that must exist —
+            // same rule as CategoryRequest::$name.
+            'item.en' => ['required', 'string', 'max:255'],
+            'item.km' => ['nullable', 'string', 'max:255'],
             'price' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
             'category_uuid' => ['required', 'uuid', 'exists:categories,uuid'],
             'spent_on' => ['required', 'date', 'before_or_equal:today'],
@@ -28,9 +33,18 @@ class ExpenseRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'spent_on.before_or_equal' => 'You cannot log an expense in the future.',
-            'category_uuid.required' => 'Please pick a category.',
-            'category_uuid.exists' => 'That category no longer exists.',
+            'item.en.required' => __('The English item is required.'),
+            'spent_on.before_or_equal' => __('You cannot log an expense in the future.'),
+            'category_uuid.required' => __('Please pick a category.'),
+            'category_uuid.exists' => __('That category no longer exists.'),
+        ];
+    }
+
+    public function attributes(): array
+    {
+        return [
+            'item.en' => __('English item'),
+            'item.km' => __('Khmer item'),
         ];
     }
 
@@ -46,6 +60,14 @@ class ExpenseRequest extends FormRequest
 
         $data['category_id'] = Category::where('uuid', $data['category_uuid'])->value('id');
         unset($data['category_uuid']);
+
+        // Drop empty locales so spatie stores only real translations and the
+        // fallback can kick in, rather than persisting "".
+        $data['item'] = array_filter(
+            $data['item'],
+            fn (?string $value, string $locale) => filled($value) && Locale::tryFrom($locale),
+            ARRAY_FILTER_USE_BOTH,
+        );
 
         return $data;
     }

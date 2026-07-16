@@ -6,6 +6,7 @@ import {
     getLocalTimeZone,
     today,
 } from '@internationalized/date';
+import LocaleTabs from '@/Components/LocaleTabs.vue';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
@@ -57,19 +58,30 @@ const maxDate = today(getLocalTimeZone());
 
 <template>
     <div class="grid gap-4">
-        <div>
-            <Label for="item">{{ __('Item') }}</Label>
-            <Input
-                id="item"
-                v-model="form.item"
-                class="mt-1"
-                autocomplete="off"
-                placeholder="e.g. Coffee"
-            />
-            <p v-if="form.errors.item" class="mt-1 text-sm text-red-600">
-                {{ form.errors.item }}
-            </p>
-        </div>
+        <LocaleTabs
+            :form="form"
+            field="item"
+            :placeholders="{ en: 'e.g. Coffee', km: 'ឧ. កាហ្វេ' }"
+        >
+            <template #label>
+                <Label for="item_en">{{ __('Item') }}</Label>
+            </template>
+
+            <template #default="{ locale, placeholder, isRequired }">
+                <Input
+                    :id="`item_${locale}`"
+                    v-model="form.item[locale]"
+                    autocomplete="off"
+                    :placeholder="placeholder"
+                    :required="isRequired"
+                    :aria-invalid="!!form.errors[`item.${locale}`]"
+                />
+            </template>
+        </LocaleTabs>
+
+        <p v-if="form.errors.item" class="-mt-2 text-sm text-red-600 dark:text-red-400">
+            {{ form.errors.item }}
+        </p>
 
         <!--
             Three across once there is room: the dialog is as wide as the list

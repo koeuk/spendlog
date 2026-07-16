@@ -11,7 +11,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
-class BrandingColorsTest extends TestCase
+class ColorsTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -37,7 +37,6 @@ class BrandingColorsTest extends TestCase
     private function payload(array $overrides = []): array
     {
         return array_merge([
-            'app_name' => 'MoneyLog',
             'button_color' => '#4b9d5f',
             'body_color' => BodyColor::Cream->value,
         ], $overrides);
@@ -48,8 +47,8 @@ class BrandingColorsTest extends TestCase
         $user = User::factory()->create();
         $user->assignRole(RoleName::User->value);
 
-        $this->actingAs($user)->get('/settings/branding')->assertForbidden();
-        $this->actingAs($this->admin())->get('/settings/branding')->assertOk();
+        $this->actingAs($user)->get('/settings/colors')->assertForbidden();
+        $this->actingAs($this->admin())->get('/settings/colors')->assertOk();
     }
 
     public function test_a_non_admin_cannot_change_the_colours(): void
@@ -58,7 +57,7 @@ class BrandingColorsTest extends TestCase
         $user->assignRole(RoleName::User->value);
 
         $this->actingAs($user)
-            ->post('/settings/branding', $this->payload(['button_color' => '#ff0000']))
+            ->post('/settings/colors', $this->payload(['button_color' => '#ff0000']))
             ->assertForbidden();
 
         $this->assertSame('#171717', AppSetting::current()->button_color);
@@ -66,12 +65,12 @@ class BrandingColorsTest extends TestCase
 
     public function test_the_page_ships_the_current_colours_and_the_five_presets(): void
     {
-        $response = $this->actingAs($this->admin())->get('/settings/branding');
+        $response = $this->actingAs($this->admin())->get('/settings/colors');
 
         $response->assertOk()
             ->assertInertia(fn ($page) => $page
-                ->has('branding.button_color')
-                ->has('branding.body_color')
+                ->has('colors.button_color')
+                ->has('colors.body_color')
                 ->has('body_presets', 5)
                 ->where('body_presets.0.value', BodyColor::White->value)
             );
@@ -80,7 +79,7 @@ class BrandingColorsTest extends TestCase
     public function test_an_admin_can_set_both_colours(): void
     {
         $this->actingAs($this->admin())
-            ->post('/settings/branding', $this->payload())
+            ->post('/settings/colors', $this->payload())
             ->assertRedirect();
 
         $settings = AppSetting::current();
@@ -93,7 +92,7 @@ class BrandingColorsTest extends TestCase
     {
         // "Flexible" is the point: the five presets are a shortcut, not a fence.
         $this->actingAs($this->admin())
-            ->post('/settings/branding', $this->payload(['body_color' => '#123456']))
+            ->post('/settings/colors', $this->payload(['body_color' => '#123456']))
             ->assertRedirect();
 
         $this->assertSame('#123456', AppSetting::current()->body_color);
@@ -102,7 +101,7 @@ class BrandingColorsTest extends TestCase
     public function test_hex_is_normalised_to_lower_case(): void
     {
         $this->actingAs($this->admin())
-            ->post('/settings/branding', $this->payload(['button_color' => '#4B9D5F']))
+            ->post('/settings/colors', $this->payload(['button_color' => '#4B9D5F']))
             ->assertRedirect();
 
         // One canonical form in the column, so comparing against a preset stays
@@ -128,7 +127,7 @@ class BrandingColorsTest extends TestCase
 
         foreach ($bad as $value) {
             $this->actingAs($this->admin())
-                ->post('/settings/branding', $this->payload(['button_color' => $value]))
+                ->post('/settings/colors', $this->payload(['button_color' => $value]))
                 ->assertSessionHasErrors('button_color');
         }
 
@@ -142,7 +141,7 @@ class BrandingColorsTest extends TestCase
         $this->assertSame('#171717', AppSetting::current()->button_color);
 
         $this->actingAs($this->admin())
-            ->post('/settings/branding', $this->payload(['button_color' => '#0000ff']))
+            ->post('/settings/colors', $this->payload(['button_color' => '#0000ff']))
             ->assertRedirect();
 
         $this->assertSame('#0000ff', AppSetting::current()->button_color);
@@ -155,7 +154,7 @@ class BrandingColorsTest extends TestCase
     public function test_css_variables_are_bare_hsl_triplets_with_a_computed_label(): void
     {
         $this->actingAs($this->admin())
-            ->post('/settings/branding', $this->payload([
+            ->post('/settings/colors', $this->payload([
                 'button_color' => '#ffffff',
                 'body_color' => '#faf8f4',
             ]));
@@ -180,7 +179,7 @@ class BrandingColorsTest extends TestCase
     public function test_the_rendered_page_applies_the_colours_before_first_paint(): void
     {
         $this->actingAs($this->admin())
-            ->post('/settings/branding', $this->payload(['button_color' => '#0000ff']));
+            ->post('/settings/colors', $this->payload(['button_color' => '#0000ff']));
 
         $html = $this->actingAs($this->admin())->get('/dashboard')->getContent();
 
