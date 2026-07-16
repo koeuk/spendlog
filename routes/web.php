@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Route;
 
 // SpendLog has no public landing page — the root is just a doorway to the app.
 Route::get('/', function () {
-    return redirect()->route(Auth::check() ? 'dashboard' : 'login');
+    return redirect()->route(Auth::check() ? Auth::user()->homeRoute() : 'login');
 })->name('home');
 
 // Outside the auth group so the language can be switched from the login screen.

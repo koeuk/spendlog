@@ -14,13 +14,6 @@ import { localized, trans } from '@/lib/i18n';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
 import { Button } from '@/Components/ui/button';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/Components/ui/select';
-import {
     Dialog,
     DialogContent,
     DialogFooter,
@@ -39,15 +32,6 @@ const props = defineProps({
 });
 
 const viewingAll = computed(() => props.scope === 'all');
-
-/*
- * reka-ui rejects an empty-string SelectItem value — it reserves '' for "nothing
- * selected", so an <SelectItem value=""> throws. The filter's real "no filter"
- * value IS the empty string, so it travels under a sentinel and is unwrapped on
- * the way out. The category filter is our own SearchableSelect and needs none of
- * this: '' is just a value there.
- */
-const ALL_USERS = '__all__';
 
 const { navigating } = useNavigating();
 
@@ -111,6 +95,11 @@ function applyCategoryFilter(uuid) {
 
 // Admin-only: narrow the everyone view to a single person.
 const userFilter = ref(props.filters?.filter?.user ?? '');
+
+const userOptions = computed(() => [
+    { value: '', label: trans('All users') },
+    ...props.users.map((u) => ({ value: u.uuid, label: u.name })),
+]);
 
 function applyUserFilter(uuid) {
     userFilter.value = uuid;
@@ -288,24 +277,17 @@ const filtered = computed(() =>
                         ignores the app's theme entirely — a white system menu on a
                         dark page. This one is ours, so it inherits the glass.
                     -->
-                    <Select
+                    <SearchableSelect
                         v-if="can.view_all && viewingAll"
-                        :model-value="userFilter || ALL_USERS"
-                        @update:model-value="applyUserFilter($event === ALL_USERS ? '' : $event)"
-                    >
-                        <SelectTrigger
-                            class="h-8 w-44 rounded-full border-neutral-200 bg-white text-xs font-medium shadow-none dark:border-neutral-700 dark:bg-neutral-800"
-                            :aria-label="__('Filter by user')"
-                        >
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem :value="ALL_USERS">{{ __('All users') }}</SelectItem>
-                            <SelectItem v-for="u in users" :key="u.uuid" :value="u.uuid">
-                                {{ u.name }}
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
+                        :options="userOptions"
+                        :model-value="userFilter"
+                        :label="__('Filter by user')"
+                        :search-placeholder="__('Search people…')"
+                        :empty-text="__('No one found.')"
+                        content-class="w-44"
+                        trigger-class="h-8 w-44 rounded-full border border-neutral-200 bg-white px-3 text-xs font-medium text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200"
+                        @update:model-value="applyUserFilter"
+                    />
 
                     <Button size="sm" @click="openCreate">{{ __('Add expense') }}</Button>
                 </div>

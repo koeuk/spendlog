@@ -98,8 +98,11 @@ class AuthController extends Controller
             ]);
 
             // Assigned explicitly — never from request input, or anyone could
-            // register themselves an admin.
-            $user->assignRole(RoleName::User->value);
+            // register themselves an admin. applyRole and not assignRole: the
+            // role carries the permissions, and permissions are the only thing
+            // the policies read, so assignRole alone hands back a token that
+            // 403s on everything.
+            $user->applyRole(RoleName::User);
 
             return $user;
         });

@@ -93,8 +93,17 @@ export function useBrandColors(isDark) {
     watch(
         [() => page.props.branding?.css, isDark],
         ([css, dark]) => applyBrandColors(css, dark),
-        // Not immediate: blade has already applied the right values before this
-        // ever runs, and re-applying on mount would only risk a wrong frame.
-        { deep: true },
+        /*
+         * Immediate, and it has to be. The shell this runs from is remounted on
+         * every Inertia visit, so the watcher is destroyed and rebuilt with a
+         * fresh baseline each navigation — it can never fire for a change made
+         * between page loads, which is the only thing it exists to catch.
+         * Applying on mount is what makes a saved colour reach the DOM at all.
+         *
+         * Safe on a full load, where blade has already written these values:
+         * the rules here mirror it exactly, so this re-applies what is on the
+         * element already. Idempotent, and no frame in between.
+         */
+        { deep: true, immediate: true },
     );
 }

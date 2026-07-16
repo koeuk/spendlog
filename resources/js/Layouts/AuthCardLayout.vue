@@ -1,5 +1,6 @@
 <script setup>
-import { Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import { Link, usePage } from '@inertiajs/vue3';
 import LocaleSwitcher from '@/Components/LocaleSwitcher.vue';
 import ThemeToggle from '@/Components/ThemeToggle.vue';
 
@@ -11,10 +12,26 @@ import ThemeToggle from '@/Components/ThemeToggle.vue';
 defineProps({
     heading: { type: String, required: true },
 });
+
+const page = usePage();
+
+// Shared from HandleInertiaRequests, so these pages have it without a prop —
+// same source AuthenticatedLayout reads. Hardcoding the name here meant an app
+// called MoneyLog greeted people with "SpendLog" on exactly the screens they
+// reach when they are already confused.
+const branding = computed(
+    () => page.props.branding ?? { name: 'SpendLog', logo: null },
+);
+const brandInitial = computed(() => (branding.value.name || 'S').charAt(0).toUpperCase());
 </script>
 
 <template>
-    <div class="relative grid min-h-screen place-items-center bg-white px-4 py-10 font-display text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
+    <!-- bg-background/text-foreground, not bg-white/text-neutral-900: this shell
+         covers the whole viewport, so a literal white paints straight over the
+         admin's body colour and the setting silently does nothing here. The
+         tokens are already theme-aware, so the dark: overrides are not needed.
+         Same reasoning as APP_PAGE in lib/appStyles.js. -->
+    <div class="relative grid min-h-screen place-items-center bg-background px-4 py-10 font-display text-foreground">
         <div class="absolute right-4 top-4 flex items-center gap-2">
             <LocaleSwitcher />
             <ThemeToggle />
@@ -26,10 +43,19 @@ defineProps({
                 class="anim inline-flex items-center gap-2 text-sm font-bold tracking-tight"
                 style="--d: 0ms"
             >
-                <span class="bg-primary text-primary-foreground grid size-7 place-items-center rounded-lg text-[13px] font-extrabold">
-                    S
+                <img
+                    v-if="branding.logo"
+                    :src="branding.logo"
+                    :alt="branding.name"
+                    class="size-7 shrink-0 rounded-lg object-contain"
+                />
+                <span
+                    v-else
+                    class="bg-primary text-primary-foreground grid size-7 place-items-center rounded-lg text-[13px] font-extrabold"
+                >
+                    {{ brandInitial }}
                 </span>
-                SpendLog
+                {{ branding.name }}
             </Link>
 
             <div

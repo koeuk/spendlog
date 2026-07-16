@@ -57,13 +57,21 @@ useFlashToasts();
 // applies them on a full document load.
 useBrandColors(isDark);
 
-const links = [
-    { label: 'Dashboard', route: 'dashboard', active: 'dashboard' },
-    { label: 'Expenses', route: 'expenses.index', active: 'expenses.*' },
-    { label: 'Budgets', route: 'budgets.index', active: 'budgets.*' },
-    { label: 'Reports', route: 'reports.index', active: 'reports.*' },
-    { label: 'Categories', route: 'categories.index', active: 'categories.*' },
-];
+// Mirrors the policies, as SettingsLayout does. Every one of these pages
+// authorizes its own view permission server-side, so an unfiltered link is not
+// a shortcut — it is a link to a 403.
+const granted = computed(() => page.props.auth?.permissions ?? []);
+const can = (permission) => granted.value.includes(permission);
+
+const links = computed(() =>
+    [
+        { label: 'Dashboard', route: 'dashboard', active: 'dashboard', permission: 'dashboard.view' },
+        { label: 'Expenses', route: 'expenses.index', active: 'expenses.*', permission: 'expenses.view' },
+        { label: 'Budgets', route: 'budgets.index', active: 'budgets.*', permission: 'budgets.view' },
+        { label: 'Reports', route: 'reports.index', active: 'reports.*', permission: 'reports.view' },
+        { label: 'Categories', route: 'categories.index', active: 'categories.*', permission: 'categories.view' },
+    ].filter((link) => can(link.permission)),
+);
 
 /*
  * The sliding nav pill.

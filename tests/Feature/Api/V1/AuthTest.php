@@ -2,8 +2,10 @@
 
 namespace Tests\Feature\Api\V1;
 
+use App\Enums\Permission;
 use App\Enums\RoleName;
 use App\Enums\TokenAbility;
+use App\Models\Category;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -170,6 +172,36 @@ class AuthTest extends TestCase
 
         $this->assertTrue($user->hasRole(RoleName::User->value));
         $this->assertFalse($user->isAdmin());
+
+        // The role is not the point — the permissions it carries are. Asserting
+        // hasRole() alone passed happily while register granted no permissions
+        // at all, which is how the API shipped issuing tokens that 403'd on
+        // every request.
+        $this->assertEqualsCanonicalizing(
+            Permission::forUser(),
+            $user->permissions->pluck('name')->all(),
+        );
+    }
+
+    /** A token from register has to actually work, not just exist. */
+    public function test_the_token_from_register_can_use_the_api(): void
+    {
+        $category = Category::factory()->create();
+
+        $token = $this->postJson('/api/v1/register', [
+            'name' => 'Sam',
+            'email' => 'sam@example.com',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+            'device_name' => 'phone',
+        ])->json('token');
+
+        $this->withToken($token)->postJson('/api/v1/expenses', [
+            'item' => ['en' => 'Coffee'],
+            'price' => 4.5,
+            'category_uuid' => $category->uuid,
+            'spent_on' => now()->toDateString(),
+        ])->assertCreated();
     }
 
     public function test_register_cannot_self_assign_a_role(): void

@@ -237,13 +237,20 @@ class ReportController extends Controller
         // the 3rd would report a daily average three times lower than reality.
         $now = CarbonImmutable::now();
         $last = $end->gt($now) ? $now : $end;
-        $days = max($start->diffInDays($last) + 1, 1);
+
+        // Count whole calendar days. $end carries a 23:59:59.999999 time, so the
+        // raw float diff already spans the final day — adding one to it would
+        // bill a day that never elapsed and report the average ~12% low.
+        $days = max($start->startOfDay()->diffInDays($last->startOfDay()) + 1, 1);
 
         // All time has nothing before it, so there is no comparison to make.
+        // Each anchor is normalised before stepping back: subMonth() from the
+        // 31st overflows forward into the current month, which would compare the
+        // period being reported against itself.
         $previousAnchor = match ($granularity) {
-            TrendGranularity::Week => $anchor->subWeek(),
-            TrendGranularity::Month => $anchor->subMonth(),
-            TrendGranularity::Year => $anchor->subYear(),
+            TrendGranularity::Week => $anchor->startOfWeek()->subWeek(),
+            TrendGranularity::Month => $anchor->startOfMonth()->subMonth(),
+            TrendGranularity::Year => $anchor->startOfYear()->subYear(),
             TrendGranularity::All => null,
         };
 
