@@ -2,6 +2,8 @@
 import { ref } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import CategoryBadge from '@/Components/CategoryBadge.vue';
+import CategoryStylePicker from '@/Components/CategoryStylePicker.vue';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
@@ -21,12 +23,6 @@ import {
     TableHeader,
     TableRow,
 } from '@/Components/ui/table';
-import {
-    CATEGORY_COLOR_NAMES,
-    CATEGORY_ICON_NAMES,
-    categoryColor,
-    categoryIcon,
-} from '@/lib/categoryStyles';
 
 const props = defineProps({
     categories: { type: Array, required: true },

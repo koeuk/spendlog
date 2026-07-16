@@ -18,7 +18,7 @@
 - [x] Create CategoryController — index, store, update, destroy
 - [x] Implement Policy: only admin can create/edit/delete (verified: non-admin → 403)
 - [x] Build simple page: Pages/Categories/Index.vue — list + create/edit modal (Dialog, Input, Button)
-- [ ] Category color + icon picker in the modal — enums/migration/model done, **UI pending**
+- [x] Category color + icon picker in the modal (10 colours, 16 lucide icons; verified rendering)
 
 ## Phase 4: Expenses CRUD (Core Feature) ✅
 - [x] Create ExpenseController — index (grouped by date), store, update, destroy
@@ -26,7 +26,7 @@
 - [x] Build Pages/Expenses/Index.vue — daily-grouped list
 - [x] Create ExpenseForm.vue component — item, price, category dropdown, date picker (Select, Popover+Calendar)
 - [x] Implement quick-add flow: modal, not a separate page
-- [ ] Show category color/icon on expense rows
+- [x] Show category color/icon on expense rows + in the category dropdown
 
 ## Phase 5: Budgets
 - [ ] Create BudgetController — set/update monthly budget (overall or per category)
