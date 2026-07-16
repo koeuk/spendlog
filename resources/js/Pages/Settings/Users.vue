@@ -4,6 +4,7 @@ import { Head, router, useForm } from '@inertiajs/vue3';
 import { Ban, CircleCheck, KeyRound, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-vue-next';
 import SettingsLayout from '@/Layouts/SettingsLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
+import Pagination from '@/Components/Pagination.vue';
 import UserPermissionsSheet from '@/Components/UserPermissionsSheet.vue';
 import { Button } from '@/Components/ui/button';
 import {
@@ -35,6 +36,7 @@ import { trans } from '@/lib/i18n';
 
 const props = defineProps({
     users: { type: Array, required: true },
+    pagination: { type: Object, required: true },
     roles: { type: Array, required: true },
     statuses: { type: Array, required: true },
     permission_groups: { type: Object, required: true },
@@ -259,6 +261,8 @@ const passwordHint = computed(() =>
                     </tr>
                 </tbody>
             </table>
+
+            <Pagination :meta="pagination" />
         </div>
 
         <UserPermissionsSheet

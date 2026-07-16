@@ -52,7 +52,7 @@ enum Permission: string
             self::ExpensesManageAll => __('Not just their own.'),
             self::BudgetsManageAll => __('Not just their own.'),
             self::UsersView => __('See the user list in settings.'),
-            self::UsersManage => __('Includes assigning roles and permissions.'),
+            self::UsersManage => __('Includes assigning roles. Granting permissions stays admin-only.'),
             self::SettingsBranding => __('The app name, logo, favicon and colours.'),
         };
     }

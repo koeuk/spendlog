@@ -147,18 +147,33 @@ class UserController extends Controller
         }
     }
 
-    /** Suspend/activate on its own, so the common case is one click. */
-    public function toggleStatus(Request $request, User $user): RedirectResponse
+    /**
+     * Set the status explicitly.
+     *
+     * Not a toggle any more: with four statuses there is no single "other" to
+     * flip to, and a toggle would silently pick one.
+     */
+    public function changeStatus(Request $request, User $user): RedirectResponse
     {
         Gate::authorize('suspend', $user);
+
+        $validated = $request->validate([
+            'status' => ['required', Rule::enum(UserStatus::class)],
+        ]);
+
+        $status = UserStatus::from($validated['status']);
+
+        if ($status === $user->status) {
+            return back();
+        }
 
         DB::beginTransaction();
 
         try {
-            $user->status = $user->isSuspended() ? UserStatus::Active : UserStatus::Suspended;
+            $user->status = $status;
             $user->save();
 
-            if ($user->isSuspended()) {
+            if ($status->revokesAccess()) {
                 // The web session dies via EnsureUserIsActive on their next
                 // request; API tokens have no such checkpoint, so they go now.
                 $user->tokens()->delete();
@@ -166,11 +181,10 @@ class UserController extends Controller
 
             DB::commit();
 
-            return back()->withSuccess(
-                $user->isSuspended()
-                    ? __(':name has been suspended.', ['name' => $user->name])
-                    : __(':name is active again.', ['name' => $user->name]),
-            );
+            return back()->withSuccess(__(':name is now :status.', [
+                'name' => $user->name,
+                'status' => mb_strtolower($status->label()),
+            ]));
         } catch (\Exception $e) {
             DB::rollback();
 
