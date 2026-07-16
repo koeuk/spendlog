@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Enums\Permission;
 use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -34,6 +35,18 @@ class AppServiceProvider extends ServiceProvider
         // payload shape and carries a Try It Out button that fires real
         // requests — a map worth not handing out.
         Gate::define('viewApiDocs', fn (?User $user) => (bool) $user?->isAdmin());
+
+        /*
+         * Page- and self-service gates.
+         *
+         * These have no model to hang a policy off — they guard a whole page, or
+         * an action on your own account — so they are plain abilities mapping
+         * one-to-one onto a permission.
+         */
+        Gate::define('viewDashboard', fn (User $user) => $user->hasPermissionTo(Permission::DashboardView->value));
+        Gate::define('viewReports', fn (User $user) => $user->hasPermissionTo(Permission::ReportsView->value));
+        Gate::define('updateProfile', fn (User $user) => $user->hasPermissionTo(Permission::ProfileUpdate->value));
+        Gate::define('updatePassword', fn (User $user) => $user->hasPermissionTo(Permission::PasswordUpdate->value));
     }
 
     /**

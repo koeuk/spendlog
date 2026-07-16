@@ -53,6 +53,44 @@ class CategoryTest extends TestCase
             ->assertJsonPath('data.0.expenses_count', 0);
     }
 
+    public function test_filtering_by_name_matches_the_value_not_the_locale_key(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole(RoleName::User->value);
+        Category::factory()->create(['name' => ['en' => 'Food', 'km' => 'អាហារ']]);
+        Category::factory()->create(['name' => ['en' => 'Transport', 'km' => 'ដឹកជញ្ជូន']]);
+
+        Sanctum::actingAs($user, [TokenAbility::CategoriesRead->value]);
+
+        // 'en' is a key in every row's JSON, so a naive LIKE over the raw column
+        // matched all of them. It is not part of any name, so it matches none.
+        $this->getJson('/api/v1/categories?filter[name]=en')
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+
+        $this->getJson('/api/v1/categories?filter[name]=Foo')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.name', 'Food');
+    }
+
+    public function test_filtering_by_name_finds_a_khmer_value_while_the_api_is_in_english(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole(RoleName::User->value);
+        Category::factory()->create(['name' => ['en' => 'Food', 'km' => 'អាហារ']]);
+        Category::factory()->create(['name' => ['en' => 'Transport', 'km' => 'ដឹកជញ្ជូន']]);
+
+        Sanctum::actingAs($user, [TokenAbility::CategoriesRead->value]);
+
+        // Searching every locale, not just the active one: the caller should not
+        // have to know which language a name was typed in.
+        $this->getJson('/api/v1/categories?filter[name]=អាហារ')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.name', 'Food');
+    }
+
     /**
      * Creating is open to everyone by design (see CategoryPolicy::create) — a
      * category gets added mid-flow while logging an expense, and gating that on

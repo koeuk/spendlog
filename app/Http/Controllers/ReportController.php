@@ -12,6 +12,7 @@ use App\Services\SpendingTrend;
 use App\Support\Concerns\PaginatesLists;
 use Carbon\CarbonImmutable;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -44,6 +45,8 @@ class ReportController extends Controller
 
     public function index(Request $request): Response
     {
+        Gate::authorize('viewReports');
+
         $user = $request->user();
 
         // A junk ?period= falls back rather than 500s — it is a query string.

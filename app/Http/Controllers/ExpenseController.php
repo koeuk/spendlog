@@ -24,6 +24,8 @@ class ExpenseController extends Controller
 
     public function index(Request $request): Response
     {
+        Gate::authorize('viewAny', Expense::class);
+
         // The permission, not the role: granting expenses.view_all to a
         // non-admin has to actually open the Everyone view.
         $isAdmin = $request->user()->hasPermissionTo(Permission::ExpensesViewAll->value);
