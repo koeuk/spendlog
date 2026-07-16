@@ -20,12 +20,20 @@ export const APP_PAGE =
  * Frosted glass is only frosted if something shows through it — on a flat white
  * page a blurred card is indistinguishable from an opaque one. So this pairs
  * with the ambient wash rendered by the layout: translucent fill + backdrop
- * blur to bend it, a hairline ring for the edge, and an inset top highlight for
- * the lit rim that reads as thickness.
+ * blur to bend it.
+ *
+ * The edge does the work at rest, not a shadow: a page of stacked cards each
+ * casting its own drop shadow reads as clutter, where one hairline border per
+ * card stays quiet. Depth is spent on hover instead, where it means something —
+ * the card lifts to say it is the one under the pointer.
+ *
+ * Only `shadow` transitions. Animating the border or a transform would make a
+ * long list shimmer as the pointer crosses it, and `transition-all` here would
+ * also animate the backdrop filter, which is expensive on every card at once.
  */
 export const CARD =
-    'rounded-[28px] border border-white/60 bg-white/60 shadow-[0_8px_32px_-8px_rgba(15,23,42,0.10),inset_0_1px_0_0_rgba(255,255,255,0.75)] backdrop-blur-xl backdrop-saturate-150 ' +
-    'dark:border-white/10 dark:bg-neutral-900/50 dark:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.6),inset_0_1px_0_0_rgba(255,255,255,0.06)]';
+    'rounded-[28px] border border-neutral-200/80 bg-white/60 backdrop-blur-xl backdrop-saturate-150 transition-shadow duration-200 ease-out hover:shadow-md ' +
+    'dark:border-white/10 dark:bg-neutral-900/50';
 
 /** The tinted glass — same green wash as the login artwork panel, made liquid. */
 export const CARD_TINT =
@@ -39,25 +47,6 @@ export const CARD_TINT =
  */
 export const CARD_SOLID =
     'rounded-[28px] border border-neutral-200/70 bg-white dark:border-neutral-800 dark:bg-neutral-900';
-
-/**
- * The flat list surface — expense days, budget rows, the categories table.
- *
- * Deliberately not CARD: those are the Dashboard's glass panels, which earn
- * their depth by sitting over the ambient wash. A long list of glass cards
- * would be noise, so these define their edge with a hairline border and carry
- * no resting shadow at all.
- */
-export const PANEL =
-    'rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900';
-
-/**
- * PANEL for surfaces you can act on, lifting on hover to say so.
- *
- * Only shadow transitions — animating the border colour or transform here would
- * make a list of these shimmer as the pointer crosses it.
- */
-export const PANEL_HOVER = `${PANEL} transition-shadow duration-200 ease-out hover:shadow-md`;
 
 /** Muted body copy. Matches AUTH_MUTED. */
 export const MUTED = 'text-neutral-500 dark:text-neutral-400';

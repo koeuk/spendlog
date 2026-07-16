@@ -108,8 +108,13 @@ function destroy(category) {
             <!-- Width and gutters come from the layout's one container, so the
                  column never resizes when navigating between pages. -->
             <div>
-                <div :class="[CARD, 'overflow-hidden']">
-                    <Table>
+                <!--
+                    The card is 28px-rounded, so a flush table crowds its corners.
+                    Padding here plus roomier cells keeps the content clear of the
+                    curve without the rows losing their full-width dividers.
+                -->
+                <div :class="[CARD, 'overflow-hidden p-2 sm:p-3']">
+                    <Table class="[&_td]:px-3 [&_th]:px-3 [&_tr:last-child]:border-0">
                         <TableHeader>
                             <TableRow>
                                 <TableHead>{{ __('Name') }}</TableHead>

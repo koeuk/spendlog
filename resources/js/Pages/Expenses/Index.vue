@@ -206,7 +206,7 @@ const isEmpty = computed(() => props.days.length === 0);
 
                 <div
                     v-else-if="isEmpty"
-                    class="rounded-lg bg-white dark:bg-neutral-900 p-10 text-center shadow-sm"
+                    :class="[CARD, 'p-10 text-center']"
                 >
                     <p class="text-sm text-gray-600 dark:text-neutral-400">
                         {{ __('No expenses yet, add your first one.') }}
