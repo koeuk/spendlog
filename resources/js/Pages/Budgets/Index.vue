@@ -110,7 +110,9 @@ function clearBudget(row) {
         </template>
 
         <div class="py-8">
-            <div class="mx-auto max-w-5xl space-y-4 px-4 sm:px-6 lg:px-8">
+            <!-- Width and gutters come from the layout's one container, so the
+                 column never resizes when navigating between pages. -->
+            <div class="space-y-4">
                 <!-- Overall -->
                 <div class="rounded-lg bg-white p-5 shadow-sm dark:bg-neutral-900">
                     <div class="flex items-start justify-between gap-4">

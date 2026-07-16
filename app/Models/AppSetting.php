@@ -45,13 +45,25 @@ class AppSetting extends Model
 
     /**
      * The one row, creating it on first use so a fresh install has no empty state.
+     *
+     * Only the raw attributes go in the cache, never the model itself. Laravel's
+     * `cache.serializable_classes` defaults to false, so the store unserializes
+     * with `allowed_classes: false` — a cached object comes back as
+     * __PHP_Incomplete_Class, which this method's return type then turns into a
+     * TypeError on every request. Caching scalars keeps that protection intact.
      */
     public static function current(): self
     {
-        return Cache::rememberForever(
+        $attributes = Cache::rememberForever(
             self::CACHE_KEY,
-            fn () => static::query()->firstOrCreate([], ['app_name' => config('app.name', 'SpendLog')]),
+            fn () => static::query()
+                ->firstOrCreate([], ['app_name' => config('app.name', 'SpendLog')])
+                ->getRawOriginal(),
         );
+
+        // newFromBuilder, not new: this row exists, so it must not be marked
+        // dirty or re-inserted on a later save.
+        return (new static)->newFromBuilder($attributes);
     }
 
     /** Null when unset — the frontend falls back to the built-in wordmark. */

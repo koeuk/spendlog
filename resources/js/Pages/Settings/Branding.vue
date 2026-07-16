@@ -144,7 +144,7 @@ function submit() {
                 />
 
                 <p class="mt-2 text-xs text-gray-500 dark:text-neutral-400">
-                    {{ __('PNG, JPG or WebP. Up to 1 MB, max 1024×1024.') }}
+                    {{ __('PNG, JPG or WebP, up to 2 MB. Any size — it is scaled to fit.') }}
                 </p>
                 <p v-if="form.errors.logo" class="mt-1 text-sm text-red-600 dark:text-red-400">
                     {{ form.errors.logo }}
@@ -189,7 +189,7 @@ function submit() {
                 </div>
 
                 <p class="mt-2 text-xs text-gray-500 dark:text-neutral-400">
-                    {{ __('Shown in the browser tab. PNG or ICO, up to 256 KB. Square works best.') }}
+                    {{ __('Shown in the browser tab. PNG, ICO, JPG or WebP, up to 1 MB. Square works best.') }}
                 </p>
                 <p v-if="form.errors.favicon" class="mt-1 text-sm text-red-600 dark:text-red-400">
                     {{ form.errors.favicon }}

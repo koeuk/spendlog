@@ -104,7 +104,9 @@ function destroy(category) {
         </template>
 
         <div class="py-8">
-            <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+            <!-- Width and gutters come from the layout's one container, so the
+                 column never resizes when navigating between pages. -->
+            <div>
                 <div class="overflow-hidden rounded-lg bg-white shadow-sm dark:bg-neutral-900">
                     <Table>
                         <TableHeader>
