@@ -6,6 +6,7 @@ import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import ExpenseForm from '@/Components/ExpenseForm.vue';
 import { CARD } from '@/lib/appStyles';
 import ExpenseListSkeleton from '@/Components/ExpenseListSkeleton.vue';
+import Pagination from '@/Components/Pagination.vue';
 import { useNavigating } from '@/composables/useNavigating';
 import { trans } from '@/lib/i18n';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
@@ -351,32 +352,10 @@ const isEmpty = computed(() => props.days.length === 0);
                     </ul>
                 </div>
 
-                <div
-                    v-if="pagination.last_page > 1"
-                    class="flex items-center justify-between pt-2"
-                >
-                    <Link
-                        v-if="pagination.prev_page_url"
-                        :href="pagination.prev_page_url"
-                        class="text-sm text-gray-600 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-neutral-100"
-                    >
-                        &larr; {{ __('Newer') }}
-                    </Link>
-                    <span v-else />
-
-                    <span class="text-xs text-gray-500 dark:text-neutral-400">
-                        Page {{ pagination.current_page }} of
-                        {{ pagination.last_page }}
-                    </span>
-
-                    <Link
-                        v-if="pagination.next_page_url"
-                        :href="pagination.next_page_url"
-                        class="text-sm text-gray-600 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-neutral-100"
-                    >
-                        {{ __('Older') }} &rarr;
-                    </Link>
-                    <span v-else />
+                <!-- Its own card, so the pager sits on a surface like the day
+                     groups above it rather than floating on the page. -->
+                <div v-if="!navigating" :class="[CARD, 'overflow-hidden']">
+                    <Pagination :meta="pagination" />
                 </div>
             </div>
         </div>

@@ -9,6 +9,7 @@ use App\Models\Category;
 use App\Models\Expense;
 use App\Models\User;
 use App\Services\SpendingTrend;
+use App\Support\Concerns\PaginatesLists;
 use Carbon\CarbonImmutable;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -27,12 +28,7 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
  */
 class ReportController extends Controller
 {
-    /**
-     * The page sizes the picker offers. An allow-list, not a max: per_page goes
-     * straight into a LIMIT, and ?per_page=100000 is a cheap way to make the
-     * server build a hundred thousand rows.
-     */
-    private const PER_PAGE = [20, 50, 100, 150, 200];
+    use PaginatesLists;
 
     /**
      * Hex twins of the Tailwind classes in categoryStyles.js — the PDF has no
@@ -153,13 +149,6 @@ class ReportController extends Controller
      *
      * @return array<string, mixed>
      */
-    private function perPage(Request $request): int
-    {
-        $perPage = (int) $request->query('per_page', self::PER_PAGE[0]);
-
-        return in_array($perPage, self::PER_PAGE, true) ? $perPage : self::PER_PAGE[0];
-    }
-
     private function expenses(User $user, CarbonImmutable $start, CarbonImmutable $end, int $perPage): array
     {
         $paginator = Expense::query()
@@ -172,6 +161,7 @@ class ReportController extends Controller
             ->withQueryString();
 
         return [
+            ...$this->paginationMeta($paginator),
             'data' => collect($paginator->items())
                 ->map(fn (Expense $expense) => [
                     'uuid' => $expense->uuid,
@@ -184,15 +174,6 @@ class ReportController extends Controller
                     'icon' => $expense->category->icon?->value,
                 ])
                 ->all(),
-            'current_page' => $paginator->currentPage(),
-            'last_page' => $paginator->lastPage(),
-            'total' => $paginator->total(),
-            'from' => $paginator->firstItem(),
-            'to' => $paginator->lastItem(),
-            'per_page' => $paginator->perPage(),
-            'per_page_options' => self::PER_PAGE,
-            'prev_page_url' => $paginator->previousPageUrl(),
-            'next_page_url' => $paginator->nextPageUrl(),
         ];
     }
 

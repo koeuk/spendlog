@@ -4,6 +4,7 @@ import { Head, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import SpendingTrendChart from '@/Components/SpendingTrendChart.vue';
 import PeriodPicker from '@/Components/PeriodPicker.vue';
+import Pagination from '@/Components/Pagination.vue';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
 import { ACTIVE, CARD, CARD_TINT, EYEBROW, FIGURE, MUTED } from '@/lib/appStyles';
 import {
@@ -72,44 +73,6 @@ const isEmpty = computed(() => props.breakdown.length === 0);
  * Plain links, not fetch: the browser's own download handling is what turns the
  * response into a file, and it carries the session cookie for free.
  */
-/**
- * Changing the page size returns to page 1 — page 7 of 20-per-page is not page 7
- * of 200-per-page, and landing past the end would show an empty list.
- */
-function setPerPage(size) {
-    router.get(
-        route('reports.index'),
-        {
-            period: props.granularity,
-            ...(props.anchor && props.anchor !== 'all' ? { at: props.anchor } : {}),
-            per_page: size,
-        },
-        {
-            only: RELOAD_KEYS,
-            preserveState: true,
-            preserveScroll: true,
-            replace: true,
-            onStart: () => (loading.value = true),
-            onFinish: () => (loading.value = false),
-        },
-    );
-}
-
-/** Page links come from the paginator, so they already carry the period. */
-function goToPage(url) {
-    if (!url) {
-        return;
-    }
-
-    router.get(url, {}, {
-        only: RELOAD_KEYS,
-        preserveState: true,
-        preserveScroll: true,
-        onStart: () => (loading.value = true),
-        onFinish: () => (loading.value = false),
-    });
-}
-
 function exportUrl(format, scope = null) {
     return route('reports.export', {
         format,
@@ -456,64 +419,7 @@ const change = computed(() => {
                         </li>
                     </ul>
 
-                    <!-- Page size lives with the pager, not the card header: both
-                         answer "how much of this list am I looking at". -->
-                    <div
-                        class="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-100 px-4 py-3 sm:px-7 dark:border-neutral-800"
-                    >
-                        <div class="flex items-center gap-2">
-                            <select
-                                :value="expenses.per_page"
-                                class="h-8 rounded-full border-neutral-200 bg-white/70 py-0 pe-7 ps-2.5 text-xs font-semibold text-neutral-700 focus:border-neutral-400 focus:ring-0 dark:border-neutral-700 dark:bg-neutral-800/70 dark:text-neutral-200"
-                                :aria-label="__('Per page')"
-                                :disabled="loading"
-                                @change="setPerPage($event.target.value)"
-                            >
-                                <option
-                                    v-for="size in expenses.per_page_options"
-                                    :key="size"
-                                    :value="size"
-                                >
-                                    {{ size }}
-                                </option>
-                            </select>
-                            <span :class="[MUTED, 'text-xs font-medium']">{{ __('per page') }}</span>
-                        </div>
-
-                        <div class="flex items-center gap-3">
-                            <span :class="[MUTED, 'text-xs font-medium tabular-nums']">
-                                {{ __('Showing :from–:to of :total', {
-                                    from: expenses.from ?? 0,
-                                    to: expenses.to ?? 0,
-                                    total: expenses.total,
-                                }) }}
-                            </span>
-
-                            <div v-if="expenses.last_page > 1" class="flex items-center gap-1">
-                                <button
-                                    type="button"
-                                    class="grid size-7 place-items-center rounded-full border border-neutral-200 text-neutral-600 transition hover:bg-neutral-50 disabled:opacity-40 disabled:hover:bg-transparent dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
-                                    :disabled="!expenses.prev_page_url || loading"
-                                    :aria-label="__('Newer')"
-                                    @click="goToPage(expenses.prev_page_url)"
-                                >
-                                    <ChevronLeft class="size-4" />
-                                </button>
-                                <span :class="[MUTED, 'min-w-16 text-center text-xs font-medium tabular-nums']">
-                                    {{ expenses.current_page }} / {{ expenses.last_page }}
-                                </span>
-                                <button
-                                    type="button"
-                                    class="grid size-7 place-items-center rounded-full border border-neutral-200 text-neutral-600 transition hover:bg-neutral-50 disabled:opacity-40 disabled:hover:bg-transparent dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
-                                    :disabled="!expenses.next_page_url || loading"
-                                    :aria-label="__('Older')"
-                                    @click="goToPage(expenses.next_page_url)"
-                                >
-                                    <ChevronRight class="size-4" />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    <Pagination :meta="expenses" :only="RELOAD_KEYS" :disabled="loading" @navigating="loading = $event" />
                 </template>
             </div>
         </div>

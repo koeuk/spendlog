@@ -8,6 +8,7 @@ use App\Enums\Permission;
 use App\Models\Expense;
 use App\Support\TranslatableQuery;
 use App\Models\User;
+use App\Support\Concerns\PaginatesLists;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,8 @@ use Spatie\QueryBuilder\QueryBuilder;
 
 class ExpenseController extends Controller
 {
+    use PaginatesLists;
+
     public function index(Request $request): Response
     {
         // The permission, not the role: granting expenses.view_all to a
@@ -58,17 +61,11 @@ class ExpenseController extends Controller
             $query->where('user_id', $request->user()->id);
         }
 
-        $expenses = $query->paginate(50)->withQueryString();
+        $expenses = $query->paginate($this->perPage($request))->withQueryString();
 
         return Inertia::render('Expenses/Index', [
             'days' => $this->groupByDay($expenses->items(), $viewingAll),
-            'pagination' => [
-                'current_page' => $expenses->currentPage(),
-                'last_page' => $expenses->lastPage(),
-                'prev_page_url' => $expenses->previousPageUrl(),
-                'next_page_url' => $expenses->nextPageUrl(),
-                'total' => $expenses->total(),
-            ],
+            'pagination' => $this->paginationMeta($expenses),
             'filters' => $request->only('filter', 'sort'),
             'scope' => $viewingAll ? 'all' : 'mine',
             'can' => [

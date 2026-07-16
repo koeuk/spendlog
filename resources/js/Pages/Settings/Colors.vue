@@ -48,15 +48,24 @@ function save() {
     });
 }
 
-/** A swatch, or the picker being committed: apply now. */
+/**
+ * A swatch, or the picker being committed: apply now.
+ *
+ * The guard compares against the *saved* value, never the form. The form is the
+ * draft, and the picker writes to it on every `input` as the pointer moves — so
+ * by the time `change` fires on commit, the draft already holds the new colour
+ * and a draft comparison would say "unchanged" and silently save nothing. That
+ * is a picker that previews and never persists.
+ */
 function choose(field, value) {
     const next = normalise(value);
 
-    if (form[field] === next) {
+    form[field] = next;
+
+    if (props.colors[field] === next) {
         return;
     }
 
-    form[field] = next;
     save();
 }
 

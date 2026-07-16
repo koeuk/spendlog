@@ -36,12 +36,19 @@ class UserPolicy
         return $user->hasPermissionTo(Permission::UsersManage->value);
     }
 
-    /** Granting permissions is itself an administrative act. */
+    /**
+     * Granting permissions is the one act that can hand out more of itself, so
+     * it asks for the Admin role rather than a permission. Gated on
+     * `users.manage` it would propagate: a non-admin granted that permission
+     * cannot edit their own, but could grant it to a second account, which
+     * could grant it back — two ordinary users reaching full rights with no
+     * admin involved.
+     */
     public function managePermissions(User $user, User $target): bool
     {
         // Editing your own permissions is how an admin accidentally locks
         // themselves out of the very screen they are standing on.
-        return $user->hasPermissionTo(Permission::UsersManage->value) && ! $user->is($target);
+        return $user->isAdmin() && ! $user->is($target);
     }
 
     /**

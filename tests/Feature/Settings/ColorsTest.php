@@ -158,6 +158,23 @@ class ColorsTest extends TestCase
     }
 
     /**
+     * A greyish mid-tone still labels fine (#928b9c is 6.03:1) — the guard is
+     * about readability, and this one is readable.
+     *
+     * This is the value that exposed the picker-never-saves bug: the page showed
+     * it in the field while the theme kept the old colour, because the commit
+     * handler compared against the draft the picker had already written to.
+     */
+    public function test_a_muted_custom_button_colour_is_accepted(): void
+    {
+        $this->actingAs($this->admin())
+            ->post('/settings/colors', $this->payload(['button_color' => '#928b9c']))
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame('#928b9c', AppSetting::current()->button_color);
+    }
+
+    /**
      * ...but only if a label can sit on it. A label is near-black or near-white,
      * so a fill contrasting with neither cannot be labelled at all — #ad661f tops
      * out at 4.43:1 against *both* ends. That is a refusal, not a preference: no

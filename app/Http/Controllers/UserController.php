@@ -9,6 +9,7 @@ use App\Http\Requests\UserRequest;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
+use App\Support\Concerns\PaginatesLists;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -18,17 +19,22 @@ use Inertia\Response;
 
 class UserController extends Controller
 {
+    use PaginatesLists;
+
     public function index(Request $request): Response
     {
         Gate::authorize('viewAny', User::class);
 
         $me = $request->user();
 
-        $users = User::query()
+        $paginator = User::query()
             ->with('roles:id,name')
             ->withCount('expenses')
             ->orderBy('name')
-            ->get()
+            ->paginate($this->perPage($request))
+            ->withQueryString();
+
+        $users = collect($paginator->items())
             ->map(fn (User $user) => [
                 'uuid' => $user->uuid,
                 'name' => $user->name,
@@ -59,6 +65,7 @@ class UserController extends Controller
 
         return Inertia::render('Settings/Users', [
             'users' => $users,
+            'pagination' => $this->paginationMeta($paginator),
             'roles' => array_map(
                 fn (RoleName $role) => ['value' => $role->value, 'label' => ucfirst($role->value)],
                 RoleName::cases(),
