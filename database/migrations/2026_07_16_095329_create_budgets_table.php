@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('budgets', function (Blueprint $table) {
             $table->id();
+            $table->uuid('uuid')->unique();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             // Null means an overall budget covering every category.
             // Restrict rather than cascade: MySQL forbids ON DELETE CASCADE on a
@@ -23,7 +24,7 @@ return new class extends Migration
             // MySQL treats NULLs as distinct in a unique index, so a plain
             // unique on category_id would not block duplicate overall budgets.
             // Collapsing null to 0 in a generated column restores the guarantee.
-            $table->unsignedBigInteger('category_key')->storedAs('COALESCE(category_id, 0)');
+            $table->unsignedBigInteger('category_key')->storedAs('COALESCE(`category_id`, 0)');
             $table->unique(['user_id', 'category_key', 'month']);
         });
     }

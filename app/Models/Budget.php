@@ -4,15 +4,18 @@ namespace App\Models;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Builder;
+use App\Models\Concerns\HasUuidRouteKey;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable(['category_id', 'month', 'amount'])]
+#[Hidden(['id'])]
 class Budget extends Model
 {
-    use HasFactory;
+    use HasFactory, HasUuidRouteKey;
 
     protected function casts(): array
     {
@@ -32,7 +35,7 @@ class Budget extends Model
         return $this->belongsTo(Category::class);
     }
 
-    public function scopeForUser(Builder $query, int $userId): Builder
+    public function scopeForUser(Builder $query, string $userId): Builder
     {
         return $query->where('user_id', $userId);
     }
