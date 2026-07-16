@@ -103,19 +103,35 @@
 
 @layer base {
     * {
-        @apply border-border;
+        @apply border-border outline-ring/50;
     }
 
     body {
         @apply bg-background text-foreground;
     }
-}
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
+    /*
+     * Tailwind v4's Preflight sets `cursor: default` on buttons, so every
+     * button in the app looks unclickable. Restore the pointer here rather than
+     * adding `cursor-pointer` to each component — this also catches buttons we
+     * don't author, like the ones Sonner and reka-ui render internally.
+     *
+     * Kept in @layer base on purpose: utilities beat base, so a component that
+     * deliberately opts out with `cursor-default` (select items, calendar cells)
+     * still wins.
+     */
+    button:not(:disabled),
+    [role='button']:not([aria-disabled='true']),
+    summary {
+        cursor: pointer;
     }
-  body {
-    @apply bg-background text-foreground;
+
+    /*
+     * Disabled buttons mostly carry `disabled:pointer-events-none`, which stops
+     * any cursor from showing at all. This is for the ones that don't.
+     */
+    button:disabled,
+    [role='button'][aria-disabled='true'] {
+        cursor: not-allowed;
     }
 }

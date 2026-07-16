@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { Eye, EyeOff } from 'lucide-vue-next';
 import AuthArtwork from '@/Components/AuthArtwork.vue';
+import LocaleSwitcher from '@/Components/LocaleSwitcher.vue';
 import ThemeToggle from '@/Components/ThemeToggle.vue';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
@@ -37,7 +38,10 @@ const slides = [
     <div class="min-h-screen bg-white p-3 font-display text-neutral-900 lg:p-4 dark:bg-neutral-950 dark:text-neutral-100">
         <div class="grid min-h-[calc(100vh-1.5rem)] gap-4 lg:min-h-[calc(100vh-2rem)] lg:grid-cols-2">
             <div class="relative flex items-center justify-center px-4 py-10 sm:px-8">
-                <div class="absolute right-4 top-4 sm:right-6"><ThemeToggle /></div>
+                <div class="absolute right-4 top-4 flex items-center gap-2 sm:right-6">
+                    <LocaleSwitcher />
+                    <ThemeToggle />
+                </div>
 
                 <div class="w-full max-w-[380px]">
                     <Link

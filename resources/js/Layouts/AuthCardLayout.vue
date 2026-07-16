@@ -1,5 +1,6 @@
 <script setup>
 import { Link } from '@inertiajs/vue3';
+import LocaleSwitcher from '@/Components/LocaleSwitcher.vue';
 import ThemeToggle from '@/Components/ThemeToggle.vue';
 
 /**
@@ -14,7 +15,10 @@ defineProps({
 
 <template>
     <div class="relative grid min-h-screen place-items-center bg-white px-4 py-10 font-display text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
-        <div class="absolute right-4 top-4"><ThemeToggle /></div>
+        <div class="absolute right-4 top-4 flex items-center gap-2">
+            <LocaleSwitcher />
+            <ThemeToggle />
+        </div>
 
         <div class="w-full max-w-[420px] text-center">
             <Link

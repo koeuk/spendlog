@@ -73,5 +73,21 @@
     "Please pick a category.": "សូមជ្រើសរើសប្រភេទ។",
     "That category no longer exists.": "ប្រភេទនេះលែងមានទៀតហើយ។",
     "The month must look like 2026-07.": "ខែត្រូវតែមានទម្រង់ដូច 2026-07។",
-    "of :amount": "ក្នុងចំណោម :amount"
+    "of :amount": "ក្នុងចំណោម :amount",
+    "Welcome back!": "សូមស្វាគមន៍ការត្រឡប់មកវិញ!",
+    "Pick up your log where you left off.": "បន្តការកត់ត្រារបស់អ្នកពីកន្លែងដែលអ្នកបានឈប់។",
+    "keeps the day-to-day money stuff honest.": "ជួយឲ្យការចំណាយប្រចាំថ្ងៃរបស់អ្នកមានតម្លាភាព។",
+    "Email": "អ៊ីមែល",
+    "Password": "ពាក្យសម្ងាត់",
+    "Remember me": "ចងចាំខ្ញុំ",
+    "Forgot Password?": "ភ្លេចពាក្យសម្ងាត់?",
+    "Login": "ចូលគណនី",
+    "Logging in…": "កំពុងចូល…",
+    "Not a member?": "មិនទាន់មានគណនី?",
+    "Register now": "ចុះឈ្មោះឥឡូវនេះ",
+    "Show password": "បង្ហាញពាក្យសម្ងាត់",
+    "Hide password": "លាក់ពាក្យសម្ងាត់",
+    "Log what you spend, the moment you spend it.": "កត់ត្រាការចំណាយរបស់អ្នក ភ្លាមៗពេលអ្នកចំណាយ។",
+    "See where the money actually goes each month.": "មើលថាលុយពិតជាទៅណាខ្លះក្នុងមួយខែ។",
+    "Set a budget. Know before you overshoot it.": "កំណត់ថវិកា។ ដឹងមុនពេលអ្នកចំណាយលើស។"
 }

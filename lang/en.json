@@ -73,5 +73,21 @@
     "Please pick a category.": "Please pick a category.",
     "That category no longer exists.": "That category no longer exists.",
     "The month must look like 2026-07.": "The month must look like 2026-07.",
-    "of :amount": "of :amount"
+    "of :amount": "of :amount",
+    "Welcome back!": "Welcome back!",
+    "Pick up your log where you left off.": "Pick up your log where you left off.",
+    "keeps the day-to-day money stuff honest.": "keeps the day-to-day money stuff honest.",
+    "Email": "Email",
+    "Password": "Password",
+    "Remember me": "Remember me",
+    "Forgot Password?": "Forgot Password?",
+    "Login": "Login",
+    "Logging in…": "Logging in…",
+    "Not a member?": "Not a member?",
+    "Register now": "Register now",
+    "Show password": "Show password",
+    "Hide password": "Hide password",
+    "Log what you spend, the moment you spend it.": "Log what you spend, the moment you spend it.",
+    "See where the money actually goes each month.": "See where the money actually goes each month.",
+    "Set a budget. Know before you overshoot it.": "Set a budget. Know before you overshoot it."
 }

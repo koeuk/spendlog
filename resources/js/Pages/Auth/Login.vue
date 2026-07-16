@@ -1,14 +1,16 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { Eye, EyeOff } from 'lucide-vue-next';
 import AuthArtwork from '@/Components/AuthArtwork.vue';
+import LocaleSwitcher from '@/Components/LocaleSwitcher.vue';
 import ThemeToggle from '@/Components/ThemeToggle.vue';
 import { Button } from '@/Components/ui/button';
 import { Checkbox } from '@/Components/ui/checkbox';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
 import { PILL_BUTTON, PILL_INPUT } from '@/lib/authStyles';
+import { trans } from '@/lib/i18n';
 
 defineProps({
     canResetPassword: { type: Boolean },
@@ -29,11 +31,12 @@ const submit = () => {
     });
 };
 
-const slides = [
-    'Log what you spend, the moment you spend it.',
-    'See where the money actually goes each month.',
-    'Set a budget. Know before you overshoot it.',
-];
+// computed, not a plain array: the strings must re-resolve when the locale changes.
+const slides = computed(() => [
+    trans('Log what you spend, the moment you spend it.'),
+    trans('See where the money actually goes each month.'),
+    trans('Set a budget. Know before you overshoot it.'),
+]);
 </script>
 
 <template>
@@ -42,7 +45,10 @@ const slides = [
     <div class="min-h-screen bg-white p-3 font-display text-neutral-900 lg:p-4 dark:bg-neutral-950 dark:text-neutral-100">
         <div class="grid min-h-[calc(100vh-1.5rem)] gap-4 lg:min-h-[calc(100vh-2rem)] lg:grid-cols-2">
             <div class="relative flex items-center justify-center px-4 py-10 sm:px-8">
-                <div class="absolute right-4 top-4 sm:right-6"><ThemeToggle /></div>
+                <div class="absolute right-4 top-4 flex items-center gap-2 sm:right-6">
+                    <LocaleSwitcher />
+                    <ThemeToggle />
+                </div>
 
                 <div class="w-full max-w-[380px]">
                     <Link
@@ -60,13 +66,13 @@ const slides = [
                         class="anim text-[2.6rem] font-extrabold leading-[1.05] tracking-[-0.03em] sm:text-5xl"
                         style="--d: 60ms"
                     >
-                        Welcome back!
+                        {{ __('Welcome back!') }}
                     </h1>
 
                     <p class="anim mt-3 text-sm leading-relaxed text-neutral-500 dark:text-neutral-400" style="--d: 120ms">
-                        Pick up your log where you left off.
+                        {{ __('Pick up your log where you left off.') }}
                         <span class="font-semibold text-neutral-900 dark:text-neutral-100">SpendLog</span>
-                        keeps the day-to-day money stuff honest.
+                        {{ __('keeps the day-to-day money stuff honest.') }}
                     </p>
 
                     <div
@@ -79,7 +85,7 @@ const slides = [
 
                     <form class="mt-8" @submit.prevent="submit">
                         <div class="anim" style="--d: 180ms">
-                            <Label for="email" class="sr-only">Email</Label>
+                            <Label for="email" class="sr-only">{{ __('Email') }}</Label>
                             <Input
                                 id="email"
                                 v-model="form.email"
@@ -87,7 +93,7 @@ const slides = [
                                 required
                                 autofocus
                                 autocomplete="username"
-                                placeholder="Email"
+                                :placeholder="__('Email')"
                                 :aria-invalid="!!form.errors.email"
                                 :class="PILL_INPUT"
                             />
@@ -97,7 +103,7 @@ const slides = [
                         </div>
 
                         <div class="anim mt-3" style="--d: 240ms">
-                            <Label for="password" class="sr-only">Password</Label>
+                            <Label for="password" class="sr-only">{{ __('Password') }}</Label>
                             <div class="relative">
                                 <Input
                                     id="password"
@@ -105,7 +111,7 @@ const slides = [
                                     :type="showPassword ? 'text' : 'password'"
                                     required
                                     autocomplete="current-password"
-                                    placeholder="Password"
+                                    :placeholder="__('Password')"
                                     :aria-invalid="!!form.errors.password"
                                     :class="[PILL_INPUT, 'pr-12']"
                                 />
@@ -113,7 +119,7 @@ const slides = [
                                     type="button"
                                     variant="ghost"
                                     size="icon"
-                                    :aria-label="showPassword ? 'Hide password' : 'Show password'"
+                                    :aria-label="showPassword ? __('Hide password') : __('Show password')"
                                     :aria-pressed="showPassword"
                                     class="absolute right-1.5 top-1.5 size-[42px] rounded-full text-neutral-400 hover:bg-neutral-50 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
                                     @click="showPassword = !showPassword"
@@ -130,7 +136,7 @@ const slides = [
                             <div class="flex items-center gap-2">
                                 <Checkbox id="remember" v-model="form.remember" name="remember" />
                                 <Label for="remember" class="cursor-pointer text-xs font-medium text-neutral-500 dark:text-neutral-400">
-                                    Remember me
+                                    {{ __('Remember me') }}
                                 </Label>
                             </div>
 
@@ -139,7 +145,7 @@ const slides = [
                                 :href="route('password.request')"
                                 class="text-xs font-semibold text-neutral-900 underline-offset-4 hover:underline dark:text-neutral-100"
                             >
-                                Forgot Password?
+                                {{ __('Forgot Password?') }}
                             </Link>
                         </div>
 
@@ -149,17 +155,17 @@ const slides = [
                             :class="[PILL_BUTTON, 'anim mt-6']"
                             style="--d: 360ms"
                         >
-                            {{ form.processing ? 'Logging in…' : 'Login' }}
+                            {{ form.processing ? __('Logging in…') : __('Login') }}
                         </Button>
                     </form>
 
                     <p class="anim mt-12 text-center text-sm font-medium text-neutral-500 dark:text-neutral-400" style="--d: 420ms">
-                        Not a member?
+                        {{ __('Not a member?') }}
                         <Link
                             :href="route('register')"
                             class="font-semibold text-[#4b9d5f] underline-offset-4 hover:underline dark:text-[#6cc182]"
                         >
-                            Register now
+                            {{ __('Register now') }}
                         </Link>
                     </p>
                 </div>
