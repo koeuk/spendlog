@@ -72,6 +72,11 @@ class HandleInertiaRequests extends Middleware
             // The layout drops the ambient wash when a background colour has been
             // chosen, so the colour renders flat instead of tinted by it.
             'plain_background' => $settings->plainBackground(),
+            // app.blade.php applies these before first paint, but that script only
+            // runs on a full page load. An Inertia visit re-renders Vue without it,
+            // so saving a colour would leave the page on the old one until a hard
+            // refresh. Shipping them as props lets the layout re-apply on change.
+            'css' => $settings->cssVariables(),
         ];
     }
 

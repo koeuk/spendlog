@@ -5,10 +5,30 @@
     <title>{{ $brand }} — {{ $periodLabel }}</title>
     <style>
         /*
-         * DejaVu ships with dompdf and covers Latin. It has no Khmer glyphs, so
-         * a Khmer report falls back per-glyph; see the note in ReportController.
+         * dompdf only ships DejaVu, which has no Khmer glyphs — a Khmer report
+         * rendered as rows of tofu boxes. Noto Sans Khmer is registered here and
+         * listed FIRST so Khmer resolves to it, with DejaVu behind it for the
+         * Latin and currency glyphs Noto Khmer does not carry.
+         *
+         * The file ships in the repo rather than relying on the host having the
+         * font: dompdf reads it off disk at render time, and a server without it
+         * would silently go back to boxes.
          */
-        * { font-family: DejaVu Sans, sans-serif; }
+        @font-face {
+            font-family: 'Noto Sans Khmer';
+            font-style: normal;
+            font-weight: 400;
+            src: url('{{ resource_path('fonts/NotoSansKhmer-Regular.ttf') }}') format('truetype');
+        }
+
+        @font-face {
+            font-family: 'Noto Sans Khmer';
+            font-style: normal;
+            font-weight: 700;
+            src: url('{{ resource_path('fonts/NotoSansKhmer-Bold.ttf') }}') format('truetype');
+        }
+
+        * { font-family: 'Noto Sans Khmer', 'DejaVu Sans', sans-serif; }
         body { margin: 0; color: #171717; font-size: 11px; }
 
         .head { border-bottom: 2px solid #171717; padding-bottom: 10px; margin-bottom: 16px; }

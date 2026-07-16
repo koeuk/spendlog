@@ -23,6 +23,7 @@ import ThemeToggle from '@/Components/ThemeToggle.vue';
 import { Toaster } from '@/Components/ui/sonner';
 import { useFlashToasts } from '@/composables/useFlashToasts';
 import { useTheme } from '@/composables/useTheme';
+import { useBrandColors } from '@/composables/useBrandColors';
 import { APP_PAGE, CARD } from '@/lib/appStyles';
 import { ChevronDown, Menu, X } from 'lucide-vue-next';
 import { Link, usePage } from '@inertiajs/vue3';
@@ -51,6 +52,10 @@ const branding = computed(
 const brandInitial = computed(() => (branding.value.name || 'S').charAt(0).toUpperCase());
 
 useFlashToasts();
+
+// Re-applies the admin's colours when they change mid-session — blade only
+// applies them on a full document load.
+useBrandColors(isDark);
 
 const links = [
     { label: 'Dashboard', route: 'dashboard', active: 'dashboard' },

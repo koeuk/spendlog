@@ -92,10 +92,60 @@ class ColorsTest extends TestCase
     {
         // "Flexible" is the point: the five presets are a shortcut, not a fence.
         $this->actingAs($this->admin())
-            ->post('/settings/colors', $this->payload(['body_color' => '#123456']))
+            ->post('/settings/colors', $this->payload(['body_color' => '#e8f0ff']))
             ->assertRedirect();
 
-        $this->assertSame('#123456', AppSetting::current()->body_color);
+        $this->assertSame('#e8f0ff', AppSetting::current()->body_color);
+    }
+
+    /**
+     * The light theme is built on a pale page: near-black text, translucent-white
+     * cards. A dark background makes the text vanish and turns the cards into
+     * light-grey slabs — neither theme. Dark mode already does this properly.
+     */
+    public function test_a_body_colour_too_dark_for_the_light_page_is_rejected(): void
+    {
+        foreach (['#000000', '#171717', '#ac2f2f', '#333333'] as $tooDark) {
+            $this->actingAs($this->admin())
+                ->post('/settings/colors', $this->payload(['body_color' => $tooDark]))
+                ->assertSessionHasErrors('body_color');
+        }
+
+        $this->assertSame(BodyColor::White->value, AppSetting::current()->body_color);
+    }
+
+    public function test_every_offered_preset_passes_its_own_rule(): void
+    {
+        // A preset the picker offers but the validator refuses would be a trap.
+        foreach (BodyColor::cases() as $preset) {
+            $this->actingAs($this->admin())
+                ->post('/settings/colors', $this->payload(['body_color' => $preset->value]))
+                ->assertSessionHasNoErrors();
+        }
+    }
+
+    /**
+     * The ambient wash sits over the page, so it would tint a chosen colour into
+     * a gradient. Choosing one turns it off; the default keeps it.
+     */
+    public function test_the_wash_is_dropped_once_a_background_colour_is_chosen(): void
+    {
+        $this->assertFalse(AppSetting::current()->plainBackground());
+
+        $this->actingAs($this->admin())
+            ->post('/settings/colors', $this->payload(['body_color' => BodyColor::Cream->value]));
+
+        $this->assertTrue(AppSetting::current()->plainBackground());
+    }
+
+    public function test_the_layout_is_told_whether_to_render_the_wash(): void
+    {
+        $this->actingAs($this->admin())
+            ->post('/settings/colors', $this->payload(['body_color' => BodyColor::Sage->value]));
+
+        $this->actingAs($this->admin())
+            ->get('/dashboard')
+            ->assertInertia(fn ($page) => $page->where('branding.plain_background', true));
     }
 
     public function test_hex_is_normalised_to_lower_case(): void

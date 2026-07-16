@@ -68,7 +68,10 @@ class ExpenseController extends Controller
             ],
             'filters' => $request->only('filter', 'sort'),
             'scope' => $viewingAll ? 'all' : 'mine',
-            'can' => ['view_all' => $isAdmin],
+            'can' => [
+                'view_all' => $isAdmin,
+                'create_category' => $request->user()->can('create', Category::class),
+            ],
             // Only an admin viewing everyone needs the user list.
             'users' => $viewingAll
                 ? User::query()->orderBy('name')->get(['uuid', 'name'])
@@ -91,6 +94,12 @@ class ExpenseController extends Controller
 
     public function store(ExpenseRequest $request): RedirectResponse
     {
+        // Naming a category inline creates one, so it goes through the same gate
+        // the Categories page uses rather than trusting the dialog to hide itself.
+        if (filled($request->input('new_category'))) {
+            Gate::authorize('create', Category::class);
+        }
+
         DB::beginTransaction();
 
         try {
@@ -110,6 +119,10 @@ class ExpenseController extends Controller
     public function update(ExpenseRequest $request, Expense $expense): RedirectResponse
     {
         Gate::authorize('update', $expense);
+
+        if (filled($request->input('new_category'))) {
+            Gate::authorize('create', Category::class);
+        }
 
         DB::beginTransaction();
 

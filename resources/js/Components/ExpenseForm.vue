@@ -6,6 +6,7 @@ import {
     getLocalTimeZone,
     today,
 } from '@internationalized/date';
+import CategoryPicker from '@/Components/CategoryPicker.vue';
 import LocaleTabs from '@/Components/LocaleTabs.vue';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
 import { Button } from '@/Components/ui/button';
@@ -28,6 +29,8 @@ import {
 const props = defineProps({
     form: { type: Object, required: true },
     categories: { type: Array, required: true },
+    // Mirrors CategoryPolicy::create, passed down from the page.
+    canCreateCategory: { type: Boolean, default: false },
 });
 
 const formatter = new DateFormatter('en-US', { dateStyle: 'medium' });
@@ -107,35 +110,11 @@ const maxDate = today(getLocalTimeZone());
 
             <div>
                 <Label for="category">{{ __('Category') }}</Label>
-                <Select v-model="form.category_uuid">
-                    <SelectTrigger id="category" class="mt-1 w-full">
-                        <SelectValue :placeholder="__('Choose')" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem
-                            v-for="category in categories"
-                            :key="category.uuid"
-                            :value="category.uuid"
-                        >
-                            <span class="flex items-center gap-2">
-                                <component
-                                    :is="categoryIcon(category.icon)"
-                                    v-if="categoryIcon(category.icon)"
-                                    class="size-4"
-                                />
-                                <span
-                                    v-else
-                                    class="size-2 rounded-full"
-                                    :class="categoryColor(category.color).dot"
-                                />
-                                {{ category.name }}
-                            </span>
-                        </SelectItem>
-                    </SelectContent>
-                </Select>
-                <p v-if="form.errors.category_uuid" class="mt-1 text-sm text-red-600">
-                    {{ form.errors.category_uuid }}
-                </p>
+                <CategoryPicker
+                    :form="form"
+                    :categories="categories"
+                    :can-create="canCreateCategory"
+                />
             </div>
 
             <div class="col-span-2 sm:col-span-1">

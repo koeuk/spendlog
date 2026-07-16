@@ -53,9 +53,6 @@ function save() {
         // Inertia would otherwise reset the form to the server's values on every
         // reply, yanking the picker out from under a still-moving pointer.
         preserveState: true,
-        // Last write wins: an earlier in-flight save landing after a newer one
-        // would otherwise flip the page back to the previous colour.
-        onStart: () => form.cancel(),
     });
 }
 

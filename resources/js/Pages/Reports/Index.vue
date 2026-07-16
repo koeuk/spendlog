@@ -12,7 +12,7 @@ import {
 } from '@/Components/ui/select';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
 import { ACTIVE, CARD, CARD_TINT, EYEBROW, FIGURE, MUTED } from '@/lib/appStyles';
-import { ArrowDownRight, ArrowUpRight } from 'lucide-vue-next';
+import { ArrowDownRight, ArrowUpRight, FileSpreadsheet, FileText } from 'lucide-vue-next';
 
 const props = defineProps({
     granularity: { type: String, required: true },
@@ -21,6 +21,7 @@ const props = defineProps({
     series: { type: Object, required: true },
     breakdown: { type: Array, required: true },
     stats: { type: Object, required: true },
+    expenses: { type: Object, required: true },
 });
 
 const PERIODS = [
@@ -31,7 +32,7 @@ const PERIODS = [
 
 // Everything on this page describes the chosen period, so a change reloads all
 // of it — unlike the dashboard, where only the chart follows the picker.
-const RELOAD_KEYS = ['granularity', 'anchor', 'options', 'series', 'breakdown', 'stats'];
+const RELOAD_KEYS = ['granularity', 'anchor', 'options', 'series', 'breakdown', 'stats', 'expenses'];
 
 const loading = ref(false);
 
@@ -64,6 +65,33 @@ const money = new Intl.NumberFormat('en-US', {
 });
 
 const isEmpty = computed(() => props.breakdown.length === 0);
+
+/**
+ * Plain links, not fetch: the browser's own download handling is what turns the
+ * response into a file, and it carries the session cookie for free.
+ */
+/** Page links come from the paginator, so they already carry the period. */
+function goToPage(url) {
+    if (!url) {
+        return;
+    }
+
+    router.get(url, {}, {
+        only: RELOAD_KEYS,
+        preserveState: true,
+        preserveScroll: true,
+        onStart: () => (loading.value = true),
+        onFinish: () => (loading.value = false),
+    });
+}
+
+function exportUrl(format) {
+    return route('reports.export', {
+        format,
+        period: props.granularity,
+        at: props.anchor,
+    });
+}
 
 // Spending less than last period is good news, so down is the positive colour —
 // the opposite of the usual "up is good" reflex.
@@ -99,6 +127,25 @@ const change = computed(() => {
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2">
+                    <!-- Downloads honour the period on screen, and vanish when
+                         there is nothing in it to download. -->
+                    <template v-if="!isEmpty">
+                        <a
+                            :href="exportUrl('pdf')"
+                            class="inline-flex h-9 items-center gap-1.5 rounded-full border border-neutral-200 bg-white/70 px-3 text-xs font-semibold text-neutral-700 transition hover:bg-white dark:border-neutral-700 dark:bg-neutral-800/70 dark:text-neutral-200 dark:hover:bg-neutral-800"
+                        >
+                            <FileText class="size-3.5" />
+                            {{ __('PDF') }}
+                        </a>
+                        <a
+                            :href="exportUrl('xlsx')"
+                            class="inline-flex h-9 items-center gap-1.5 rounded-full border border-neutral-200 bg-white/70 px-3 text-xs font-semibold text-neutral-700 transition hover:bg-white dark:border-neutral-700 dark:bg-neutral-800/70 dark:text-neutral-200 dark:hover:bg-neutral-800"
+                        >
+                            <FileSpreadsheet class="size-3.5" />
+                            {{ __('Excel') }}
+                        </a>
+                    </template>
+
 <Select
                         :model-value="anchor"
                         :disabled="loading"
@@ -319,6 +366,85 @@ const change = computed(() => {
                         </tfoot>
                     </table>
                 </div>
+            </div>
+
+            <!-- Every expense in the period. Paginated, because a year is hundreds
+                 of rows; the exports are how you get the lot. -->
+            <div :class="[CARD, 'anim overflow-hidden']" style="--d: 300ms">
+                <div class="flex items-center justify-between gap-3 px-4 pb-4 pt-6 sm:px-7">
+                    <h2 class="text-base font-bold tracking-tight">{{ __('Expenses') }}</h2>
+                    <span :class="[MUTED, 'text-xs font-medium tabular-nums']">
+                        {{ expenses.total }}
+                    </span>
+                </div>
+
+                <p v-if="!expenses.data.length" :class="[MUTED, 'px-6 pb-10 pt-4 text-center text-sm']">
+                    {{ __('Nothing logged in this period.') }}
+                </p>
+
+                <template v-else>
+                    <ul class="divide-y divide-neutral-100 dark:divide-neutral-800">
+                        <li
+                            v-for="expense in expenses.data"
+                            :key="expense.uuid"
+                            class="flex items-center gap-3 px-4 py-3 sm:px-7"
+                        >
+                            <span
+                                class="grid size-8 shrink-0 place-items-center rounded-full ring-1 ring-inset"
+                                :class="categoryColor(expense.color).badge"
+                            >
+                                <component
+                                    :is="categoryIcon(expense.icon)"
+                                    v-if="categoryIcon(expense.icon)"
+                                    class="size-4"
+                                    aria-hidden="true"
+                                />
+                                <span
+                                    v-else
+                                    class="size-2 rounded-full"
+                                    :class="categoryColor(expense.color).dot"
+                                />
+                            </span>
+
+                            <div class="min-w-0 flex-1">
+                                <p class="truncate text-sm font-semibold">{{ expense.item }}</p>
+                                <p :class="[MUTED, 'truncate text-xs']">{{ expense.category }}</p>
+                            </div>
+
+                            <span :class="[MUTED, 'hidden shrink-0 text-xs font-medium sm:block']">
+                                {{ expense.date_label }}
+                            </span>
+                            <span class="shrink-0 text-sm font-semibold tabular-nums">
+                                {{ money.format(expense.price) }}
+                            </span>
+                        </li>
+                    </ul>
+
+                    <div
+                        v-if="expenses.last_page > 1"
+                        class="flex items-center justify-between gap-3 border-t border-neutral-100 px-4 py-3 sm:px-7 dark:border-neutral-800"
+                    >
+                        <button
+                            type="button"
+                            class="text-xs font-semibold text-neutral-600 disabled:opacity-40 dark:text-neutral-300"
+                            :disabled="!expenses.prev_page_url"
+                            @click="goToPage(expenses.prev_page_url)"
+                        >
+                            &larr; {{ __('Newer') }}
+                        </button>
+                        <span :class="[MUTED, 'text-xs font-medium tabular-nums']">
+                            {{ __('Page :current of :last', { current: expenses.current_page, last: expenses.last_page }) }}
+                        </span>
+                        <button
+                            type="button"
+                            class="text-xs font-semibold text-neutral-600 disabled:opacity-40 dark:text-neutral-300"
+                            :disabled="!expenses.next_page_url"
+                            @click="goToPage(expenses.next_page_url)"
+                        >
+                            {{ __('Older') }} &rarr;
+                        </button>
+                    </div>
+                </template>
             </div>
         </div>
     </AuthenticatedLayout>

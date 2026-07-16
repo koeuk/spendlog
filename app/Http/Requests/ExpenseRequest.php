@@ -2,9 +2,11 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\CategoryColor;
 use App\Enums\Locale;
 use App\Models\Category;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class ExpenseRequest extends FormRequest
 {
@@ -25,8 +27,38 @@ class ExpenseRequest extends FormRequest
             'item.en' => ['required', 'string', 'max:255'],
             'item.km' => ['nullable', 'string', 'max:255'],
             'price' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
-            'category_uuid' => ['required', 'uuid', 'exists:categories,uuid'],
             'spent_on' => ['required', 'date', 'before_or_equal:today'],
+
+            /*
+             * Exactly one of these. The dialog either picks an existing category
+             * or names a new one inline, so requiring the uuid outright would
+             * reject every inline creation.
+             */
+            'category_uuid' => [
+                Rule::requiredIf(fn () => blank($this->input('new_category'))),
+                'nullable',
+                'uuid',
+                'exists:categories,uuid',
+            ],
+            'new_category' => [
+                'nullable',
+                'string',
+                'max:255',
+                // Case-insensitive: "coffee" must not create a second Coffee.
+                function (string $attribute, mixed $value, \Closure $fail) {
+                    if (blank($value)) {
+                        return;
+                    }
+
+                    $exists = Category::query()
+                        ->whereRaw('LOWER(JSON_UNQUOTE(JSON_EXTRACT(name, "$.en"))) = ?', [mb_strtolower(trim($value))])
+                        ->exists();
+
+                    if ($exists) {
+                        $fail(__('A category called ":name" already exists — pick it from the list.', ['name' => trim($value)]));
+                    }
+                },
+            ],
         ];
     }
 
@@ -45,6 +77,7 @@ class ExpenseRequest extends FormRequest
         return [
             'item.en' => __('English item'),
             'item.km' => __('Khmer item'),
+            'new_category' => __('category'),
         ];
     }
 
@@ -58,8 +91,8 @@ class ExpenseRequest extends FormRequest
     {
         $data = $this->validated();
 
-        $data['category_id'] = Category::where('uuid', $data['category_uuid'])->value('id');
-        unset($data['category_uuid']);
+        $data['category_id'] = $this->resolveCategoryId();
+        unset($data['category_uuid'], $data['new_category']);
 
         // Drop empty locales so spatie stores only real translations and the
         // fallback can kick in, rather than persisting "".
@@ -70,5 +103,37 @@ class ExpenseRequest extends FormRequest
         );
 
         return $data;
+    }
+
+    /**
+     * An inline name creates the category; otherwise the picked uuid is resolved.
+     *
+     * firstOrCreate, not create: two people naming the same category at once
+     * would otherwise race past the validator and insert a duplicate.
+     */
+    private function resolveCategoryId(): int
+    {
+        $name = trim((string) $this->input('new_category'));
+
+        if (blank($name)) {
+            return (int) Category::where('uuid', $this->validated('category_uuid'))->value('id');
+        }
+
+        $existing = Category::query()
+            ->whereRaw('LOWER(JSON_UNQUOTE(JSON_EXTRACT(name, "$.en"))) = ?', [mb_strtolower($name)])
+            ->value('id');
+
+        if ($existing) {
+            return (int) $existing;
+        }
+
+        $category = new Category;
+        // Only English: whoever typed it was logging an expense, not translating.
+        // The Khmer name can be filled in later on the Categories page.
+        $category->setTranslations('name', ['en' => $name]);
+        $category->color = CategoryColor::Slate;
+        $category->save();
+
+        return (int) $category->id;
     }
 }

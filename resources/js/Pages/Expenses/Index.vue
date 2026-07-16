@@ -30,7 +30,7 @@ const props = defineProps({
     pagination: { type: Object, required: true },
     categories: { type: Array, required: true },
     scope: { type: String, default: 'mine' },
-    can: { type: Object, default: () => ({ view_all: false }) },
+    can: { type: Object, default: () => ({ view_all: false, create_category: false }) },
     users: { type: Array, default: () => [] },
     filters: { type: Object, default: () => ({}) },
 });
@@ -82,6 +82,8 @@ const form = useForm({
     item: { en: '', km: '' },
     price: '',
     category_uuid: '',
+    // Set instead of category_uuid when naming a category inline.
+    new_category: '',
     spent_on: todayString(),
 });
 
@@ -103,6 +105,7 @@ function openEdit(expense) {
     };
     form.price = String(expense.price);
     form.category_uuid = expense.category_uuid;
+    form.new_category = '';
     form.spent_on = expense.spent_on;
     form.clearErrors();
     showDialog.value = true;
@@ -409,7 +412,11 @@ const isEmpty = computed(() => props.days.length === 0);
                     </DialogHeader>
 
                     <div class="py-4">
-                        <ExpenseForm :form="form" :categories="categories" />
+                        <ExpenseForm
+                            :form="form"
+                            :categories="categories"
+                            :can-create-category="can.create_category"
+                        />
                     </div>
 
                     <DialogFooter>

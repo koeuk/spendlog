@@ -118,5 +118,8 @@
     "vs :period": "vs :period",
     "No earlier period to compare.": "No earlier period to compare.",
     "Over elapsed days only.": "Over elapsed days only.",
-    "Nothing logged in this period.": "Nothing logged in this period."
+    "Nothing logged in this period.": "Nothing logged in this period.",
+    "Generated :date": "Generated :date",
+    "PDF": "PDF",
+    "Excel": "Excel"
 }
