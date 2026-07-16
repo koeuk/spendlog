@@ -187,7 +187,20 @@ function clearBudget(row) {
                         <h3 class="text-sm font-semibold text-gray-900">By category</h3>
                     </div>
 
-                    <ul class="divide-y divide-gray-100">
+                    <ul v-if="navigating" class="divide-y divide-gray-100" aria-busy="true">
+                        <li v-for="n in 5" :key="n" class="px-5 py-4">
+                            <div class="flex items-center justify-between gap-4">
+                                <div class="flex items-center gap-2.5">
+                                    <Skeleton class="size-7 rounded-full" />
+                                    <Skeleton class="h-4 w-20" />
+                                </div>
+                                <Skeleton class="h-4 w-10" />
+                            </div>
+                            <Skeleton class="mt-3 h-2 w-full rounded-full" />
+                        </li>
+                    </ul>
+
+                    <ul v-else class="divide-y divide-gray-100">
                         <li
                             v-for="category in summary.categories"
                             :key="category.uuid"
