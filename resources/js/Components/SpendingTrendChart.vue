@@ -8,6 +8,12 @@ import { EYEBROW, FIGURE, MUTED } from '@/lib/appStyles';
 const props = defineProps({
     // { granularity, anchor, options: [{value,label}], series: {label,total,buckets} }
     trend: { type: Object, required: true },
+    // Which page owns the chart. The dashboard refreshes only its trend key;
+    // the report has to refresh its table and totals alongside it.
+    routeName: { type: String, default: 'dashboard' },
+    reloadKeys: { type: Array, default: () => ['trend'] },
+    // The report puts the period controls in its own header instead.
+    showControls: { type: Boolean, default: true },
 });
 
 const PERIODS = [
@@ -35,12 +41,12 @@ const loading = ref(false);
  */
 function load(granularity, anchor = null) {
     router.get(
-        route('dashboard'),
+        route(props.routeName),
         // Dropping `at` when the granularity changes: an anchor is written in
         // that granularity's own format, so a week value is meaningless to year.
         anchor ? { trend: granularity, at: anchor } : { trend: granularity },
         {
-            only: ['trend'],
+            only: props.reloadKeys,
             preserveState: true,
             preserveScroll: true,
             replace: true,
@@ -206,7 +212,7 @@ const tooltipTop = computed(() => {
             </div>
 
             <!-- Filters in one row above the plot: which period, then how it is drawn. -->
-            <div class="flex flex-wrap items-center gap-2">
+            <div v-if="showControls" class="flex flex-wrap items-center gap-2">
                 <!-- Native select on purpose: it is a plain one-of-many choice,
                      and the OS picker beats a custom menu on a phone. -->
                 <select

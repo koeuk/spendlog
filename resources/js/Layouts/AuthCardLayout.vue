@@ -26,7 +26,7 @@ defineProps({
                 class="anim inline-flex items-center gap-2 text-sm font-bold tracking-tight"
                 style="--d: 0ms"
             >
-                <span class="grid size-7 place-items-center rounded-lg bg-neutral-900 text-[13px] font-extrabold text-white dark:bg-neutral-100 dark:text-neutral-900">
+                <span class="bg-primary text-primary-foreground grid size-7 place-items-center rounded-lg text-[13px] font-extrabold">
                     S
                 </span>
                 SpendLog

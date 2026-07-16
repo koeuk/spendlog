@@ -167,13 +167,47 @@ class ColorsTest extends TestCase
         $this->assertMatchesRegularExpression('/^[\d.]+ [\d.]+% [\d.]+%$/', $vars['background']);
     }
 
-    public function test_the_defaults_reproduce_the_existing_palette(): void
+    /**
+     * The default must leave --primary alone, not restate its light half.
+     *
+     * app.css defines --primary as a theme-aware pair: near-black on a white
+     * page, near-white on a near-black one. The default #171717 is only the
+     * light half, so pinning it across both themes puts a #171717 button on a
+     * #0a0a0a page — 1.1:1, invisible. Null here means "keep the stock tokens".
+     */
+    public function test_the_default_button_colour_does_not_override_the_theme_aware_primary(): void
     {
-        // A fresh install must look exactly as it did before this feature landed.
         $vars = AppSetting::current()->cssVariables();
 
-        $this->assertSame('0 0% 9.02%', $vars['primary']);   // app.css: --primary: 0 0% 9%
+        $this->assertNull($vars['primary']);
+        $this->assertNull($vars['primaryForeground']);
+        // The background is a single value and does still apply.
         $this->assertSame('0 0% 100%', $vars['background']); // app.css: --background: 0 0% 100%
+    }
+
+    /**
+     * A real brand colour is one value and belongs in both themes — that is the
+     * whole point of choosing one.
+     */
+    public function test_a_chosen_button_colour_does_override_primary(): void
+    {
+        $this->actingAs($this->admin())
+            ->post('/settings/colors', $this->payload(['button_color' => '#b42727']));
+
+        $vars = AppSetting::current()->cssVariables();
+
+        $this->assertSame('0 64.38% 42.94%', $vars['primary']);
+        // Dark red ⇒ a near-white label.
+        $this->assertSame('0 0% 98%', $vars['primaryForeground']);
+    }
+
+    public function test_the_rendered_page_leaves_primary_alone_at_the_default(): void
+    {
+        $html = $this->actingAs($this->admin())->get('/dashboard')->getContent();
+
+        // The stash is always parked; the override is not.
+        $this->assertStringContainsString('--brand-background', $html);
+        $this->assertStringContainsString('"primary":null', $html);
     }
 
     public function test_the_rendered_page_applies_the_colours_before_first_paint(): void

@@ -54,6 +54,7 @@ const links = [
     { label: 'Dashboard', route: 'dashboard', active: 'dashboard' },
     { label: 'Expenses', route: 'expenses.index', active: 'expenses.*' },
     { label: 'Budgets', route: 'budgets.index', active: 'budgets.*' },
+    { label: 'Reports', route: 'reports.index', active: 'reports.*' },
     { label: 'Categories', route: 'categories.index', active: 'categories.*' },
 ];
 
@@ -181,9 +182,13 @@ watch(() => page.url, () => nextTick(measurePill));
                             :alt="branding.name"
                             class="size-7 shrink-0 rounded-lg object-contain"
                         />
+                        <!-- The mark wears the brand colour: it stands in for the
+                             logo, so it is the one thing that should obviously be
+                             the admin's colour. Theme-aware by default, like every
+                             other use of the token. -->
                         <span
                             v-else
-                            class="grid size-7 place-items-center rounded-lg bg-neutral-900 text-[13px] font-extrabold text-white dark:bg-neutral-100 dark:text-neutral-900"
+                            class="bg-primary text-primary-foreground grid size-7 place-items-center rounded-lg text-[13px] font-extrabold"
                         >
                             {{ brandInitial }}
                         </span>

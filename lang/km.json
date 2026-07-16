@@ -107,5 +107,16 @@
     "View": "ទិដ្ឋភាព",
     "Bars": "សសរ",
     "Line": "ខ្សែ",
-    "Period": "អំឡុងពេល"
+    "Period": "អំឡុងពេល",
+    "Reports": "របាយការណ៍",
+    "Total spent": "ចំណាយសរុប",
+    "Daily average": "មធ្យមភាគប្រចាំថ្ងៃ",
+    "Transactions": "ប្រតិបត្តិការ",
+    "Top category": "ប្រភេទចំណាយច្រើនជាងគេ",
+    "Average": "មធ្យមភាគ",
+    "Share": "ភាគរយ",
+    "vs :period": "ធៀបនឹង :period",
+    "No earlier period to compare.": "គ្មានអំឡុងពេលមុនដើម្បីប្រៀបធៀបទេ។",
+    "Over elapsed days only.": "គិតតែថ្ងៃដែលកន្លងផុតទៅប៉ុណ្ណោះ។",
+    "Nothing logged in this period.": "គ្មានការកត់ត្រាក្នុងអំឡុងពេលនេះទេ។"
 }
