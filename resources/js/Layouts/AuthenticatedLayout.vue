@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import AmbientBackdrop from '@/Components/AmbientBackdrop.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
@@ -32,6 +32,55 @@ const links = [
     { label: 'Budgets', route: 'budgets.index', active: 'budgets.*' },
     { label: 'Categories', route: 'categories.index', active: 'categories.*' },
 ];
+
+/*
+ * The sliding nav pill.
+ *
+ * Measured from the DOM rather than computed from the links, because the pill
+ * has to track the rendered label — which changes width with the locale and the
+ * font, neither of which we can know up front.
+ */
+const navRef = ref(null);
+const pill = ref({ left: 0, width: 0 });
+// Off for the first frame, so the pill appears in place instead of flying in
+// from the left edge on a cold load.
+const pillAnimates = ref(false);
+
+const pillStyle = computed(() => ({
+    transform: `translateX(${pill.value.left}px)`,
+    width: `${pill.value.width}px`,
+    // Width 0 means no link matched (e.g. Settings) — fade out rather than
+    // leaving a zero-width sliver parked at the first tab.
+    opacity: pill.value.width > 0 ? 1 : 0,
+}));
+
+function measurePill() {
+    const active = navRef.value?.querySelector('[aria-current="page"]');
+
+    pill.value = active
+        ? { left: active.offsetLeft, width: active.offsetWidth }
+        : { ...pill.value, width: 0 };
+}
+
+let observer;
+
+onMounted(() => {
+    measurePill();
+    // Next frame, not this one: enabling the transition in the same paint as
+    // the first position would animate it in from translateX(0).
+    requestAnimationFrame(() => (pillAnimates.value = true));
+
+    // Catches everything a resize listener would, plus label widths changing
+    // when the locale switches or the webfont finishes loading.
+    observer = new ResizeObserver(measurePill);
+    observer.observe(navRef.value);
+});
+
+onBeforeUnmount(() => observer?.disconnect());
+
+// Inertia swaps the page without remounting the layout, so the active link
+// changes with no lifecycle hook to hang this on.
+watch(() => page.url, () => nextTick(measurePill));
 </script>
 
 <template>
@@ -64,7 +113,16 @@ const links = [
                         <span class="hidden sm:inline">{{ branding.name }}</span>
                     </Link>
 
-                    <div class="hidden items-center gap-1 md:flex">
+                    <div ref="navRef" class="relative hidden items-center gap-1 md:flex">
+                        <!-- One pill for the whole nav, slid to the active link.
+                             aria-hidden: it is decoration, and the link already
+                             carries aria-current="page". -->
+                        <span
+                            aria-hidden="true"
+                            class="pointer-events-none absolute inset-y-0 left-0 rounded-full bg-neutral-900 will-change-transform motion-reduce:transition-none dark:bg-neutral-100"
+                            :class="pillAnimates ? 'transition-[transform,width,opacity] duration-300 ease-out' : ''"
+                            :style="pillStyle"
+                        />
                         <NavLink
                             v-for="link in links"
                             :key="link.route"
