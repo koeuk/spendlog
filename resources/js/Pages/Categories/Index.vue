@@ -55,7 +55,7 @@ function submit() {
     };
 
     if (editing.value) {
-        form.put(route('categories.update', editing.value.id), options);
+        form.put(route('categories.update', editing.value.uuid), options);
     } else {
         form.post(route('categories.store'), options);
     }
@@ -65,8 +65,8 @@ const deleting = ref(null);
 const deleteForm = useForm({});
 
 function destroy(category) {
-    deleting.value = category.id;
-    deleteForm.delete(route('categories.destroy', category.id), {
+    deleting.value = category.uuid;
+    deleteForm.delete(route('categories.destroy', category.uuid), {
         preserveScroll: true,
         onFinish: () => {
             deleting.value = null;
@@ -112,7 +112,7 @@ function destroy(category) {
                                     No categories yet.
                                 </TableCell>
                             </TableRow>
-                            <TableRow v-for="category in categories" :key="category.id">
+                            <TableRow v-for="category in categories" :key="category.uuid">
                                 <TableCell class="font-medium">
                                     {{ category.name }}
                                 </TableCell>
@@ -132,7 +132,7 @@ function destroy(category) {
                                             variant="ghost"
                                             size="sm"
                                             class="text-red-600 hover:text-red-700"
-                                            :disabled="deleting === category.id"
+                                            :disabled="deleting === category.uuid"
                                             @click="destroy(category)"
                                         >
                                             Delete

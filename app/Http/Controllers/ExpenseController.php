@@ -16,7 +16,7 @@ class ExpenseController extends Controller
     public function index(Request $request): Response
     {
         $expenses = Expense::query()
-            ->with(['category:id,name', 'user:id,name'])
+            ->with(['category:id,uuid,name', 'user:id,name'])
             ->where('user_id', $request->user()->id)
             ->orderByDesc('spent_on')
             ->orderByDesc('id')
@@ -32,14 +32,14 @@ class ExpenseController extends Controller
                 'next_page_url' => $expenses->nextPageUrl(),
                 'total' => $expenses->total(),
             ],
-            'categories' => Category::query()->orderBy('name')->get(['id', 'name']),
+            'categories' => Category::query()->orderBy('name')->get(['uuid', 'name']),
         ]);
     }
 
     public function store(ExpenseRequest $request): RedirectResponse
     {
         // Created through the relationship so user_id is never mass-assignable.
-        $request->user()->expenses()->create($request->validated());
+        $request->user()->expenses()->create($request->expenseAttributes());
 
         return back()->with('success', 'Expense added.');
     }
@@ -48,7 +48,7 @@ class ExpenseController extends Controller
     {
         Gate::authorize('update', $expense);
 
-        $expense->update($request->validated());
+        $expense->update($request->expenseAttributes());
 
         return back()->with('success', 'Expense updated.');
     }
@@ -75,11 +75,11 @@ class ExpenseController extends Controller
                 'date' => $date,
                 'total' => (float) $group->sum('price'),
                 'expenses' => $group->map(fn (Expense $expense) => [
-                    'id' => $expense->id,
+                    'uuid' => $expense->uuid,
                     'item' => $expense->item,
                     'price' => (float) $expense->price,
                     'spent_on' => $expense->spent_on->toDateString(),
-                    'category_id' => $expense->category_id,
+                    'category_uuid' => $expense->category->uuid,
                     'category' => $expense->category->name,
                 ])->values(),
             ])
