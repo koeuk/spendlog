@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Enums\RoleName;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
@@ -42,6 +43,11 @@ class RegisteredUserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
+
+        // Without this the account can do nothing at all — not even open the
+        // dashboard. The role is not decoration: it carries the starting
+        // permissions, and permissions are the only thing the policies read.
+        $user->applyRole(RoleName::User);
 
         event(new Registered($user));
 

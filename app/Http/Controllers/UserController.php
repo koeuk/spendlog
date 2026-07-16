@@ -89,12 +89,7 @@ class UserController extends Controller
 
             // Assigned explicitly, never mass-assigned — otherwise the request
             // body could hand out admin.
-            $role = RoleName::from($request->validated('role'));
-            $user->syncRoles([$role->value]);
-
-            // The role is a template: it grants nothing by itself, so the new
-            // account would have no access at all without this.
-            $user->syncPermissions(PermissionEnum::defaultsFor($role));
+            $user->applyRole(RoleName::from($request->validated('role')));
 
             DB::commit();
 
@@ -143,11 +138,9 @@ class UserController extends Controller
             $user->save();
 
             if ($roleChanged) {
-                $user->syncRoles([$role]);
-
-                // Reset to the new role's defaults. Keeping the old set would
+                // Resets to the new role's defaults. Keeping the old set would
                 // leave an ex-admin holding admin permissions with a user badge.
-                $user->syncPermissions(PermissionEnum::defaultsFor(RoleName::from($role)));
+                $user->applyRole(RoleName::from($role));
             }
 
             DB::commit();

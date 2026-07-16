@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Permission;
 use App\Enums\RoleName;
 use App\Enums\UserStatus;
 use App\Models\Concerns\HasUuidRouteKey;
@@ -59,6 +60,23 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
             'status' => UserStatus::class,
         ];
+    }
+
+    /**
+     * Put the account on a role and give it that role's starting permissions.
+     *
+     * Always both. A role grants nothing at run time (see RoleSeeder), so
+     * syncRoles() on its own leaves the account able to do literally nothing —
+     * which is how self-registration shipped broken. Anything that sets a role
+     * goes through here so that cannot happen again.
+     *
+     * The permissions are a starting set, not a binding: they can be edited per
+     * person afterwards, and re-applying a role resets them to the defaults.
+     */
+    public function applyRole(RoleName $role): void
+    {
+        $this->syncRoles([$role->value]);
+        $this->syncPermissions(Permission::defaultsFor($role));
     }
 
     public function isAdmin(): bool

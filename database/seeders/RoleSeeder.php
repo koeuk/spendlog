@@ -63,9 +63,15 @@ class RoleSeeder extends Seeder
             User::with('roles', 'permissions')->chunkById(100, function ($users) {
                 foreach ($users as $user) {
                     $roleName = $user->roles->first()?->name;
+                    $role = $roleName ? RoleName::tryFrom($roleName) : null;
 
-                    if (! $roleName || ! ($role = RoleName::tryFrom($roleName))) {
-                        continue;
+                    if (! $role) {
+                        // No role at all. These are the accounts self-registration
+                        // created before it applied one — skipping them would leave
+                        // them stranded with no permissions and no way to earn any.
+                        // Treated as ordinary users, which is what they signed up as.
+                        $role = RoleName::User;
+                        $user->assignRole($role->value);
                     }
 
                     $defaults = PermissionEnum::defaultsFor($role);

@@ -25,6 +25,6 @@ class UserSeeder extends Seeder
 
         $user->save();
 
-        $user->syncRoles([$role->value]);
+        $user->applyRole($role);
     }
 }

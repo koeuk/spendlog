@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\RoleName;
 use App\Enums\UserStatus;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -37,6 +38,26 @@ class UserFactory extends Factory
             'status' => UserStatus::Active,
             'remember_token' => Str::random(10),
         ];
+    }
+
+    /**
+     * Give the account the ordinary user role and its permissions, matching what
+     * registering through the app actually produces.
+     *
+     * Without this a factory user holds no permissions and every policy denies
+     * it, so tests would 403 on things a real signed-up person can plainly do.
+     * Needs the permission catalogue in place — Tests\TestCase seeds RoleSeeder
+     * for exactly this reason.
+     */
+    public function configure(): static
+    {
+        return $this->afterCreating(fn (User $user) => $user->applyRole(RoleName::User));
+    }
+
+    /** The starting set for an admin, as UserController::store would grant it. */
+    public function admin(): static
+    {
+        return $this->afterCreating(fn (User $user) => $user->applyRole(RoleName::Admin));
     }
 
     /**
