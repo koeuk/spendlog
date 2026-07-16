@@ -2,20 +2,26 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\RoleName;
 use App\Models\Concerns\HasUuidRouteKey;
 use Database\Factories\UserFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable
+/**
+ * Implementing MustVerifyEmail is what makes the Registered event actually send
+ * the verification mail, and what gives the 'verified' middleware teeth — without
+ * it that middleware silently lets everyone through.
+ */
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, HasUuidRouteKey, Notifiable;
+    use HasApiTokens, HasFactory, HasRoles, HasUuidRouteKey, Notifiable;
 
     /**
      * The attributes that are mass assignable.
