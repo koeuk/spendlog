@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\BodyColor;
+use App\Enums\ButtonColor;
 use App\Http\Requests\BrandingRequest;
 use App\Http\Requests\ColorRequest;
 use App\Models\AppSetting;
@@ -59,7 +60,8 @@ class SettingsController extends Controller
                 'body_color' => $settings->body_color,
             ],
             // Sent rather than mirrored in JS: the swatches, the migration
-            // default and the enum then cannot drift apart.
+            // default and the enums then cannot drift apart.
+            'button_presets' => ButtonColor::presets(),
             'body_presets' => BodyColor::presets(),
         ]);
     }

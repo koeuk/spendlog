@@ -43,6 +43,19 @@ final class Palette
     private const MUTED_SATURATION = 0.35;
 
     /**
+     * Minimum luminance gap between the page and each surface. Small values —
+     * these are meant to be a whisper of depth, not stripes — but large enough
+     * that the edge survives a cheap panel.
+     */
+    private const CARD_SEPARATION = 0.02;
+
+    /** Muted sits just off the card — a hint of a step, not another layer. */
+    private const STACK_SEPARATION = 0.015;
+
+    /** The border has to read as an edge, so it is the biggest step. */
+    private const BORDER_SEPARATION = 0.05;
+
+    /**
      * Every design token, as bare HSL triplets ready for a custom property.
      *
      * @return array<string, string>
@@ -51,13 +64,25 @@ final class Palette
     {
         [$h, $s, $l] = self::hsl($hex);
 
-        $dark = $l < self::DARK_BELOW;
+        /*
+         * Surfaces are spaced by *luminance*, not lightness, so they stay visibly
+         * apart on any hue — and each is stepped off the previous one, not all
+         * off the page.
+         *
+         * Stepping each from the page independently looks equivalent and is not.
+         * On a saturated yellow a single lightness step moves luminance by more
+         * than 0.09, so the card (needing 0.02) and the border (needing 0.09)
+         * both stop at that same first step and come out identical: a border you
+         * cannot see. Chaining them keeps the hierarchy intact whatever the hue
+         * does.
+         */
+        $saturation = $s * self::SURFACE_SATURATION;
+        // Near the top there is nowhere lighter to go, so the stack descends.
+        $direction = $l > 96.0 ? -1 : 1;
 
-        // Surfaces step toward the light on a dark theme, and toward white on a
-        // light one — always the direction with room to move.
-        $card = self::surface($h, $s, $l, $dark ? 5.0 : 3.0, $dark);
-        $muted = self::surface($h, $s, $l, $dark ? 9.0 : 5.0, $dark);
-        $border = self::surface($h, $s, $l, $dark ? 16.0 : 10.0, $dark);
+        $card = self::step($h, $saturation, $l, self::hexOf(self::triplet($h, $s, $l)), self::CARD_SEPARATION, $direction);
+        $muted = self::step($h, $saturation, self::lightnessOf($card), self::hexOf($card), self::STACK_SEPARATION, $direction);
+        $border = self::step($h, $saturation, self::lightnessOf($muted), self::hexOf($muted), self::BORDER_SEPARATION, $direction);
 
         $background = self::triplet($h, $s, $l);
         $foreground = self::textOn($h, $s, $background, self::AAA);
@@ -94,26 +119,62 @@ final class Palette
     }
 
     /**
-     * A surface $delta lightness away from the background, in the direction that
-     * has room, with its saturation damped.
+     * Walk lightness away from $fromLightness until the result is $separation
+     * luminance clear of $againstHex.
+     *
+     * Measured, not assumed. Stepping lightness by a fixed amount is not enough,
+     * because the damped saturation moves luminance too — and for the
+     * yellow-green hues the two cancel almost exactly. A #6c6c13 olive page with
+     * lightness +5 on the card lands within 0.003 luminance of the page: a card
+     * you cannot see. So this walks until the separation is real, then stops.
      */
-    private static function surface(float $h, float $s, float $l, float $delta, bool $dark): string
+    private static function step(
+        float $h,
+        float $saturation,
+        float $fromLightness,
+        string $againstHex,
+        float $separation,
+        int $direction,
+    ): string {
+        $from = Color::luminance($againstHex);
+
+        for ($offset = 1; $offset <= 100; $offset++) {
+            $lightness = self::clamp($fromLightness + $direction * $offset);
+            $candidate = self::triplet($h, $saturation, $lightness);
+
+            if (abs(Color::luminance(self::hexOf($candidate)) - $from) >= $separation) {
+                return $candidate;
+            }
+
+            // Clamped at the end of the range: no further step will change
+            // anything, so stop rather than spin.
+            if ($lightness <= 0.0 || $lightness >= 100.0) {
+                break;
+            }
+        }
+
+        return self::triplet($h, $saturation, $direction > 0 ? 100.0 : 0.0);
+    }
+
+    private static function lightnessOf(string $triplet): float
     {
-        $saturation = $s * self::SURFACE_SATURATION;
-
-        // Near the top of the range there is nowhere lighter to go, so step down
-        // instead — otherwise a white page and a white card become one flat field
-        // with no edge between them.
-        $lightness = $dark || $l > 96.0
-            ? $l + ($l > 96.0 ? -$delta : $delta)
-            : min(100.0, $l + $delta);
-
-        return self::triplet($h, $saturation, self::clamp($lightness));
+        return (float) rtrim(explode(' ', $triplet)[2], '%');
     }
 
     /**
-     * Text for $surface: start at the far end of the lightness range and walk
-     * toward the surface only as far as the contrast target allows.
+     * Body text for $surface: whichever end of the lightness range contrasts
+     * more, full stop.
+     *
+     * Measured against both ends rather than branched on a luminance threshold.
+     * A mid-tone like #c1891a sits at luminance 0.28 — "dark", by any threshold
+     * — yet takes black text at 5.9:1 and white at only 3.2:1. Guessing from the
+     * threshold picks white and produces exactly the unreadable page this whole
+     * exercise is meant to prevent.
+     *
+     * No walking toward the surface: body text wants the *most* contrast it can
+     * get, not the least that passes. (Muted text is the one that recedes — see
+     * below.) $target is therefore only used to report whether the surface can
+     * host readable text at all, which supports() exposes.
      *
      * Keeping a trace of the hue stops the text reading as a grey sticker on a
      * coloured page, but at a fraction of the saturation — coloured body text is
@@ -121,38 +182,27 @@ final class Palette
      */
     private static function textOn(float $h, float $s, string $surface, float $target): string
     {
-        $surfaceLuminance = Color::luminance(self::hexOf($surface));
         $saturation = min($s * 0.15, 12.0);
 
-        // Start from whichever end contrasts more, then close the gap.
-        $towardLight = $surfaceLuminance < 0.4;
-
-        for ($step = 0; $step <= 100; $step += 2) {
-            $lightness = $towardLight ? 98.0 - $step : 4.0 + $step;
-            $candidate = self::triplet($h, $saturation, self::clamp($lightness));
-
-            if (Color::contrast(self::hexOf($candidate), self::hexOf($surface)) < $target) {
-                // One step back — the last value that still passed.
-                $lightness = $towardLight ? $lightness + 2 : $lightness - 2;
-
-                return self::triplet($h, $saturation, self::clamp($lightness));
-            }
-        }
-
-        return self::triplet($h, $saturation, $towardLight ? 98.0 : 4.0);
+        return self::bestTextEnd($h, $saturation, self::hexOf($surface));
     }
 
     /**
      * Muted text: as close to the surface as AA allows, so it recedes.
+     *
+     * Walks from mid-range toward the same end body text chose, stopping at the
+     * first value that clears AA — the quietest reading that is still legible.
+     * Falls back to the body-text end when nothing in between passes, which is
+     * what happens on a mid-tone surface where the margin is thin.
      */
     private static function mutedTextOn(float $h, float $s, string $surface): string
     {
         $surfaceHex = self::hexOf($surface);
-        $towardLight = Color::luminance($surfaceHex) < 0.4;
         $saturation = min($s * self::MUTED_SATURATION, 25.0);
 
-        // Walk in from the surface until it just clears AA — the first passing
-        // value is the quietest one that is still readable.
+        // Same direction as body text, decided the same way.
+        $towardLight = self::prefersLightText($h, $saturation, $surfaceHex);
+
         for ($step = 0; $step <= 100; $step += 2) {
             $lightness = $towardLight ? 45.0 + $step : 60.0 - $step;
             $candidate = self::triplet($h, $saturation, self::clamp($lightness));
@@ -162,7 +212,77 @@ final class Palette
             }
         }
 
-        return self::triplet($h, $saturation, $towardLight ? 98.0 : 4.0);
+        // Nothing between passed — take the extreme, the best available.
+        return self::bestTextEnd($h, $saturation, $surfaceHex);
+    }
+
+    private static function bestTextEnd(float $h, float $s, string $surfaceHex): string
+    {
+        return self::prefersLightText($h, $s, $surfaceHex)
+            ? self::triplet($h, $s, 98.0)
+            : self::triplet($h, $s, 4.0);
+    }
+
+    private static function prefersLightText(float $h, float $s, string $surfaceHex): bool
+    {
+        $light = self::hexOf(self::triplet($h, $s, 98.0));
+        $dark = self::hexOf(self::triplet($h, $s, 4.0));
+
+        return Color::contrast($light, $surfaceHex) > Color::contrast($dark, $surfaceHex);
+    }
+
+    /**
+     * The best contrast any text can reach on this colour.
+     *
+     * A mid-tone cannot host readable text at either end — a pure #d92626 red
+     * peaks at 4.40:1 — and no palette can fix that: there is no third end to
+     * reach for. See supports().
+     */
+    public static function bestTextContrast(string $hex): float
+    {
+        [$h, $s] = self::hsl($hex);
+        $saturation = min($s * 0.15, 12.0);
+
+        return max(
+            Color::contrast(self::hexOf(self::triplet($h, $saturation, 98.0)), $hex),
+            Color::contrast(self::hexOf(self::triplet($h, $saturation, 4.0)), $hex),
+        );
+    }
+
+    /**
+     * Whether a readable theme can actually be built on this colour.
+     *
+     * Checked against the derived *card*, not just the page. The card is where
+     * nearly all the text lives, and it is a step off the page — so a colour can
+     * host readable text itself while the surface derived from it cannot. Both
+     * have to work or the theme is broken where it matters most.
+     *
+     * This is what the picker refuses on. It is a real limit of mid-tones, not a
+     * matter of taste, so it is worth stating plainly rather than shipping a page
+     * whose labels are a guess.
+     */
+    public static function supports(string $hex): bool
+    {
+        $palette = self::from($hex);
+
+        $pairs = [
+            ['foreground', 'background'],
+            ['card-foreground', 'card'],
+            ['muted-foreground', 'card'],
+        ];
+
+        foreach ($pairs as [$text, $surface]) {
+            $contrast = Color::contrast(
+                self::hexOf($palette[$text]),
+                self::hexOf($palette[$surface]),
+            );
+
+            if ($contrast < self::AA) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

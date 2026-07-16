@@ -22,6 +22,8 @@ class SpendingTrend
         TrendGranularity::Week->value => 12,
         TrendGranularity::Month->value => 24,
         TrendGranularity::Year->value => 10,
+        // All time is one span; the picker has nothing to choose between.
+        TrendGranularity::All->value => 1,
     ];
 
     /**
@@ -33,6 +35,7 @@ class SpendingTrend
             TrendGranularity::Week => $this->week($user, $anchor),
             TrendGranularity::Month => $this->month($user, $anchor),
             TrendGranularity::Year => $this->year($user, $anchor),
+            TrendGranularity::All => $this->all($user),
         };
     }
 
@@ -47,6 +50,10 @@ class SpendingTrend
         $now ??= CarbonImmutable::now();
         $earliest = $this->earliestExpense($user) ?? $now;
         $limit = self::MAX_OPTIONS[$granularity->value];
+
+        if ($granularity === TrendGranularity::All) {
+            return [['value' => 'all', 'label' => $this->periodLabel($granularity, $earliest)]];
+        }
 
         $options = [];
         $cursor = $this->startOf($granularity, $now);
@@ -76,7 +83,8 @@ class SpendingTrend
     {
         $now ??= CarbonImmutable::now();
 
-        if (! $value) {
+        // All time has no anchor to resolve — the span is the whole history.
+        if ($granularity === TrendGranularity::All || ! $value) {
             return $now;
         }
 
@@ -100,8 +108,16 @@ class SpendingTrend
      *
      * @return array{0: CarbonImmutable, 1: CarbonImmutable}
      */
-    public function range(TrendGranularity $granularity, CarbonImmutable $anchor): array
+    public function range(TrendGranularity $granularity, CarbonImmutable $anchor, ?User $user = null): array
     {
+        if ($granularity === TrendGranularity::All) {
+            // Everything ever logged. Without a user we cannot know when that
+            // starts, so fall back to a span wide enough to hold any history.
+            $start = $user ? ($this->earliestExpense($user) ?? $anchor) : $anchor->subYears(50);
+
+            return [$start->startOfDay(), CarbonImmutable::now()->endOfDay()];
+        }
+
         return match ($granularity) {
             TrendGranularity::Week => [$anchor->startOfWeek(), $anchor->endOfWeek()],
             TrendGranularity::Month => [$anchor->startOfMonth(), $anchor->endOfMonth()],
@@ -115,6 +131,7 @@ class SpendingTrend
             TrendGranularity::Week => $date->startOfWeek()->toDateString(),
             TrendGranularity::Month => $date->format('Y-m'),
             TrendGranularity::Year => $date->format('Y'),
+            TrendGranularity::All => 'all',
         };
     }
 
@@ -124,6 +141,7 @@ class SpendingTrend
             TrendGranularity::Week => $date->startOfWeek(),
             TrendGranularity::Month => $date->startOfMonth(),
             TrendGranularity::Year => $date->startOfYear(),
+            TrendGranularity::All => $date->startOfMonth(),
         };
     }
 
@@ -133,7 +151,55 @@ class SpendingTrend
             TrendGranularity::Week => $date->startOfWeek()->isoFormat('D MMM').' – '.$date->endOfWeek()->isoFormat('D MMM YYYY'),
             TrendGranularity::Month => $date->isoFormat('MMMM YYYY'),
             TrendGranularity::Year => $date->isoFormat('YYYY'),
+            TrendGranularity::All => __('All time'),
         };
+    }
+
+    /**
+     * Everything ever logged — one bar per month from the first expense to now.
+     *
+     * Months, not years: a two-year history would be two bars, which is not a
+     * trend. Months keep the shape readable at any history length.
+     */
+    private function all(User $user): array
+    {
+        $earliest = $this->earliestExpense($user);
+        $now = CarbonImmutable::now();
+
+        if (! $earliest) {
+            return $this->assemble(__('All time'), []);
+        }
+
+        $start = $earliest->startOfMonth();
+
+        $totals = Expense::query()
+            ->where('user_id', $user->id)
+            // Grouped by the same expression that is selected: under
+            // only_full_group_by, grouping by YEAR()/MONTH() while selecting
+            // DATE_FORMAT() is rejected — MySQL cannot prove they agree.
+            ->groupByRaw("DATE_FORMAT(spent_on, '%Y-%m')")
+            ->selectRaw("DATE_FORMAT(spent_on, '%Y-%m') as bucket, SUM(price) as total")
+            ->pluck('total', 'bucket');
+
+        $buckets = [];
+        $span = $start->diffInMonths($now);
+
+        for ($month = $start; $month->lte($now->endOfMonth()); $month = $month->addMonth()) {
+            $buckets[] = $this->bucket(
+                key: $month->format('Y-m'),
+                // Once past a couple of years the month labels collide, so only
+                // each January is named — the year is the useful landmark then.
+                label: $span > 24
+                    ? ($month->month === 1 ? $month->isoFormat('YYYY') : '')
+                    : ($month->month === 1 ? $month->isoFormat('MMM YY') : $month->isoFormat('MMM')),
+                caption: $month->isoFormat('MMMM YYYY'),
+                value: (float) ($totals[$month->format('Y-m')] ?? 0),
+                date: $month,
+                granularity: TrendGranularity::Year,
+            );
+        }
+
+        return $this->assemble(__('All time'), $buckets);
     }
 
     /** One bar per day, Monday to Sunday. */

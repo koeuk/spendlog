@@ -27,6 +27,7 @@ const PERIODS = [
     { key: 'week', label: 'Week' },
     { key: 'month', label: 'Month' },
     { key: 'year', label: 'Year' },
+    { key: 'all', label: 'All' },
 ];
 
 const VIEWS = [

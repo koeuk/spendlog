@@ -51,19 +51,19 @@
                         s.setProperty('--primary-foreground', t.primaryForeground);
                     }
 
-                    // Always parked here, even in dark mode, and never read by a
-                    // token directly. It is the stash useTheme reads from when the
-                    // user toggles back to light — without it, someone who loads
-                    // the page in dark and switches to light would get the stock
-                    // white instead of the admin's colour, with no way to recover
-                    // it short of a reload.
-                    s.setProperty('--brand-background', t.background);
+                    // The derived theme — every surface and text token, not just
+                    // the page. Light mode only: dark mode has its own, built for
+                    // a dark page. Stashed on the element either way so useTheme
+                    // can re-apply it when the user toggles back to light, which
+                    // it could not do from a value that was never written.
+                    if (t.palette) {
+                        window.__brandPalette = t.palette;
 
-                    // The body colour is a light-mode choice only: the presets are
-                    // all near-white, and forcing one in dark mode would put pale
-                    // text on a pale page.
-                    if (!dark) {
-                        s.setProperty('--background', t.background);
+                        if (!dark) {
+                            for (var token in t.palette) {
+                                s.setProperty('--' + token, t.palette[token]);
+                            }
+                        }
                     }
                 } catch (e) {}
             })();

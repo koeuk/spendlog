@@ -28,6 +28,7 @@ const PERIODS = [
     { key: 'week', label: 'Week' },
     { key: 'month', label: 'Month' },
     { key: 'year', label: 'Year' },
+    { key: 'all', label: 'All' },
 ];
 
 // Everything on this page describes the chosen period, so a change reloads all
@@ -146,7 +147,10 @@ const change = computed(() => {
                         </a>
                     </template>
 
+<!-- All time is one span, so a one-option picker would be furniture. -->
+
 <Select
+                        v-if="options.length > 1"
                         :model-value="anchor"
                         :disabled="loading"
                         @update:model-value="load(granularity, $event)"

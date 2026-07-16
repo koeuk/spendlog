@@ -121,5 +121,7 @@
     "Nothing logged in this period.": "Nothing logged in this period.",
     "Generated :date": "Generated :date",
     "PDF": "PDF",
-    "Excel": "Excel"
+    "Excel": "Excel",
+    "All time": "All time",
+    "All": "All"
 }

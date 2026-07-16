@@ -1,4 +1,5 @@
 import { computed, ref } from 'vue';
+import { applyPalette } from '@/composables/useBrandColors';
 
 const STORAGE_KEY = 'spendlog.theme';
 
@@ -44,21 +45,16 @@ function apply() {
     root.style.colorScheme = isDark.value ? 'dark' : 'light';
 
     /*
-     * The admin's body colour is light-mode only, and the pre-paint script in
-     * app.blade.php sets it as inline style on <html>. Inline style outranks any
-     * stylesheet rule, so adding the .dark class is not enough on its own —
-     * without removing it here, switching to dark would keep the light page.
+     * The admin's theme is light-mode only, and it is applied as inline style on
+     * <html>. Inline style outranks any stylesheet rule, so adding the .dark
+     * class is not enough on its own — without clearing those tokens here,
+     * switching to dark would keep the light page, cards and all.
      *
-     * --brand-background is the stash that script always leaves, so toggling back
-     * to light restores the admin's colour rather than the stock white.
+     * window.__brandPalette is the stash both the pre-paint script and
+     * useBrandColors leave behind, so toggling back to light restores the admin's
+     * theme rather than the stock white.
      */
-    const brandBackground = root.style.getPropertyValue('--brand-background');
-
-    if (isDark.value) {
-        root.style.removeProperty('--background');
-    } else if (brandBackground) {
-        root.style.setProperty('--background', brandBackground);
-    }
+    applyPalette(isDark.value ? null : (window.__brandPalette ?? null));
 }
 
 function setTheme(next) {

@@ -48,7 +48,7 @@ class ReportController extends Controller
             ?? TrendGranularity::Month;
 
         $anchor = $this->trend->resolveAnchor($granularity, $request->query('at'));
-        [$start, $end] = $this->trend->range($granularity, $anchor);
+        [$start, $end] = $this->trend->range($granularity, $anchor, $user);
 
         $series = $this->trend->series($user, $granularity, $anchor);
         $breakdown = $this->breakdown($user, $start, $end);
@@ -79,7 +79,7 @@ class ReportController extends Controller
         $granularity = TrendGranularity::tryFrom((string) $request->query('period'))
             ?? TrendGranularity::Month;
         $anchor = $this->trend->resolveAnchor($granularity, $request->query('at'));
-        [$start, $end] = $this->trend->range($granularity, $anchor);
+        [$start, $end] = $this->trend->range($granularity, $anchor, $user);
 
         $periodLabel = $this->periodLabelFor($granularity, $anchor);
         $expenses = $this->allExpenses($user, $start, $end);
@@ -229,18 +229,24 @@ class ReportController extends Controller
         $last = $end->gt($now) ? $now : $end;
         $days = max($start->diffInDays($last) + 1, 1);
 
+        // All time has nothing before it, so there is no comparison to make.
         $previousAnchor = match ($granularity) {
             TrendGranularity::Week => $anchor->subWeek(),
             TrendGranularity::Month => $anchor->subMonth(),
             TrendGranularity::Year => $anchor->subYear(),
+            TrendGranularity::All => null,
         };
 
-        [$prevStart, $prevEnd] = $this->trend->range($granularity, $previousAnchor);
+        $previous = 0.0;
 
-        $previous = round((float) Expense::query()
-            ->where('user_id', $user->id)
-            ->whereBetween('spent_on', [$prevStart->toDateString(), $prevEnd->toDateString()])
-            ->sum('price'), 2);
+        if ($previousAnchor !== null) {
+            [$prevStart, $prevEnd] = $this->trend->range($granularity, $previousAnchor, $user);
+
+            $previous = round((float) Expense::query()
+                ->where('user_id', $user->id)
+                ->whereBetween('spent_on', [$prevStart->toDateString(), $prevEnd->toDateString()])
+                ->sum('price'), 2);
+        }
 
         return [
             'total' => $total,
@@ -252,7 +258,7 @@ class ReportController extends Controller
             'change_percent' => $previous > 0
                 ? round((($total - $previous) / $previous) * 100, 1)
                 : null,
-            'previous_label' => $this->trend->options($user, $granularity)
+            'previous_label' => $previousAnchor !== null
                 ? $this->periodLabelFor($granularity, $previousAnchor)
                 : null,
         ];
@@ -264,6 +270,7 @@ class ReportController extends Controller
             TrendGranularity::Week => $date->startOfWeek()->isoFormat('D MMM').' – '.$date->endOfWeek()->isoFormat('D MMM YYYY'),
             TrendGranularity::Month => $date->isoFormat('MMMM YYYY'),
             TrendGranularity::Year => $date->isoFormat('YYYY'),
+            TrendGranularity::All => __('All time'),
         };
     }
 }

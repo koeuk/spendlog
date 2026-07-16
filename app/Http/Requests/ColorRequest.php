@@ -2,17 +2,13 @@
 
 namespace App\Http\Requests;
 
-use App\Support\Color;
-use Closure;
+use App\Enums\BodyColor;
+use App\Enums\ButtonColor;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class ColorRequest extends FormRequest
 {
-    /** What APP_PAGE actually paints body text in (text-neutral-900). */
-    private const PAGE_TEXT = '#171717';
-
-    /** WCAG AA for body text. */
-    private const MIN_TEXT_CONTRAST = 4.5;
 
     /**
      * Authorization is handled by the admin gate in the controller.
@@ -30,35 +26,14 @@ class ColorRequest extends FormRequest
             // "red;} html{display:none" would otherwise escape the declaration.
             // The pattern is shared with Color, so the rule and the parser can
             // never disagree about what is valid.
-            'button_color' => ['required', 'string', 'regex:'.Color::HEX_PATTERN],
-            'body_color' => ['required', 'string', 'regex:'.Color::HEX_PATTERN, $this->lightEnough()],
+            // Both are now chosen from a set rather than typed, so the set is the
+            // rule. Rule::enum still leaves the values as plain hex in the column
+            // — the enums are the offered options, not a storage format.
+            'button_color' => ['required', 'string', Rule::enum(ButtonColor::class)],
+            'body_color' => ['required', 'string', Rule::enum(BodyColor::class)],
         ];
     }
 
-    /**
-     * The light-mode page must stay light.
-     *
-     * This is not fussiness about taste — the light theme is built on a pale
-     * page. Body text is near-black, and the cards are translucent white
-     * (bg-white/60), so on a dark background the page text vanishes and the
-     * cards turn light-grey with dark text inside them: a pale-card, dark-page
-     * hybrid that is neither theme. Dark mode already does a dark page properly,
-     * with fills and text designed for it, so there is nothing to gain here and a
-     * broken screen to lose.
-     */
-    private function lightEnough(): Closure
-    {
-        return function (string $attribute, mixed $value, Closure $fail) {
-            // Malformed hex is the regex rule's job — do not report it twice.
-            if (! is_string($value) || ! Color::isHex($value)) {
-                return;
-            }
-
-            if (Color::contrast($value, self::PAGE_TEXT) < self::MIN_TEXT_CONTRAST) {
-                $fail(__('That colour is too dark for the light background — the page text would be unreadable on it. Dark mode already uses a dark page.'));
-            }
-        };
-    }
 
     /**
      * Browsers send #RRGGBB from <input type="color"> in lower case, but a typed
@@ -77,8 +52,8 @@ class ColorRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'button_color.regex' => __('The button colour must be a hex value like #4b9d5f.'),
-            'body_color.regex' => __('The background colour must be a hex value like #faf8f4.'),
+            'button_color.enum' => __('That is not one of the available button colours.'),
+            'body_color.enum' => __('That is not one of the available backgrounds.'),
         ];
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Support\Color;
+use App\Support\Palette;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
@@ -123,10 +124,12 @@ class AppSetting extends Model
      * once an admin picks one it applies to each. The default is the one value
      * that cannot, which is exactly why it means "leave the stock tokens alone".
      *
-     * `background` is light-mode only, for the mirror reason: an admin picking
-     * Cream should not be able to switch dark mode off for everyone.
+     * The palette is light-mode only, for the mirror reason: an admin picking
+     * Cream should not be able to switch dark mode off for everyone. It is null
+     * at the default background too — the stock tokens already are that theme,
+     * and re-deriving them would only round-trip the same values.
      *
-     * @return array{primary: string|null, primaryForeground: string|null, background: string}
+     * @return array{primary: string|null, primaryForeground: string|null, palette: array<string, string>|null}
      */
     public function cssVariables(): array
     {
@@ -134,12 +137,23 @@ class AppSetting extends Model
 
         return [
             'primary' => $branded ? Color::toHslTriplet($this->button_color) : null,
-            // Computed, never chosen: a free colour picker otherwise lets an
-            // admin put white text on a pale button and lose the label.
+            // Computed, never chosen: the label has to survive whichever fill is
+            // picked, and only the fill knows which end reads on it.
             'primaryForeground' => $branded
                 ? Color::readableForegroundTriplet($this->button_color)
                 : null,
-            'background' => Color::toHslTriplet($this->body_color),
+            /*
+             * The whole theme, derived from the background — not just the page.
+             *
+             * Setting --background alone paints the page and leaves everything
+             * else behind: cards stay translucent white, borders stay grey, muted
+             * text stays neutral. On a tinted page that reads as a wash rather
+             * than a theme. Palette derives every surface and text token from the
+             * same hue, contrast-checked, so they move together.
+             */
+            'palette' => $this->plainBackground()
+                ? Palette::from($this->body_color)
+                : null,
         ];
     }
 
