@@ -19,7 +19,7 @@ class ExpenseController extends Controller
     public function index(Request $request): Response
     {
         $expenses = QueryBuilder::for(Expense::class)
-            ->allowedFilters([
+            ->allowedFilters(
                 AllowedFilter::partial('item'),
                 // Filter by the public UUID; the column itself stays internal.
                 AllowedFilter::callback('category', fn ($query, $value) => $query->whereHas(
@@ -28,8 +28,8 @@ class ExpenseController extends Controller
                 )),
                 AllowedFilter::callback('from', fn ($query, $value) => $query->whereDate('spent_on', '>=', $value)),
                 AllowedFilter::callback('to', fn ($query, $value) => $query->whereDate('spent_on', '<=', $value)),
-            ])
-            ->allowedSorts(['spent_on', 'price', 'item'])
+            )
+            ->allowedSorts('spent_on', 'price', 'item')
             ->defaultSort('-spent_on', '-id')
             ->with(['category:id,uuid,name,color,icon', 'user:id,uuid,name'])
             // Scoped last so no filter can widen it beyond the owner's rows.

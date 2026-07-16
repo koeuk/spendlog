@@ -21,14 +21,14 @@ class CategoryController extends Controller
         Gate::authorize('viewAny', Category::class);
 
         $categories = QueryBuilder::for(Category::class)
-            ->allowedFilters([
+            ->allowedFilters(
                 AllowedFilter::partial('name'),
                 AllowedFilter::exact('color'),
-            ])
-            ->allowedSorts([
+            )
+            ->allowedSorts(
                 'name',
                 AllowedSort::field('expenses', 'expenses_count'),
-            ])
+            )
             ->defaultSort('name')
             ->withCount('expenses')
             ->get();
