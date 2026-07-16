@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import CategoryBadge from '@/Components/CategoryBadge.vue';
@@ -34,6 +34,11 @@ const props = defineProps({
     can: { type: Object, required: true },
     filters: { type: Object, default: () => ({}) },
 });
+
+// The actions column only earns its space if at least one action is available —
+// a normal user can add a category but not edit or delete a shared one, so they
+// would otherwise get an empty column under a header.
+const canManageAny = computed(() => props.can.update || props.can.delete);
 
 // Seeded from the URL so a shared or reloaded link shows its own search term.
 const search = ref(props.filters?.filter?.name ?? '');
