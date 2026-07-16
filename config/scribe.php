@@ -14,14 +14,28 @@ return [
     'title' => config('app.name').' API Documentation',
 
     // A short description of your API. Will be included in the docs webpage, Postman collection and OpenAPI spec.
-    'description' => '',
+    'description' => 'Token-authenticated JSON API for mobile and third-party clients.',
 
     // Text to place in the "Introduction" section, right after the `description`. Markdown and HTML are supported.
     'intro_text' => <<<'INTRO'
-            This documentation aims to provide all the information you need to work with our API.
+            The Inertia frontend is unaffected by this API — it keeps using session auth.
 
-            <aside>As you scroll, you'll see code examples for working with the API in different programming languages in the dark area to the right (or as part of the content on mobile).
-            You can switch the language used with the tabs at the top right (or from the nav menu at the top left on mobile).</aside>
+            **Identifiers are UUIDs.** Every table has a `bigint` `id` for foreign keys and joins,
+            and a `uuid` as its public route key. `id` is hidden from JSON and never leaves the
+            server, so passing one where a UUID belongs 404s before the query even runs.
+
+            **Money is a string** — `"12.50"`, never `12.5`. The columns are `decimal(10,2)`, and a
+            JSON float would drop the trailing zero and drift on sums. Parse it with a decimal type
+            on the client. Percentages are not money and stay numeric (`percent: 106`).
+
+            **Dates.** `spent_on` is a calendar day (`2026-07-16`), budgets are months (`2026-07`),
+            timestamps are ISO 8601 UTC.
+
+            **Rate limits.** 60 requests/minute per token. `login` and `register` allow 5 per minute
+            per email+IP, plus 20 per minute per IP.
+
+            <aside>Code examples for each endpoint are in the dark panel to the right; switch
+            language with the tabs at the top.</aside>
         INTRO,
 
     // The base URL displayed in the docs.
@@ -80,7 +94,12 @@ return [
         'assets_directory' => null,
 
         // Middleware to attach to the docs endpoint (if `add_routes` is true).
-        'middleware' => [],
+        // 'web' gives the session the admin check needs; RestrictDocsAccess is
+        // open in local and admin-only everywhere else.
+        'middleware' => [
+            'web',
+            \App\Http\Middleware\RestrictDocsAccess::class,
+        ],
     ],
 
     'external' => [
@@ -105,17 +124,16 @@ return [
     // How is your API authenticated? This information will be used in the displayed docs, generated examples and response calls.
     'auth' => [
         // Set this to true if ANY endpoints in your API use authentication.
-        'enabled' => false,
+        'enabled' => true,
 
-        // Set this to true if your API should be authenticated by default. If so, you must also set `enabled` (above) to true.
-        // You can then use @unauthenticated or @authenticated on individual endpoints to change their status from the default.
-        'default' => false,
+        // Everything except login/register, which are marked @unauthenticated.
+        'default' => true,
 
         // Where is the auth value meant to be sent in a request?
         'in' => AuthIn::BEARER->value,
 
         // The name of the auth parameter (e.g. token, key, apiKey) or header (e.g. Authorization, Api-Key).
-        'name' => 'key',
+        'name' => 'Authorization',
 
         // The value of the parameter to be used by Scribe to authenticate response calls.
         // This will NOT be included in the generated documentation. If empty, Scribe will use a random value.
@@ -123,10 +141,21 @@ return [
 
         // Placeholder your users will see for the auth parameter in the example requests.
         // Set this to null if you want Scribe to use a random value as placeholder instead.
-        'placeholder' => '{YOUR_AUTH_KEY}',
+        'placeholder' => '{YOUR_AUTH_TOKEN}',
 
         // Any extra authentication-related info for your users. Markdown and HTML are supported.
-        'extra_info' => 'You can retrieve your token by visiting your dashboard and clicking <b>Generate API token</b>.',
+        'extra_info' => <<<'AUTH'
+            Get a token from `POST /api/v1/login`, then send it as `Authorization: Bearer {token}`.
+
+            **Two gates, and both must pass.** Token *abilities* limit what the client may attempt;
+            *policies* limit what the user may do. A mobile token cannot write categories even when
+            its owner is an admin.
+
+            New tokens get every ability **except** `categories:write` — category management is an
+            admin desk job, and a lost phone should not rewrite the taxonomy every user's expenses
+            hang off. A client may request a narrower token via `abilities[]`; anything it asks for
+            is intersected with what the user may grant, so asking for more never widens it.
+            AUTH,
     ],
 
     // Example requests for each endpoint will be shown in each of these languages.

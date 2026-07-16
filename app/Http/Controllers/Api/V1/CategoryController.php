@@ -15,8 +15,25 @@ use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\AllowedSort;
 use Spatie\QueryBuilder\QueryBuilder;
 
+/**
+ * @group Categories
+ *
+ * The shared taxonomy every expense and budget hangs off. Readable by everyone,
+ * writable by admins only — and a token needs `categories:write` on top of that.
+ *
+ * @authenticated
+ */
 class CategoryController extends Controller
 {
+    /**
+     * List categories
+     *
+     * @queryParam filter[name] string Partial match. Example: foo
+     * @queryParam filter[color] string Exact colour. Example: amber
+     * @queryParam sort string name or expenses. Prefix with - to reverse. Example: -expenses
+     *
+     * @response 200 {"data": [{"uuid": "0198a...", "name": "Food", "color": "amber", "icon": "utensils", "expenses_count": 12, "created_at": "2026-07-16T10:00:00+00:00", "updated_at": "2026-07-16T10:00:00+00:00"}]}
+     */
     public function index(): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', Category::class);
@@ -37,6 +54,14 @@ class CategoryController extends Controller
         return CategoryResource::collection($categories);
     }
 
+    /**
+     * Get a category
+     *
+     * @urlParam category string required The category UUID. Example: 0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+     *
+     * @response 200 {"data": {"uuid": "0198a...", "name": "Food", "color": "amber", "icon": "utensils", "expenses_count": 12}}
+     * @response 404 scenario="unknown or non-UUID" {"message": "Not found."}
+     */
     public function show(Category $category): CategoryResource
     {
         Gate::authorize('viewAny', Category::class);
@@ -44,6 +69,20 @@ class CategoryController extends Controller
         return new CategoryResource($category->loadCount('expenses'));
     }
 
+    /**
+     * Create a category
+     *
+     * Admins only, and the token needs `categories:write` — which is **not**
+     * granted by default.
+     *
+     * @bodyParam name string required Must be unique. Example: Travel
+     * @bodyParam color string required One of: slate, red, orange, amber, green, teal, blue, indigo, purple, pink. Example: blue
+     * @bodyParam icon string One of the CategoryIcon values, or null. Example: plane
+     *
+     * @response 201 {"data": {"uuid": "0198a...", "name": "Travel", "color": "blue", "icon": "plane"}}
+     * @response 403 scenario="not an admin, or token lacks categories:write" {"message": "This action is unauthorized."}
+     * @response 422 scenario="duplicate name" {"message": "The name has already been taken.", "errors": {"name": ["The name has already been taken."]}}
+     */
     public function store(CategoryRequest $request): JsonResponse
     {
         Gate::authorize('create', Category::class);
