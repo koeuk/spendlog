@@ -3,19 +3,39 @@
 namespace App\Models;
 
 use Carbon\CarbonImmutable;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Builder;
 use App\Models\Concerns\HasUuidRouteKey;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['category_id', 'item', 'price', 'spent_on'])]
-#[Hidden(['id'])]
 class Expense extends Model
 {
     use HasFactory, HasUuidRouteKey;
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * Deliberately omits user_id — it is set from the authenticated user via
+     * the expenses() relationship, never from request input.
+     *
+     * @var array
+     */
+    protected $fillable = [
+        'category_id',
+        'item',
+        'price',
+        'spent_on',
+    ];
+
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array
+     */
+    protected $hidden = [
+        'id',
+    ];
 
     protected function casts(): array
     {
