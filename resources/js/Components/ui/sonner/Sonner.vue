@@ -41,15 +41,16 @@ const delegatedProps = reactiveOmit(props, "class", "toastOptions");
   <Sonner
     :class="cn('toaster group', props.class)"
     :style="{
-      '--normal-bg': 'var(--popover)',
-      '--normal-text': 'var(--popover-foreground)',
-      '--normal-border': 'var(--border)',
+      // This project's CSS vars hold raw HSL triplets, so each needs hsl().
+      '--normal-bg': 'hsl(var(--popover))',
+      '--normal-text': 'hsl(var(--popover-foreground))',
+      '--normal-border': 'hsl(var(--border))',
       '--border-radius': 'var(--radius)',
       '--gray2': 'hsl(var(--popover) / 0.9)',
-      '--gray3': 'var(--border)',
-      '--gray4': 'var(--border)',
-      '--gray5': 'var(--border)',
-      '--gray12': 'var(--popover-foreground)',
+      '--gray3': 'hsl(var(--border))',
+      '--gray4': 'hsl(var(--border))',
+      '--gray5': 'hsl(var(--border))',
+      '--gray12': 'hsl(var(--popover-foreground))',
     }"
     :toast-options="
       props.toastOptions ?? {

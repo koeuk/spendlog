@@ -5,9 +5,13 @@ import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
+import { Toaster } from '@/Components/ui/sonner';
+import { useFlashToasts } from '@/composables/useFlashToasts';
 import { Link } from '@inertiajs/vue3';
 
 const showingNavigationDropdown = ref(false);
+
+useFlashToasts();
 </script>
 
 <template>
@@ -219,5 +223,7 @@ const showingNavigationDropdown = ref(false);
                 <slot />
             </main>
         </div>
+
+        <Toaster position="top-right" rich-colors close-button />
     </div>
 </template>
