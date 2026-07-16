@@ -8,6 +8,7 @@ use App\Services\BudgetSummary;
 use App\Enums\TrendGranularity;
 use App\Services\SpendingTrend;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -24,6 +25,8 @@ class DashboardController extends Controller
 
     public function index(Request $request): Response
     {
+        Gate::authorize('viewDashboard');
+
         $user = $request->user();
         $today = CarbonImmutable::now();
 

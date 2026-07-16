@@ -21,6 +21,8 @@ class BudgetController extends Controller
 
     public function index(Request $request): Response
     {
+        Gate::authorize('viewAny', Budget::class);
+
         $month = $this->resolveMonth($request->query('month'));
 
         return Inertia::render('Budgets/Index', [

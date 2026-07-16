@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
@@ -7,8 +7,9 @@ import ExpenseForm from '@/Components/ExpenseForm.vue';
 import { CARD } from '@/lib/appStyles';
 import ExpenseListSkeleton from '@/Components/ExpenseListSkeleton.vue';
 import Pagination from '@/Components/Pagination.vue';
+import SearchInput from '@/Components/SearchInput.vue';
 import { useNavigating } from '@/composables/useNavigating';
-import { trans } from '@/lib/i18n';
+import { localized, trans } from '@/lib/i18n';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
 import { Button } from '@/Components/ui/button';
 import {
@@ -45,15 +46,56 @@ const viewingAll = computed(() => props.scope === 'all');
  * the way out.
  */
 const ALL_USERS = '__all__';
+const ALL_CATEGORIES = '__all__';
 
 const { navigating } = useNavigating();
 
+/*
+ * Every control on this page narrows the same list, so each one edits the
+ * current query rather than replacing it — otherwise switching scope would
+ * silently drop the search term the user just typed.
+ *
+ * Empty values are dropped rather than sent blank: ?filter[item]= is a filter
+ * for the empty string, not the absence of one.
+ */
+function navigate({ scope, ...changes } = {}) {
+    const filter = { ...(props.filters?.filter ?? {}), ...changes };
+    const query = {};
+
+    const nextScope = scope ?? props.scope;
+
+    if (nextScope === 'all') {
+        query.scope = 'all';
+    }
+
+    for (const [key, value] of Object.entries(filter)) {
+        if (value !== '' && value !== null && value !== undefined) {
+            query.filter = { ...query.filter, [key]: value };
+        }
+    }
+
+    router.get(route('expenses.index'), query, {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+    });
+}
+
 function setScope(scope) {
-    router.get(
-        route('expenses.index'),
-        scope === 'all' ? { scope: 'all' } : {},
-        { preserveScroll: true },
-    );
+    // The user filter only exists on the everyone view; carrying it back to
+    // "mine" would send a filter the server refuses to allow there.
+    navigate(scope === 'all' ? { scope } : { scope, user: '' });
+}
+
+const search = ref(props.filters?.filter?.item ?? '');
+
+watch(search, (value) => navigate({ item: value }));
+
+const categoryFilter = ref(props.filters?.filter?.category ?? '');
+
+function applyCategoryFilter(uuid) {
+    categoryFilter.value = uuid;
+    navigate({ category: uuid });
 }
 
 // Admin-only: narrow the everyone view to a single person.
@@ -61,11 +103,7 @@ const userFilter = ref(props.filters?.filter?.user ?? '');
 
 function applyUserFilter(uuid) {
     userFilter.value = uuid;
-    router.get(
-        route('expenses.index'),
-        uuid ? { scope: 'all', filter: { user: uuid } } : { scope: 'all' },
-        { preserveScroll: true },
-    );
+    navigate({ user: uuid });
 }
 
 function todayString() {
@@ -183,6 +221,13 @@ function formatDay(date) {
 }
 
 const isEmpty = computed(() => props.days.length === 0);
+
+// An empty list means two different things: nothing logged yet, or nothing left
+// after filtering. Offering "add your first one" to someone who just searched
+// would be answering a question they did not ask.
+const filtered = computed(() =>
+    Object.values(props.filters?.filter ?? {}).some((v) => v !== '' && v != null),
+);
 </script>
 
 <template>
@@ -260,6 +305,33 @@ const isEmpty = computed(() => props.days.length === 0);
             <!-- Width and gutters come from the layout's one container, so the
                  column never resizes when navigating between pages. -->
             <div class="space-y-4">
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <SearchInput
+                        v-model="search"
+                        :placeholder="__('Search expenses…')"
+                        class="sm:max-w-sm sm:flex-1"
+                    />
+
+                    <Select
+                        :model-value="categoryFilter || ALL_CATEGORIES"
+                        @update:model-value="
+                            applyCategoryFilter($event === ALL_CATEGORIES ? '' : $event)
+                        "
+                    >
+                        <SelectTrigger class="sm:w-52" :aria-label="__('Filter by category')">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem :value="ALL_CATEGORIES">
+                                {{ __('All categories') }}
+                            </SelectItem>
+                            <SelectItem v-for="c in categories" :key="c.uuid" :value="c.uuid">
+                                {{ localized(c.name) }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
                 <ExpenseListSkeleton v-if="navigating" />
 
                 <div
@@ -267,9 +339,13 @@ const isEmpty = computed(() => props.days.length === 0);
                     :class="[CARD, 'p-10 text-center']"
                 >
                     <p class="text-sm text-gray-600 dark:text-neutral-400">
-                        {{ __('No expenses yet, add your first one.') }}
+                        {{
+                            filtered
+                                ? __('No expenses match these filters.')
+                                : __('No expenses yet, add your first one.')
+                        }}
                     </p>
-                    <Button class="mt-4" size="sm" @click="openCreate">
+                    <Button v-if="!filtered" class="mt-4" size="sm" @click="openCreate">
                         {{ __('Add expense') }}
                     </Button>
                 </div>

@@ -6,28 +6,21 @@ use App\Enums\Permission;
 use App\Models\Category;
 use App\Models\User;
 
+/**
+ * Categories are shared by everyone, which is why the verbs split unevenly:
+ * creating only ever adds to the list, while editing and deleting change a row
+ * other people are already filing expenses against.
+ */
 class CategoryPolicy
 {
-    /**
-     * Everyone needs to read categories to log an expense against one.
-     */
     public function viewAny(User $user): bool
     {
-        return true;
+        return $user->hasPermissionTo(Permission::CategoriesView->value);
     }
 
-    /**
-     * Anyone may add one.
-     *
-     * Deliberately looser than update/delete: a category is created mid-flow from
-     * the expense dialog, and making people stop to ask an admin is how expenses
-     * end up filed under "Other" forever. Editing and deleting stay admin-only —
-     * those change or remove a row everyone else is already using, while creating
-     * only ever adds to the list.
-     */
     public function create(User $user): bool
     {
-        return true;
+        return $user->hasPermissionTo(Permission::CategoriesCreate->value);
     }
 
     public function update(User $user, Category $category): bool

@@ -146,6 +146,13 @@ function destroy() {
             <!-- Width and gutters come from the layout's one container, so the
                  column never resizes when navigating between pages. -->
             <div>
+                <div class="mb-4 sm:max-w-sm">
+                    <SearchInput
+                        v-model="search"
+                        :placeholder="__('Search categories…')"
+                    />
+                </div>
+
                 <!--
                     The card is 28px-rounded, so a flush table crowds its corners.
                     Padding here plus roomier cells keeps the content clear of the
@@ -168,7 +175,7 @@ function destroy() {
                                     :colspan="can.manage ? 3 : 2"
                                     class="py-10 text-center text-sm text-gray-500 dark:text-neutral-400"
                                 >
-                                    {{ __('No categories yet.') }}
+                                    {{ search ? __('No categories match your search.') : __('No categories yet.') }}
                                 </TableCell>
                             </TableRow>
                             <TableRow v-for="category in categories" :key="category.uuid">

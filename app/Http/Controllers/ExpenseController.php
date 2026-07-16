@@ -94,6 +94,8 @@ class ExpenseController extends Controller
 
     public function store(ExpenseRequest $request): RedirectResponse
     {
+        Gate::authorize('create', Expense::class);
+
         // Naming a category inline creates one, so it goes through the same gate
         // the Categories page uses rather than trusting the dialog to hide itself.
         if (filled($request->input('new_category'))) {
