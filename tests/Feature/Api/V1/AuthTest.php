@@ -97,10 +97,33 @@ class AuthTest extends TestCase
         );
     }
 
-    public function test_a_new_token_excludes_categories_write_by_default(): void
+    /**
+     * Abilities are derived from permissions, so the API cannot reach a
+     * different answer than the web about the same person. A user who may add a
+     * category inline while logging an expense can do it from a phone too.
+     */
+    public function test_a_new_token_carries_the_abilities_the_permissions_justify(): void
     {
         $user = User::factory()->create(['email' => 'sam@example.com']);
-        $user->applyRole(RoleName::Admin);
+        $user->applyRole(RoleName::User);
+
+        $this->postJson('/api/v1/login', [
+            'email' => 'sam@example.com',
+            'password' => 'password',
+            'device_name' => 'phone',
+        ])->assertOk();
+
+        $abilities = $user->tokens()->first()->abilities;
+
+        $this->assertContains(TokenAbility::ExpensesWrite->value, $abilities);
+        $this->assertContains(TokenAbility::CategoriesWrite->value, $abilities);
+    }
+
+    public function test_a_token_omits_abilities_the_permissions_do_not_cover(): void
+    {
+        $user = User::factory()->create(['email' => 'sam@example.com']);
+        $user->applyRole(RoleName::User);
+        $user->revokePermissionTo(Permission::CategoriesCreate->value);
 
         $this->postJson('/api/v1/login', [
             'email' => 'sam@example.com',
@@ -111,7 +134,8 @@ class AuthTest extends TestCase
         $abilities = $user->tokens()->first()->abilities;
 
         $this->assertNotContains(TokenAbility::CategoriesWrite->value, $abilities);
-        $this->assertContains(TokenAbility::ExpensesWrite->value, $abilities);
+        // Reading them is a separate permission and survives.
+        $this->assertContains(TokenAbility::CategoriesRead->value, $abilities);
     }
 
     public function test_a_client_can_request_a_narrower_token(): void
@@ -132,13 +156,14 @@ class AuthTest extends TestCase
     }
 
     /**
-     * The intersection is the whole point: asking for more than you may have
-     * must not widen the token.
+     * The intersection is the whole point: asking for more than your permissions
+     * cover must not widen the token.
      */
-    public function test_a_non_admin_cannot_request_categories_write(): void
+    public function test_a_client_cannot_request_an_ability_its_permissions_do_not_cover(): void
     {
         $user = User::factory()->create(['email' => 'sam@example.com']);
         $user->applyRole(RoleName::User);
+        $user->revokePermissionTo(Permission::CategoriesCreate->value);
 
         $this->postJson('/api/v1/login', [
             'email' => 'sam@example.com',

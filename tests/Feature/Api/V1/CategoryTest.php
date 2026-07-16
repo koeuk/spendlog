@@ -115,6 +115,34 @@ class CategoryTest extends TestCase
     }
 
     /**
+     * The reported failure, end to end: a mobile client logs in as an ordinary
+     * user and uses the inline "add a category while logging" flow the web
+     * grants them. This 403'd at the ability middleware — before the policy that
+     * would have allowed it was ever consulted — so the same person could do it
+     * in a browser and not from their phone.
+     *
+     * Nothing here is granted by hand: the token is whatever logging in issues.
+     */
+    public function test_a_default_token_can_create_a_category_inline(): void
+    {
+        $user = User::factory()->create(['email' => 'sam@example.com']);
+        $user->applyRole(RoleName::User);
+
+        $token = $this->postJson('/api/v1/login', [
+            'email' => 'sam@example.com',
+            'password' => 'password',
+            'device_name' => 'phone',
+        ])->assertOk()->json('token');
+
+        $this->withToken($token)->postJson('/api/v1/categories', [
+            'name' => ['en' => 'Snacks'],
+            'color' => CategoryColor::Red->value,
+        ])->assertStatus(201);
+
+        $this->assertSame(1, Category::query()->whereJsonContains('name->en', 'Snacks')->count());
+    }
+
+    /**
      * The counterpart that must keep biting: editing someone else's category is
      * still admin-only, because it changes a row everyone already uses.
      */

@@ -32,8 +32,24 @@ class CategoryController extends Controller
             ->allowedSorts(
                 TranslatableQuery::sort('name'),
                 AllowedSort::field('expenses', 'expenses_count'),
+                AllowedSort::field('created', 'created_at'),
             )
-            ->defaultSort('name')
+            /*
+             * Newest first: a category is added to be used straight away, so the
+             * one just created is the one being looked for.
+             *
+             * Passed as instances, not as the string '-created': defaultSort()
+             * builds its own AllowedSort from a string and would map the alias
+             * back onto a literal `created` column, which does not exist. The
+             * leading '-' sets the direction; the second argument keeps the real
+             * column. Ties break on id because a seed or import shares a
+             * created_at to the second, and MySQL may then order those rows
+             * differently on every query.
+             */
+            ->defaultSort(
+                AllowedSort::field('-created', 'created_at'),
+                AllowedSort::field('-id'),
+            )
             ->withCount('expenses')
             ->get()
             ->map(fn (Category $category) => [
