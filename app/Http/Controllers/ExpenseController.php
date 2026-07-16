@@ -7,19 +7,33 @@ use App\Models\Category;
 use App\Models\Expense;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
 class ExpenseController extends Controller
 {
     public function index(Request $request): Response
     {
-        $expenses = Expense::query()
-            ->with(['category:id,uuid,name,color,icon', 'user:id,name'])
+        $expenses = QueryBuilder::for(Expense::class)
+            ->allowedFilters([
+                AllowedFilter::partial('item'),
+                // Filter by the public UUID; the column itself stays internal.
+                AllowedFilter::callback('category', fn ($query, $value) => $query->whereHas(
+                    'category',
+                    fn ($q) => $q->whereIn('uuid', (array) $value),
+                )),
+                AllowedFilter::callback('from', fn ($query, $value) => $query->whereDate('spent_on', '>=', $value)),
+                AllowedFilter::callback('to', fn ($query, $value) => $query->whereDate('spent_on', '<=', $value)),
+            ])
+            ->allowedSorts(['spent_on', 'price', 'item'])
+            ->defaultSort('-spent_on', '-id')
+            ->with(['category:id,uuid,name,color,icon', 'user:id,uuid,name'])
+            // Scoped last so no filter can widen it beyond the owner's rows.
             ->where('user_id', $request->user()->id)
-            ->orderByDesc('spent_on')
-            ->orderByDesc('id')
             ->paginate(50)
             ->withQueryString();
 
@@ -32,6 +46,7 @@ class ExpenseController extends Controller
                 'next_page_url' => $expenses->nextPageUrl(),
                 'total' => $expenses->total(),
             ],
+            'filters' => $request->only('filter', 'sort'),
             'categories' => Category::query()
                 ->orderBy('name')
                 ->get(['uuid', 'name', 'color', 'icon']),
@@ -40,28 +55,58 @@ class ExpenseController extends Controller
 
     public function store(ExpenseRequest $request): RedirectResponse
     {
-        // Created through the relationship so user_id is never mass-assignable.
-        $request->user()->expenses()->create($request->expenseAttributes());
+        DB::beginTransaction();
 
-        return back()->with('success', 'Expense added.');
+        try {
+            // Created through the relationship so user_id is never mass-assignable.
+            $request->user()->expenses()->create($request->expenseAttributes());
+
+            DB::commit();
+
+            return redirect()->back()->withSuccess(__('Expense added successfully.'));
+        } catch (\Exception $e) {
+            DB::rollback();
+
+            return redirect()->back()->withError($e->getMessage())->withInput();
+        }
     }
 
     public function update(ExpenseRequest $request, Expense $expense): RedirectResponse
     {
         Gate::authorize('update', $expense);
 
-        $expense->update($request->expenseAttributes());
+        DB::beginTransaction();
 
-        return back()->with('success', 'Expense updated.');
+        try {
+            $expense->update($request->expenseAttributes());
+
+            DB::commit();
+
+            return redirect()->back()->withSuccess(__('Expense updated successfully.'));
+        } catch (\Exception $e) {
+            DB::rollback();
+
+            return redirect()->back()->withError($e->getMessage())->withInput();
+        }
     }
 
     public function destroy(Expense $expense): RedirectResponse
     {
         Gate::authorize('delete', $expense);
 
-        $expense->delete();
+        DB::beginTransaction();
 
-        return back()->with('success', 'Expense deleted.');
+        try {
+            $expense->delete();
+
+            DB::commit();
+
+            return redirect()->back()->withSuccess(__('Expense deleted successfully.'));
+        } catch (\Exception $e) {
+            DB::rollback();
+
+            return redirect()->back()->withError($e->getMessage());
+        }
     }
 
     /**

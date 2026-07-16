@@ -46,6 +46,12 @@ const showingNavigationDropdown = ref(false);
                                     Expenses
                                 </NavLink>
                                 <NavLink
+                                    :href="route('budgets.index')"
+                                    :active="route().current('budgets.*')"
+                                >
+                                    Budgets
+                                </NavLink>
+                                <NavLink
                                     :href="route('categories.index')"
                                     :active="route().current('categories.*')"
                                 >

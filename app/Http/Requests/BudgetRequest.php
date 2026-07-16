@@ -44,9 +44,13 @@ class BudgetRequest extends FormRequest
     {
         $data = $this->validated();
 
+        // Coalesce: an overall budget omits category_uuid entirely, so
+        // 'nullable' leaves the key absent rather than null.
+        $categoryUuid = $data['category_uuid'] ?? null;
+
         return [
-            'category_id' => $data['category_uuid']
-                ? Category::where('uuid', $data['category_uuid'])->value('id')
+            'category_id' => $categoryUuid
+                ? Category::where('uuid', $categoryUuid)->value('id')
                 : null,
             'month' => $data['month'].'-01',
             'amount' => $data['amount'],

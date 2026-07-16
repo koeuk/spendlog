@@ -8,6 +8,7 @@ use App\Services\BudgetSummary;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -36,24 +37,44 @@ class BudgetController extends Controller
     {
         $attributes = $request->budgetAttributes();
 
-        $request->user()->budgets()->updateOrCreate(
-            [
-                'category_id' => $attributes['category_id'],
-                'month' => $attributes['month'],
-            ],
-            ['amount' => $attributes['amount']],
-        );
+        DB::beginTransaction();
 
-        return back()->with('success', 'Budget saved.');
+        try {
+            $request->user()->budgets()->updateOrCreate(
+                [
+                    'category_id' => $attributes['category_id'],
+                    'month' => $attributes['month'],
+                ],
+                ['amount' => $attributes['amount']],
+            );
+
+            DB::commit();
+
+            return redirect()->back()->withSuccess(__('Budget saved successfully.'));
+        } catch (\Exception $e) {
+            DB::rollback();
+
+            return redirect()->back()->withError($e->getMessage())->withInput();
+        }
     }
 
     public function destroy(Budget $budget): RedirectResponse
     {
         Gate::authorize('delete', $budget);
 
-        $budget->delete();
+        DB::beginTransaction();
 
-        return back()->with('success', 'Budget removed.');
+        try {
+            $budget->delete();
+
+            DB::commit();
+
+            return redirect()->back()->withSuccess(__('Budget removed successfully.'));
+        } catch (\Exception $e) {
+            DB::rollback();
+
+            return redirect()->back()->withError($e->getMessage());
+        }
     }
 
     /**
