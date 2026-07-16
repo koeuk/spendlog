@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CategoryRequest;
 use App\Models\Category;
 use App\Support\TranslatableQuery;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,28 @@ class CategoryController extends Controller
     {
         Gate::authorize('viewAny', Category::class);
 
+        /*
+         * created_at alone is not an order: the seeded categories share two
+         * timestamps between 45 of them, and MySQL is free to return tied rows
+         * in a different order on every query — the list would reshuffle on a
+         * plain reload. id breaks the tie in whichever direction was asked for,
+         * so "oldest" is the exact mirror of "newest" and both are stable.
+         *
+         * One instance, used as both an allowed and the default sort: the alias
+         * has to keep its 'created_at' mapping, which a bare defaultSort('-created')
+         * string would lose by rebuilding the sort against a `created` column
+         * that does not exist. The leading '-' sets the default direction, and an
+         * explicit ?sort=created still overrides it.
+         */
+        $created = AllowedSort::callback(
+            '-created',
+            function (Builder $query, bool $descending): void {
+                $direction = $descending ? 'desc' : 'asc';
+
+                $query->orderBy('created_at', $direction)->orderBy('id', $direction);
+            },
+        );
+
         $categories = QueryBuilder::for(Category::class)
             ->allowedFilters(
                 // Keyed 'name' rather than "name->{locale}": the query string is
@@ -32,24 +55,11 @@ class CategoryController extends Controller
             ->allowedSorts(
                 TranslatableQuery::sort('name'),
                 AllowedSort::field('expenses', 'expenses_count'),
-                AllowedSort::field('created', 'created_at'),
+                $created,
             )
-            /*
-             * Newest first: a category is added to be used straight away, so the
-             * one just created is the one being looked for.
-             *
-             * Passed as instances, not as the string '-created': defaultSort()
-             * builds its own AllowedSort from a string and would map the alias
-             * back onto a literal `created` column, which does not exist. The
-             * leading '-' sets the direction; the second argument keeps the real
-             * column. Ties break on id because a seed or import shares a
-             * created_at to the second, and MySQL may then order those rows
-             * differently on every query.
-             */
-            ->defaultSort(
-                AllowedSort::field('-created', 'created_at'),
-                AllowedSort::field('-id'),
-            )
+            // Newest first: a category is added to be used straight away, so the
+            // one just created is the one being looked for.
+            ->defaultSort($created)
             ->withCount('expenses')
             ->get()
             ->map(fn (Category $category) => [

@@ -43,15 +43,54 @@ const canManageAny = computed(() => props.can.update || props.can.delete);
 // Seeded from the URL so a shared or reloaded link shows its own search term.
 const search = ref(props.filters?.filter?.name ?? '');
 
-watch(search, (value) => {
-    router.get(
-        route('categories.index'),
-        value ? { filter: { name: value } } : {},
+// Mirrors the server's default. Sorting is the server's job here — the page
+// holds every category at once today, but ordering the whole set is what the
+// URL describes, and a client-side sort would quietly disagree the day this
+// list is paginated.
+const NEWEST = '-created';
+const OLDEST = 'created';
+
+const sort = ref(props.filters?.sort ?? NEWEST);
+
+const SORTS = [
+    { key: NEWEST, label: 'Newest' },
+    { key: OLDEST, label: 'Oldest' },
+];
+
+/*
+ * Both controls narrow the same list, so each edits the current query rather
+ * than replacing it — sorting used to drop the search term, and searching used
+ * to drop the sort. The default sort is left out of the URL: it is what a bare
+ * /categories already means.
+ */
+function navigate({ name, sort: nextSort } = {}) {
+    const term = name ?? search.value;
+    const order = nextSort ?? sort.value;
+    const query = {};
+
+    if (term) {
+        query.filter = { name: term };
+    }
+
+    if (order && order !== NEWEST) {
+        query.sort = order;
+    }
+
+    router.get(route('categories.index'), query, {
         // preserveState keeps the box focused mid-typing; replace keeps every
         // keystroke out of the back button.
-        { preserveState: true, preserveScroll: true, replace: true },
-    );
-});
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+    });
+}
+
+watch(search, (value) => navigate({ name: value }));
+
+function applySort(key) {
+    sort.value = key;
+    navigate({ sort: key });
+}
 
 const showDialog = ref(false);
 const editing = ref(null);
@@ -151,11 +190,34 @@ function destroy() {
             <!-- Width and gutters come from the layout's one container, so the
                  column never resizes when navigating between pages. -->
             <div>
-                <div class="mb-4 sm:max-w-sm">
+                <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
                     <SearchInput
                         v-model="search"
                         :placeholder="__('Search categories…')"
+                        class="sm:max-w-sm sm:flex-1"
                     />
+
+                    <div
+                        class="inline-flex self-start rounded-md border border-gray-200 bg-white p-0.5 dark:border-neutral-800 dark:bg-neutral-800"
+                        role="group"
+                        :aria-label="__('Sort categories')"
+                    >
+                        <button
+                            v-for="option in SORTS"
+                            :key="option.key"
+                            type="button"
+                            class="rounded px-2.5 py-1 text-xs font-medium transition"
+                            :class="
+                                sort === option.key
+                                    ? 'bg-gray-900 text-white'
+                                    : 'text-gray-600 dark:text-neutral-400 hover:bg-gray-50 dark:hover:bg-neutral-800'
+                            "
+                            :aria-pressed="sort === option.key"
+                            @click="applySort(option.key)"
+                        >
+                            {{ __(option.label) }}
+                        </button>
+                    </div>
                 </div>
 
                 <!--

@@ -150,5 +150,8 @@
     "Re-send the verification email.": "Re-send the verification email.",
     "A new verification link has been sent to your email address.": "A new verification link has been sent to your email address.",
     "Saving…": "Saving…",
-    "Saved.": "Saved."
+    "Saved.": "Saved.",
+    "Newest": "Newest",
+    "Oldest": "Oldest",
+    "Sort categories": "Sort categories"
 }
