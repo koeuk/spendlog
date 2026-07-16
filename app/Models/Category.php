@@ -8,10 +8,19 @@ use App\Models\Concerns\HasUuidRouteKey;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Translatable\HasTranslations;
 
 class Category extends Model
 {
-    use HasFactory, HasUuidRouteKey;
+    use HasFactory, HasTranslations, HasUuidRouteKey;
+
+    /**
+     * Reading $category->name returns the active locale's value, falling back
+     * to the app fallback_locale when that locale is missing.
+     *
+     * @var array<int, string>
+     */
+    public array $translatable = ['name'];
 
     /**
      * The attributes that are mass assignable.

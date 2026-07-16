@@ -1,0 +1,310 @@
+name: Expenses
+description: |-
+
+  Daily expense tracking. Every listing is scoped to the caller's own rows
+  unless an admin explicitly opts out with `scope=all`.
+endpoints:
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/expenses
+    metadata:
+      custom: []
+      groupName: Expenses
+      groupDescription: |-
+
+        Daily expense tracking. Every listing is scoped to the caller's own rows
+        unless an admin explicitly opts out with `scope=all`.
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'List expenses'
+      description: |-
+        Paginated, newest first.
+
+        `filter[user]` exists only while an admin is viewing everyone; for anyone
+        else it is a 400, not a silently empty result.
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters:
+      'filter[item]':
+        custom: []
+        name: 'filter[item]'
+        description: 'Partial match on the item name.'
+        required: false
+        example: coffee
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      'filter[category]':
+        custom: []
+        name: 'filter[category]'
+        description: 'Category UUID.'
+        required: false
+        example: 0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      'filter[from]':
+        custom: []
+        name: 'filter[from]'
+        description: 'date Only expenses on or after this day.'
+        required: false
+        example: '2026-07-01'
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      'filter[to]':
+        custom: []
+        name: 'filter[to]'
+        description: 'date Only expenses on or before this day.'
+        required: false
+        example: '2026-07-31'
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      'filter[user]':
+        custom: []
+        name: 'filter[user]'
+        description: 'Admin only, and only with scope=all. User UUID.'
+        required: false
+        example: architecto
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      sort:
+        custom: []
+        name: sort
+        description: 'spent_on, price or item. Prefix with - to reverse.'
+        required: false
+        example: '-price'
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      scope:
+        custom: []
+        name: scope
+        description: 'Admin only. Set to "all" to list every user''s expenses and include `owner`.'
+        required: false
+        example: all
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      per_page:
+        custom: []
+        name: per_page
+        description: 'Default 50, clamped to 100.'
+        required: false
+        example: 25
+        type: integer
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+    cleanQueryParameters:
+      'filter[item]': coffee
+      'filter[category]': 0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+      'filter[from]': '2026-07-01'
+      'filter[to]': '2026-07-31'
+      'filter[user]': architecto
+      sort: '-price'
+      scope: all
+      per_page: 25
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"data": [{"uuid": "0198f...", "item": "Coffee", "price": "4.50", "spent_on": "2026-07-16", "category": {"uuid": "0198a...", "name": "Food", "color": "amber", "icon": "utensils"}, "created_at": "2026-07-16T10:00:00+00:00", "updated_at": "2026-07-16T10:00:00+00:00"}], "links": {"first": "...", "last": "...", "prev": null, "next": null}, "meta": {"current_page": 1, "per_page": 50, "total": 1}}'
+        headers: []
+        description: success
+      -
+        custom: []
+        status: 400
+        content: '{"message": "Requested filter(s) `user` are not allowed."}'
+        headers: []
+        description: 'non-admin used filter[user]'
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: 'api/v1/expenses/{uuid}'
+    metadata:
+      custom: []
+      groupName: Expenses
+      groupDescription: |-
+
+        Daily expense tracking. Every listing is scoped to the caller's own rows
+        unless an admin explicitly opts out with `scope=all`.
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Get an expense'
+      description: ''
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      uuid:
+        custom: []
+        name: uuid
+        description: ''
+        required: true
+        example: 019f6aa5-bbd1-725e-9c53-d1038e1702ec
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      expense:
+        custom: []
+        name: expense
+        description: 'The expense UUID.'
+        required: true
+        example: 0198f1a2-b3c4-7d5e-8f9a-0b1c2d3e4f5a
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      uuid: 019f6aa5-bbd1-725e-9c53-d1038e1702ec
+      expense: 0198f1a2-b3c4-7d5e-8f9a-0b1c2d3e4f5a
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"data": {"uuid": "0198f...", "item": "Coffee", "price": "4.50", "spent_on": "2026-07-16", "category": {"uuid": "0198a...", "name": "Food", "color": "amber", "icon": "utensils"}}}'
+        headers: []
+        description: ''
+      -
+        custom: []
+        status: 403
+        content: '{"message": "This action is unauthorized."}'
+        headers: []
+        description: "someone else's expense"
+      -
+        custom: []
+        status: 404
+        content: '{"message": "Not found."}'
+        headers: []
+        description: 'unknown or non-UUID'
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - DELETE
+    uri: 'api/v1/expenses/{uuid}'
+    metadata:
+      custom: []
+      groupName: Expenses
+      groupDescription: |-
+
+        Daily expense tracking. Every listing is scoped to the caller's own rows
+        unless an admin explicitly opts out with `scope=all`.
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Delete an expense'
+      description: ''
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      uuid:
+        custom: []
+        name: uuid
+        description: ''
+        required: true
+        example: 019f6aa5-bbd1-725e-9c53-d1038e1702ec
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      expense:
+        custom: []
+        name: expense
+        description: 'The expense UUID.'
+        required: true
+        example: 0198f1a2-b3c4-7d5e-8f9a-0b1c2d3e4f5a
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      uuid: 019f6aa5-bbd1-725e-9c53-d1038e1702ec
+      expense: 0198f1a2-b3c4-7d5e-8f9a-0b1c2d3e4f5a
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 204
+        content: '{}'
+        headers: []
+        description: deleted
+      -
+        custom: []
+        status: 403
+        content: '{"message": "This action is unauthorized."}'
+        headers: []
+        description: "someone else's expense"
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null

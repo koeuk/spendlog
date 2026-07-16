@@ -12,18 +12,44 @@ class CategorySeeder extends Seeder
     public function run(): void
     {
         $categories = [
-            ['name' => 'Food', 'color' => CategoryColor::Orange, 'icon' => CategoryIcon::Utensils],
-            ['name' => 'Transport', 'color' => CategoryColor::Blue, 'icon' => CategoryIcon::Car],
-            ['name' => 'Bills', 'color' => CategoryColor::Red, 'icon' => CategoryIcon::Receipt],
-            ['name' => 'Shopping', 'color' => CategoryColor::Purple, 'icon' => CategoryIcon::ShoppingBag],
-            ['name' => 'Other', 'color' => CategoryColor::Slate, 'icon' => CategoryIcon::CircleDashed],
+            [
+                'name' => ['en' => 'Food', 'km' => 'អាហារ'],
+                'color' => CategoryColor::Orange,
+                'icon' => CategoryIcon::Utensils,
+            ],
+            [
+                'name' => ['en' => 'Transport', 'km' => 'ការធ្វើដំណើរ'],
+                'color' => CategoryColor::Blue,
+                'icon' => CategoryIcon::Car,
+            ],
+            [
+                'name' => ['en' => 'Bills', 'km' => 'វិក្កយបត្រ'],
+                'color' => CategoryColor::Red,
+                'icon' => CategoryIcon::Receipt,
+            ],
+            [
+                'name' => ['en' => 'Shopping', 'km' => 'ការទិញទំនិញ'],
+                'color' => CategoryColor::Purple,
+                'icon' => CategoryIcon::ShoppingBag,
+            ],
+            [
+                'name' => ['en' => 'Other', 'km' => 'ផ្សេងៗ'],
+                'color' => CategoryColor::Slate,
+                'icon' => CategoryIcon::CircleDashed,
+            ],
         ];
 
         foreach ($categories as $category) {
-            Category::firstOrCreate(
-                ['name' => $category['name']],
-                ['color' => $category['color'], 'icon' => $category['icon']],
-            );
+            // Matched on the English name: it is the stable identifier across
+            // re-seeds, and a JSON column cannot be matched on as a whole.
+            $existing = Category::query()
+                ->whereJsonContains('name->en', $category['name']['en'])
+                ->first() ?? new Category;
+
+            $existing->setTranslations('name', $category['name']);
+            $existing->color = $category['color'];
+            $existing->icon = $category['icon'];
+            $existing->save();
         }
     }
 }

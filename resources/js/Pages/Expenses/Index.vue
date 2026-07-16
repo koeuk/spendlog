@@ -152,7 +152,7 @@ const isEmpty = computed(() => props.days.length === 0);
                     <!-- Admin only: switch between own expenses and everyone's -->
                     <div
                         v-if="can.view_all"
-                        class="inline-flex rounded-md border border-gray-200 dark:border-neutral-800 bg-white p-0.5"
+                        class="inline-flex rounded-md border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-800 p-0.5"
                     >
                         <button
                             type="button"
@@ -203,7 +203,7 @@ const isEmpty = computed(() => props.days.length === 0);
 
                 <div
                     v-else-if="isEmpty"
-                    class="rounded-lg bg-white p-10 text-center shadow-sm"
+                    class="rounded-lg bg-white dark:bg-neutral-900 p-10 text-center shadow-sm"
                 >
                     <p class="text-sm text-gray-600 dark:text-neutral-400">
                         {{ __('No expenses yet, add your first one.') }}

@@ -12,7 +12,11 @@ return new class extends Migration
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
-            $table->string('name')->unique();
+
+            // {"en": "Food", "km": "អាហារ"} — spatie/laravel-translatable.
+            // No unique index: MySQL cannot index a JSON column directly, so
+            // per-locale uniqueness is enforced in CategoryRequest instead.
+            $table->json('name');
 
             // Stored per row so chart colours stay stable as categories change.
             $table->string('color', 20)->default(CategoryColor::Slate->value);

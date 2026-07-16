@@ -94,6 +94,18 @@ class CategoryController extends Controller
             ->setStatusCode(201);
     }
 
+    /**
+     * Update a category
+     *
+     * @urlParam category string required The category UUID. Example: 0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+     *
+     * @bodyParam name string required Unique, ignoring this category's own row. Example: Travel
+     * @bodyParam color string required Example: blue
+     * @bodyParam icon string Example: plane
+     *
+     * @response 200 {"data": {"uuid": "0198a...", "name": "Travel", "color": "blue", "icon": "plane"}}
+     * @response 403 scenario="not an admin" {"message": "This action is unauthorized."}
+     */
     public function update(CategoryRequest $request, Category $category): CategoryResource
     {
         Gate::authorize('update', $category);
@@ -103,6 +115,18 @@ class CategoryController extends Controller
         return new CategoryResource($category);
     }
 
+    /**
+     * Delete a category
+     *
+     * The expenses and budgets foreign keys **restrict** rather than cascade, so
+     * deleting a category still in use is a 409 conflict — the request was
+     * well-formed, the state just forbids it.
+     *
+     * @urlParam category string required The category UUID. Example: 0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+     *
+     * @response 204 scenario="deleted" {}
+     * @response 409 scenario="still referenced by expenses or budgets" {"message": "\"Food\" is still in use and cannot be deleted."}
+     */
     public function destroy(Category $category): JsonResponse
     {
         Gate::authorize('delete', $category);

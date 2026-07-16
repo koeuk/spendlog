@@ -1,0 +1,96 @@
+name: Authentication
+description: |-
+
+  Token auth for mobile and third-party clients. The Inertia frontend keeps
+  using session auth and is unaffected.
+endpoints:
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/me
+    metadata:
+      custom: []
+      groupName: Authentication
+      groupDescription: |-
+
+        Token auth for mobile and third-party clients. The Inertia frontend keeps
+        using session auth and is unaffected.
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Current user'
+      description: ''
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"data": {"uuid": "0198f...", "name": "Sam", "email": "sam@example.com", "is_admin": false, "email_verified_at": "2026-07-16T10:00:00+00:00", "created_at": "2026-07-16T10:00:00+00:00"}}'
+        headers: []
+        description: ''
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: api/v1/logout
+    metadata:
+      custom: []
+      groupName: Authentication
+      groupDescription: |-
+
+        Token auth for mobile and third-party clients. The Inertia frontend keeps
+        using session auth and is unaffected.
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Log out'
+      description: |-
+        Revokes **only the calling token**, so signing out on a phone leaves the
+        user's other devices signed in.
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"message": "Logged out."}'
+        headers: []
+        description: ''
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null

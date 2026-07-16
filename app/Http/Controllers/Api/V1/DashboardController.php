@@ -14,7 +14,9 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * One call, so a mobile home screen is not four round trips.
+ * @group Dashboard
+ *
+ * @authenticated
  */
 class DashboardController extends Controller
 {
@@ -23,6 +25,20 @@ class DashboardController extends Controller
 
     public function __construct(private readonly BudgetSummary $summary) {}
 
+    /**
+     * Home screen
+     *
+     * Everything a home screen needs in one call, rather than four round trips:
+     * today's total, this month's summary, the by-category breakdown ranked by
+     * spend with each category's share of the month, and the 8 most recent
+     * expenses.
+     *
+     * `breakdown` is empty when nothing was spent this month — the shares would
+     * be meaningless.
+     *
+     * @response 200 {"data": {"today": {"date": "2026-07-16", "total": "12.50"}, "summary": {"month": "2026-07", "overall": {"spent": "75.00", "budget": "200.00", "remaining": "125.00", "percent": 38, "bar_percent": 38, "status": "ok"}, "categories": []}, "breakdown": [{"uuid": "0198a...", "name": "Food", "color": "amber", "icon": "utensils", "spent": "75.00", "share": 75}], "recent": [{"uuid": "0198f...", "item": "Coffee", "price": "4.50", "spent_on": "2026-07-16", "category": {"uuid": "0198a...", "name": "Food"}}]}}
+     * @response 403 scenario="token lacks dashboard:read" {"message": "Invalid ability provided."}
+     */
     public function __invoke(Request $request): JsonResponse
     {
         $user = $request->user();
