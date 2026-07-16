@@ -6,6 +6,7 @@ import {
     getLocalTimeZone,
     today,
 } from '@internationalized/date';
+import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
@@ -100,7 +101,19 @@ const maxDate = today(getLocalTimeZone());
                             :key="category.uuid"
                             :value="category.uuid"
                         >
-                            {{ category.name }}
+                            <span class="flex items-center gap-2">
+                                <component
+                                    :is="categoryIcon(category.icon)"
+                                    v-if="categoryIcon(category.icon)"
+                                    class="size-4"
+                                />
+                                <span
+                                    v-else
+                                    class="size-2 rounded-full"
+                                    :class="categoryColor(category.color).dot"
+                                />
+                                {{ category.name }}
+                            </span>
                         </SelectItem>
                     </SelectContent>
                 </Select>

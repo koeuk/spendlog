@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import ExpenseForm from '@/Components/ExpenseForm.vue';
+import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
 import { Button } from '@/Components/ui/button';
 import {
     Dialog,
@@ -155,6 +156,22 @@ const isEmpty = computed(() => props.days.length === 0);
                             :key="expense.uuid"
                             class="group flex items-center gap-3 px-4 py-3"
                         >
+                            <span
+                                class="flex size-8 shrink-0 items-center justify-center rounded-full ring-1 ring-inset"
+                                :class="categoryColor(expense.category_color).badge"
+                            >
+                                <component
+                                    :is="categoryIcon(expense.category_icon)"
+                                    v-if="categoryIcon(expense.category_icon)"
+                                    class="size-4"
+                                />
+                                <span
+                                    v-else
+                                    class="size-2 rounded-full"
+                                    :class="categoryColor(expense.category_color).dot"
+                                />
+                            </span>
+
                             <div class="min-w-0 flex-1">
                                 <p class="truncate text-sm font-medium text-gray-900">
                                     {{ expense.item }}

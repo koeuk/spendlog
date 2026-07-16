@@ -16,7 +16,7 @@ class ExpenseController extends Controller
     public function index(Request $request): Response
     {
         $expenses = Expense::query()
-            ->with(['category:id,uuid,name', 'user:id,name'])
+            ->with(['category:id,uuid,name,color,icon', 'user:id,name'])
             ->where('user_id', $request->user()->id)
             ->orderByDesc('spent_on')
             ->orderByDesc('id')
@@ -32,7 +32,9 @@ class ExpenseController extends Controller
                 'next_page_url' => $expenses->nextPageUrl(),
                 'total' => $expenses->total(),
             ],
-            'categories' => Category::query()->orderBy('name')->get(['uuid', 'name']),
+            'categories' => Category::query()
+                ->orderBy('name')
+                ->get(['uuid', 'name', 'color', 'icon']),
         ]);
     }
 
@@ -81,6 +83,8 @@ class ExpenseController extends Controller
                     'spent_on' => $expense->spent_on->toDateString(),
                     'category_uuid' => $expense->category->uuid,
                     'category' => $expense->category->name,
+                    'category_color' => $expense->category->color?->value,
+                    'category_icon' => $expense->category->icon?->value,
                 ])->values(),
             ])
             ->values()
