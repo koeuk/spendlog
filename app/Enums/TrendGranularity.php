@@ -7,6 +7,7 @@ enum TrendGranularity: string
     case Week = 'week';
     case Month = 'month';
     case Year = 'year';
+    case All = 'all';
 
     /** The label the toggle shows; translated in the frontend. */
     public function label(): string
@@ -15,6 +16,7 @@ enum TrendGranularity: string
             self::Week => 'Week',
             self::Month => 'Month',
             self::Year => 'Year',
+            self::All => 'All',
         };
     }
 }

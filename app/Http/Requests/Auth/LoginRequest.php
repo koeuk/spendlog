@@ -50,6 +50,21 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        /*
+         * Checked after the password, not before: refusing a suspended account
+         * earlier would answer "is this address suspended?" to anyone who asked,
+         * which is a user-enumeration oracle. Getting here means the credentials
+         * were already correct.
+         */
+        if (! Auth::user()->status->canSignIn()) {
+            Auth::logout();
+            RateLimiter::hit($this->throttleKey());
+
+            throw ValidationException::withMessages([
+                'email' => trans('Your account has been suspended. Please contact an administrator.'),
+            ]);
+        }
+
         RateLimiter::clear($this->throttleKey());
     }
 

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
@@ -22,6 +23,9 @@ return Application::configure(basePath: dirname(__DIR__))
             // Before HandleInertiaRequests: it shares the active locale and its
             // dictionary, so the locale must already be applied by then.
             SetLocale::class,
+            // Suspending someone who is already signed in has to end that session
+            // now, not whenever it happens to expire.
+            EnsureUserIsActive::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);

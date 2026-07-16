@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
-import { Palette, ShieldCheck, SwatchBook, UserRound } from 'lucide-vue-next';
+import { Palette, ShieldCheck, SwatchBook, UserRound, Users } from 'lucide-vue-next';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { CARD, EYEBROW, MUTED, SEGMENT_ON, SEGMENT_OFF } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
@@ -21,6 +21,9 @@ const items = computed(() =>
     [
         { key: 'profile', label: trans('Profile'), href: route('profile.edit'), icon: UserRound, pattern: 'profile.*' },
         { key: 'password', label: trans('Password'), href: route('password.edit'), icon: ShieldCheck, pattern: 'password.edit' },
+        isAdmin.value
+            ? { key: 'users', label: trans('Users'), href: route('users.index'), icon: Users, pattern: 'users.*' }
+            : null,
         isAdmin.value
             ? { key: 'branding', label: trans('Appearance'), href: route('branding.edit'), icon: Palette, pattern: 'branding.*' }
             : null,
@@ -72,13 +75,18 @@ function isActive(pattern) {
 
             <div class="min-w-0 flex-1 space-y-3">
                 <div :class="[CARD, 'anim p-6 sm:p-8']" style="--d: 60ms">
-                    <header>
-                        <h2 class="text-lg font-bold tracking-[-0.02em]">
-                            {{ heading }}
-                        </h2>
-                        <p v-if="description" class="mt-1 text-sm" :class="MUTED">
-                            {{ description }}
-                        </p>
+                    <header class="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                            <h2 class="text-lg font-bold tracking-[-0.02em]">
+                                {{ heading }}
+                            </h2>
+                            <p v-if="description" class="mt-1 text-sm" :class="MUTED">
+                                {{ description }}
+                            </p>
+                        </div>
+
+                        <!-- For a panel-level action, e.g. "Add user". -->
+                        <slot name="actions" />
                     </header>
 
                     <div class="mt-6">

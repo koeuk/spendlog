@@ -8,6 +8,7 @@ use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -53,6 +54,13 @@ Route::middleware('auth')->group(function () {
         // Admin only — enforced in the controller, not just hidden in the UI.
         Route::get('/branding', [SettingsController::class, 'branding'])->name('branding.edit');
         Route::post('/branding', [SettingsController::class, 'updateBranding'])->name('branding.update');
+
+        // Admin only — enforced by UserPolicy in the controller.
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::post('/users', [UserController::class, 'store'])->name('users.store');
+        Route::patch('/users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::patch('/users/{user}/status', [UserController::class, 'toggleStatus'])->name('users.status');
+        Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 
         Route::get('/colors', [SettingsController::class, 'colors'])->name('colors.edit');
         Route::post('/colors', [SettingsController::class, 'updateColors'])->name('colors.update');

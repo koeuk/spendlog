@@ -14,7 +14,6 @@ class ColorRequest extends FormRequest
     /** WCAG AA for body text. */
     private const MIN_TEXT_CONTRAST = 4.5;
 
-
     /**
      * Authorization is handled by the admin gate in the controller.
      */

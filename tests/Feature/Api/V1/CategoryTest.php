@@ -54,10 +54,14 @@ class CategoryTest extends TestCase
     }
 
     /**
-     * The ability gates the client; the policy gates the user. This checks the
-     * policy still bites even when the token would allow the call.
+     * Creating is open to everyone by design (see CategoryPolicy::create) — a
+     * category gets added mid-flow while logging an expense, and gating that on
+     * an admin is how everything ends up filed under "Other".
+     *
+     * The ability still gates the client, which the sibling test covers: this
+     * one asserts only that being a non-admin is not itself a barrier.
      */
-    public function test_a_non_admin_cannot_create_a_category_even_with_the_ability(): void
+    public function test_a_non_admin_can_create_a_category_with_the_ability(): void
     {
         $user = User::factory()->create();
         $user->assignRole(RoleName::User->value);
@@ -65,11 +69,32 @@ class CategoryTest extends TestCase
         Sanctum::actingAs($user, [TokenAbility::CategoriesWrite->value]);
 
         $this->postJson('/api/v1/categories', [
-            'name' => ['en' => 'Sneaky'],
+            'name' => ['en' => 'Snacks'],
+            'color' => CategoryColor::Red->value,
+        ])->assertStatus(201);
+
+        $this->assertSame(1, Category::query()->whereJsonContains('name->en', 'Snacks')->count());
+    }
+
+    /**
+     * The counterpart that must keep biting: editing someone else's category is
+     * still admin-only, because it changes a row everyone already uses.
+     */
+    public function test_a_non_admin_cannot_update_a_category_even_with_the_ability(): void
+    {
+        $category = Category::factory()->create(['name' => ['en' => 'Food']]);
+
+        $user = User::factory()->create();
+        $user->assignRole(RoleName::User->value);
+
+        Sanctum::actingAs($user, [TokenAbility::CategoriesWrite->value]);
+
+        $this->patchJson("/api/v1/categories/{$category->uuid}", [
+            'name' => ['en' => 'Renamed'],
             'color' => CategoryColor::Red->value,
         ])->assertForbidden();
 
-        $this->assertSame(0, Category::query()->whereJsonContains('name->en', 'Sneaky')->count());
+        $this->assertSame('Food', $category->fresh()->getTranslation('name', 'en'));
     }
 
     /**
