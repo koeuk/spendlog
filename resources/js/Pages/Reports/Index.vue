@@ -3,6 +3,13 @@ import { computed, ref } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import SpendingTrendChart from '@/Components/SpendingTrendChart.vue';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/Components/ui/select';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
 import { ACTIVE, CARD, CARD_TINT, EYEBROW, FIGURE, MUTED } from '@/lib/appStyles';
 import { ArrowDownRight, ArrowUpRight } from 'lucide-vue-next';
@@ -92,17 +99,27 @@ const change = computed(() => {
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2">
-                    <select
-                        :value="anchor"
-                        class="h-9 rounded-full border-neutral-200 bg-white/70 py-0 pe-8 ps-3 text-xs font-semibold text-neutral-700 focus:border-neutral-400 focus:ring-0 dark:border-neutral-700 dark:bg-neutral-800/70 dark:text-neutral-200"
-                        :aria-label="__('Period')"
+<Select
+                        :model-value="anchor"
                         :disabled="loading"
-                        @change="load(granularity, $event.target.value)"
+                        @update:model-value="load(granularity, $event)"
                     >
-                        <option v-for="option in options" :key="option.value" :value="option.value">
-                            {{ option.label }}
-                        </option>
-                    </select>
+                        <SelectTrigger
+                            class="h-9 w-auto min-w-32 gap-1.5 rounded-full border-neutral-200 bg-white/70 px-3 text-xs font-semibold shadow-none dark:border-neutral-700 dark:bg-neutral-800/70"
+                            :aria-label="__('Period')"
+                        >
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem
+                                v-for="option in options"
+                                :key="option.value"
+                                :value="option.value"
+                            >
+                                {{ option.label }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
 
                     <div
                         class="inline-flex rounded-full border border-neutral-200 bg-white/70 p-0.5 dark:border-neutral-700 dark:bg-neutral-800/70"

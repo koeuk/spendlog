@@ -1,4 +1,11 @@
 <script setup>
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/Components/ui/select';
 import { computed, ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { ChartColumn, ChartSpline } from 'lucide-vue-next';
@@ -213,19 +220,33 @@ const tooltipTop = computed(() => {
 
             <!-- Filters in one row above the plot: which period, then how it is drawn. -->
             <div v-if="showControls" class="flex flex-wrap items-center gap-2">
-                <!-- Native select on purpose: it is a plain one-of-many choice,
-                     and the OS picker beats a custom menu on a phone. -->
-                <select
-                    :value="trend.anchor"
-                    class="h-8 rounded-full border-neutral-200 bg-white/70 py-0 ps-3 pe-8 text-xs font-semibold text-neutral-700 focus:border-neutral-400 focus:ring-0 dark:border-neutral-700 dark:bg-neutral-800/70 dark:text-neutral-200"
-                    :aria-label="__('Period')"
+<!--
+                    Ours rather than a native <select>: the OS popup is drawn
+                    outside the page and ignores the theme, so it lands as a white
+                    system menu on a dark chart. Trade-off noted: on a phone this
+                    loses the native picker wheel.
+                -->
+                <Select
+                    :model-value="trend.anchor"
                     :disabled="loading"
-                    @change="load(trend.granularity, $event.target.value)"
+                    @update:model-value="load(trend.granularity, $event)"
                 >
-                    <option v-for="option in trend.options" :key="option.value" :value="option.value">
-                        {{ option.label }}
-                    </option>
-                </select>
+                    <SelectTrigger
+                        class="h-8 w-auto min-w-32 gap-1.5 rounded-full border-neutral-200 bg-white/70 px-3 text-xs font-semibold shadow-none dark:border-neutral-700 dark:bg-neutral-800/70"
+                        :aria-label="__('Period')"
+                    >
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem
+                            v-for="option in trend.options"
+                            :key="option.value"
+                            :value="option.value"
+                        >
+                            {{ option.label }}
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
 
                 <div
                     class="inline-flex rounded-full border border-neutral-200 bg-white/70 p-0.5 dark:border-neutral-700 dark:bg-neutral-800/70"

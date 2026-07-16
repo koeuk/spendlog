@@ -45,7 +45,9 @@ const { isDark } = useTheme();
 const page = usePage();
 
 // Shared from HandleInertiaRequests, so every page has it without a prop.
-const branding = computed(() => page.props.branding ?? { name: 'SpendLog', logo: null });
+const branding = computed(
+    () => page.props.branding ?? { name: 'SpendLog', logo: null, plain_background: false },
+);
 const brandInitial = computed(() => (branding.value.name || 'S').charAt(0).toUpperCase());
 
 useFlashToasts();
@@ -146,7 +148,10 @@ watch(() => page.url, () => nextTick(measurePill));
 
 <template>
     <div :class="APP_PAGE">
-        <AmbientBackdrop />
+        <!-- Off once a background colour is chosen: the wash lies over the
+             page, so it would tint the chosen colour into a gradient rather
+             than leave it as the colour that was picked. -->
+        <AmbientBackdrop v-if="!branding.plain_background" />
 
         <div class="mx-auto max-w-6xl px-3 pb-10 lg:px-4">
             <!--

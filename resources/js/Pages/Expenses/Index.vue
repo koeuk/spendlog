@@ -11,6 +11,13 @@ import { trans } from '@/lib/i18n';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
 import { Button } from '@/Components/ui/button';
 import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/Components/ui/select';
+import {
     Dialog,
     DialogContent,
     DialogFooter,
@@ -29,6 +36,14 @@ const props = defineProps({
 });
 
 const viewingAll = computed(() => props.scope === 'all');
+
+/*
+ * reka-ui rejects an empty-string SelectItem value — it reserves '' for "nothing
+ * selected", so an <SelectItem value=""> throws. The filter's real "no filter"
+ * value IS the empty string, so it travels under a sentinel and is unwrapped on
+ * the way out.
+ */
+const ALL_USERS = '__all__';
 
 const { navigating } = useNavigating();
 
@@ -208,17 +223,29 @@ const isEmpty = computed(() => props.days.length === 0);
                         </button>
                     </div>
 
-                    <select
+                    <!--
+                        Not a native <select>: its popup is drawn by the OS, so it
+                        ignores the app's theme entirely — a white system menu on a
+                        dark page. This one is ours, so it inherits the glass.
+                    -->
+                    <Select
                         v-if="can.view_all && viewingAll"
-                        :value="userFilter"
-                        class="rounded-md border-gray-200 dark:border-neutral-800 py-1 text-xs text-gray-700 dark:text-neutral-300 focus:border-gray-400 focus:ring-0"
-                        @change="applyUserFilter($event.target.value)"
+                        :model-value="userFilter || ALL_USERS"
+                        @update:model-value="applyUserFilter($event === ALL_USERS ? '' : $event)"
                     >
-                        <option value="">{{ __('All users') }}</option>
-                        <option v-for="u in users" :key="u.uuid" :value="u.uuid">
-                            {{ u.name }}
-                        </option>
-                    </select>
+                        <SelectTrigger
+                            class="h-8 w-44 rounded-full border-neutral-200 bg-white text-xs font-medium shadow-none dark:border-neutral-700 dark:bg-neutral-800"
+                            :aria-label="__('Filter by user')"
+                        >
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem :value="ALL_USERS">{{ __('All users') }}</SelectItem>
+                            <SelectItem v-for="u in users" :key="u.uuid" :value="u.uuid">
+                                {{ u.name }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
 
                     <Button size="sm" @click="openCreate">{{ __('Add expense') }}</Button>
                 </div>

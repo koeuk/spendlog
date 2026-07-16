@@ -24,6 +24,12 @@ class AppSetting extends Model
     public const DEFAULT_BUTTON_COLOR = '#171717';
 
     /**
+     * Also a sentinel: at the default the page keeps its ambient wash, and any
+     * other colour renders flat. See plainBackground().
+     */
+    public const DEFAULT_BODY_COLOR = '#ffffff';
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array
@@ -135,6 +141,20 @@ class AppSetting extends Model
                 : null,
             'background' => Color::toHslTriplet($this->body_color),
         ];
+    }
+
+    /**
+     * Whether the page should render its background flat.
+     *
+     * The ambient wash is three big blurred colour circles laid over the page.
+     * It is what the default look is built on — but it sits *on top* of the
+     * background, so a chosen colour comes through tinted and gradient-y rather
+     * than as the colour that was picked. Choosing a colour therefore turns the
+     * wash off: you get the colour you chose, flat.
+     */
+    public function plainBackground(): bool
+    {
+        return $this->body_color !== self::DEFAULT_BODY_COLOR;
     }
 
     /** Null when unset — the frontend falls back to the built-in wordmark. */

@@ -31,6 +31,7 @@ Route::middleware('auth')->group(function () {
         ->only(['index', 'store', 'update', 'destroy']);
 
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/export/{format}', [ReportController::class, 'export'])->name('reports.export');
 
     // store() upserts the (category, month) slot, so no separate update route.
     Route::resource('budgets', BudgetController::class)

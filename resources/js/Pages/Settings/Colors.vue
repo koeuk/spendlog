@@ -1,8 +1,7 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, onBeforeUnmount } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import SettingsLayout from '@/Layouts/SettingsLayout.vue';
-import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
 import { trans } from '@/lib/i18n';
@@ -27,6 +26,65 @@ const form = useForm({
 function setColor(field, value) {
     form[field] = String(value ?? '').trim().toLowerCase();
 }
+
+/*
+ * There is no Save button — a colour applies as soon as it is chosen.
+ *
+ * Which means the write has to be rationed. A native colour picker fires `input`
+ * for every pixel the pointer moves across its gradient, so posting on `input`
+ * would be hundreds of requests per drag. Two guards:
+ *
+ *  - the picker posts on `change` (fires once, when the picker is committed),
+ *    while `input` only updates the local preview;
+ *  - the hex field debounces, because it fires per keystroke and is half-typed
+ *    for most of them.
+ *
+ * A preset is a single deliberate click, so it saves immediately.
+ */
+const DEBOUNCE_MS = 500;
+
+let timer = null;
+
+function save() {
+    clearTimeout(timer);
+
+    form.post(route('colors.update'), {
+        preserveScroll: true,
+        // Inertia would otherwise reset the form to the server's values on every
+        // reply, yanking the picker out from under a still-moving pointer.
+        preserveState: true,
+        // Last write wins: an earlier in-flight save landing after a newer one
+        // would otherwise flip the page back to the previous colour.
+        onStart: () => form.cancel(),
+    });
+}
+
+function saveSoon() {
+    clearTimeout(timer);
+    timer = setTimeout(save, DEBOUNCE_MS);
+}
+
+function pickPreset(value) {
+    setColor('body_color', value);
+    save();
+}
+
+function commit(field, value) {
+    setColor(field, value);
+    save();
+}
+
+function type(field, value) {
+    setColor(field, value);
+
+    // Only chase a value that is actually a colour — a half-typed "#b4" would
+    // 422 and paint an error under the field while the admin is mid-word.
+    if (/^#[0-9a-f]{6}$/i.test(form[field])) {
+        saveSoon();
+    }
+}
+
+onBeforeUnmount(() => clearTimeout(timer));
 
 const usingPreset = computed(() =>
     props.body_presets.some((preset) => preset.value === form.body_color),
@@ -89,10 +147,6 @@ const buttonContrast = computed(() => {
 });
 
 const contrastWarning = computed(() => buttonContrast.value < 4.5);
-
-function submit() {
-    form.post(route('colors.update'), { preserveScroll: true });
-}
 </script>
 
 <template>
@@ -102,7 +156,7 @@ function submit() {
         :heading="trans('Colours')"
         :description="trans('The button and background colours everyone sees.')"
     >
-        <form class="max-w-xl space-y-8" @submit.prevent="submit">
+        <div class="max-w-xl space-y-8">
             <!-- Button colour -->
             <div>
                 <Label for="button_color">{{ __('Button colour') }}</Label>
@@ -114,6 +168,7 @@ function submit() {
                         :value="form.button_color"
                         class="size-10 shrink-0 cursor-pointer rounded-lg border border-neutral-200 bg-transparent p-1 dark:border-neutral-700"
                         @input="setColor('button_color', $event.target.value)"
+                        @change="commit('button_color', $event.target.value)"
                     />
                     <Input
                         :model-value="form.button_color"
@@ -122,12 +177,13 @@ function submit() {
                         spellcheck="false"
                         aria-label="Button colour hex"
                         :aria-invalid="!!form.errors.button_color"
-                        @update:model-value="setColor('button_color', $event)"
+                        @update:model-value="type('button_color', $event)"
                     />
 
-                    <!-- Live preview: the label colour is computed from the fill,
-                         so a pale pick shows dark text here exactly as it will
-                         once saved. -->
+                    <!-- A sample, not a control: with no Save button on the page
+                         a pill labelled "Save" would just look broken when clicked.
+                         The label colour is computed from the fill, so a pale pick
+                         shows dark text here exactly as it will once applied. -->
                     <span
                         class="inline-flex h-9 items-center rounded-full px-4 text-sm font-semibold"
                         :style="{
@@ -135,7 +191,7 @@ function submit() {
                             color: readableOn(form.button_color),
                         }"
                     >
-                        {{ __('Save') }}
+                        {{ __('Preview') }}
                     </span>
                 </div>
 
@@ -176,7 +232,7 @@ function submit() {
                                 : 'border-neutral-200 dark:border-neutral-700'
                         "
                         :style="{ backgroundColor: preset.value }"
-                        @click="setColor('body_color', preset.value)"
+                        @click="pickPreset(preset.value)"
                     />
 
                     <span class="mx-1 h-6 w-px bg-neutral-200 dark:bg-neutral-700" aria-hidden="true" />
@@ -188,6 +244,7 @@ function submit() {
                         aria-label="Custom background colour"
                         class="size-9 shrink-0 cursor-pointer rounded-full border border-neutral-200 bg-transparent p-1 dark:border-neutral-700"
                         @input="setColor('body_color', $event.target.value)"
+                        @change="commit('body_color', $event.target.value)"
                     />
                     <Input
                         :model-value="form.body_color"
@@ -196,7 +253,7 @@ function submit() {
                         spellcheck="false"
                         aria-label="Background colour hex"
                         :aria-invalid="!!form.errors.body_color"
-                        @update:model-value="setColor('body_color', $event)"
+                        @update:model-value="type('body_color', $event)"
                     />
                 </div>
 
@@ -212,9 +269,18 @@ function submit() {
                 </p>
             </div>
 
-            <Button type="submit" :disabled="form.processing">
-                {{ form.processing ? __('Saving…') : __('Save') }}
-            </Button>
-        </form>
+            <!-- Saved as you pick — see the note in the script. The status is
+                 announced politely so a screen reader is told the change landed
+                 without interrupting whatever it is reading. -->
+            <p
+                class="h-4 text-xs font-medium"
+                :class="form.processing ? 'text-neutral-500 dark:text-neutral-400' : 'text-[#4b9d5f] dark:text-[#6cc182]'"
+                role="status"
+                aria-live="polite"
+            >
+                <template v-if="form.processing">{{ __('Saving…') }}</template>
+                <template v-else-if="form.recentlySuccessful">{{ __('Saved') }}</template>
+            </p>
+        </div>
     </SettingsLayout>
 </template>

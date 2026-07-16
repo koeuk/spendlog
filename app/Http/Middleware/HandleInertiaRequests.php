@@ -69,6 +69,9 @@ class HandleInertiaRequests extends Middleware
             'name' => $settings->app_name,
             'logo' => $settings->logoUrl(),
             'favicon' => $settings->faviconUrl(),
+            // The layout drops the ambient wash when a background colour has been
+            // chosen, so the colour renders flat instead of tinted by it.
+            'plain_background' => $settings->plainBackground(),
         ];
     }
 
