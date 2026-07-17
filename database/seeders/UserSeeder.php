@@ -11,6 +11,13 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
+        // Nothing can be put on a role that does not exist yet. DatabaseSeeder
+        // already runs RoleSeeder first, but `db:seed --class=UserSeeder` on its
+        // own would otherwise die with "no role named super_admin" — after
+        // creating the account, leaving an owner row with no role and no
+        // permissions. RoleSeeder is idempotent, so calling it twice is free.
+        $this->call(RoleSeeder::class);
+
         $this->upsertSuperAdmin();
 
         $this->upsertUser('admin@spendlog.test', 'Admin', RoleName::Admin);

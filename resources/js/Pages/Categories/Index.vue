@@ -197,8 +197,11 @@ function destroy() {
                         class="sm:max-w-sm sm:flex-1"
                     />
 
+                    <!-- ms-auto, not justify-between on the row: the search box is
+                         capped at max-w-sm, so the gap has to be pushed from this
+                         side or the toggle just trails it. -->
                     <div
-                        class="inline-flex self-start rounded-md border border-gray-200 bg-white p-0.5 dark:border-neutral-800 dark:bg-neutral-800"
+                        class="inline-flex self-start rounded-md border border-gray-200 bg-white p-0.5 sm:ms-auto dark:border-neutral-800 dark:bg-neutral-800"
                         role="group"
                         :aria-label="__('Sort categories')"
                     >
