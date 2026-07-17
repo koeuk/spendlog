@@ -16,7 +16,7 @@ const props = defineProps({
 const classes = computed(() =>
     props.active
         ? 'block w-full rounded-[20px] bg-neutral-900 px-4 py-2.5 text-start text-sm font-semibold text-white transition dark:bg-neutral-100 dark:text-neutral-900'
-        : 'block w-full rounded-[20px] px-4 py-2.5 text-start text-sm font-medium text-neutral-600 transition hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100',
+        : 'block w-full rounded-[20px] px-4 py-2.5 text-start text-sm font-medium text-neutral-600 transition hover:bg-neutral-100 hover:text-neutral-900 dark:text-white dark:hover:bg-neutral-800 dark:hover:text-white',
 );
 </script>
 

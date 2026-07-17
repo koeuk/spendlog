@@ -23,7 +23,7 @@ const props = defineProps({
 const classes = computed(() =>
     props.active
         ? 'relative z-10 inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold text-white transition-colors duration-300 dark:text-neutral-900'
-        : 'relative z-10 inline-flex items-center rounded-full px-4 py-2 text-sm font-medium text-neutral-500 transition-colors duration-300 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100',
+        : 'relative z-10 inline-flex items-center rounded-full px-4 py-2 text-sm font-medium text-neutral-500 transition-colors duration-300 hover:text-neutral-900 dark:text-white dark:hover:text-white',
 );
 </script>
 

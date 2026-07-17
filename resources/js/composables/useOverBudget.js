@@ -1,30 +1,21 @@
 import { computed, ref } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 
-const STORAGE_KEY = 'spendlog.overBudgetDismissed';
-
 /**
- * Whether the over-budget bar has been dismissed.
+ * Whether the over-budget bar has been dismissed this page load.
  *
- * Module-level, like useTheme's preference, and for a sharper reason here: the
- * layout that renders the bar is remounted on every Inertia visit, so a ref
- * declared inside its setup would reset to false and the bar would be back on
- * the next page. Dismissing it would hide it until you clicked anything.
+ * Module-level, not declared inside the composable: the layout that renders the
+ * bar is remounted on every Inertia visit, so a ref inside setup would reset to
+ * false and the bar would reappear on the next page — dismissing it would hide
+ * it only until you clicked anything.
  *
- * sessionStorage rather than localStorage: dismissing means "I know, not now",
- * not "never tell me again". Closing the tab should bring it back.
+ * Kept in memory and nowhere else, on purpose. A full page refresh reloads this
+ * module, which resets the flag, so refreshing while still over budget brings
+ * the bar back. Dismissing means "hide it right now", and a reload is a fresh
+ * look. It still survives Inertia navigation, so clicking around after
+ * dismissing does not re-nag within the same page load.
  */
-const dismissed = ref(readStored());
-
-function readStored() {
-    try {
-        return sessionStorage.getItem(STORAGE_KEY) === '1';
-    } catch {
-        // Private mode / storage disabled — show it rather than throw. It is a
-        // warning, and it is still dismissible for as long as the page lives.
-        return false;
-    }
-}
+const dismissed = ref(false);
 
 /**
  * The bar, and the state it needs. Call from the app shell.
@@ -50,13 +41,6 @@ export function useOverBudget() {
 
     function dismissOverBudget() {
         dismissed.value = true;
-
-        try {
-            sessionStorage.setItem(STORAGE_KEY, '1');
-        } catch {
-            // The ref above still hides it for this page's lifetime; only the
-            // memory of it across a reload is lost.
-        }
     }
 
     return { overBudget, showOverBudget, dismissOverBudget };
