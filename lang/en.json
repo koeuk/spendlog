@@ -186,5 +186,11 @@
     "Move up": "Move up",
     "Move down": "Move down",
     "Deleting…": "Deleting…",
-    "Nothing here yet. Check back soon.": "Nothing here yet. Check back soon."
+    "Nothing here yet. Check back soon.": "Nothing here yet. Check back soon.",
+    "Footer pages": "Footer pages",
+    "The About and Privacy pages linked at the bottom of every page.": "The About and Privacy pages linked at the bottom of every page.",
+    "Title": "Title",
+    "Body": "Body",
+    "When off, the page is hidden and its footer link disappears.": "When off, the page is hidden and its footer link disappears.",
+    "© :year :name. All rights reserved.": "© :year :name. All rights reserved."
 }

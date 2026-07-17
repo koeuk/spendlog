@@ -14,6 +14,7 @@ let lastPill = null;
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import { useWindowScroll } from '@vueuse/core';
 import AmbientBackdrop from '@/Components/AmbientBackdrop.vue';
+import AppFooter from '@/Components/AppFooter.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
@@ -174,7 +175,9 @@ watch(() => page.url, () => nextTick(measurePill));
              than leave it as the colour that was picked. -->
         <AmbientBackdrop v-if="!branding.plain_background" />
 
-        <div class="mx-auto max-w-6xl px-3 pb-10 lg:px-4">
+        <!-- flex column at full viewport height so the footer can be pushed to
+             the bottom on short pages (main grows) rather than floating mid-page. -->
+        <div class="mx-auto flex min-h-screen max-w-6xl flex-col px-3 pb-10 lg:px-4">
             <!--
                 The bar floats on the page rather than spanning it edge to edge,
                 echoing the panel geometry of the auth screens.
@@ -417,7 +420,9 @@ watch(() => page.url, () => nextTick(measurePill));
                 <slot name="header" />
             </header>
 
-            <main>
+            <!-- Grows to absorb the slack, so the footer lands at the bottom on a
+                 short page and is pushed down naturally on a tall one. -->
+            <main class="flex-1">
                 <slot />
             </main>
 

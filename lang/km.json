@@ -186,5 +186,11 @@
     "Move up": "ផ្លាស់ទីឡើងលើ",
     "Move down": "ផ្លាស់ទីចុះក្រោម",
     "Deleting…": "កំពុងលុប…",
-    "Nothing here yet. Check back soon.": "មិនទាន់មានអ្វីនៅទីនេះទេ។ សូមត្រឡប់មកម្ដងទៀត។"
+    "Nothing here yet. Check back soon.": "មិនទាន់មានអ្វីនៅទីនេះទេ។ សូមត្រឡប់មកម្ដងទៀត។",
+    "Footer pages": "ទំព័របាតទំព័រ",
+    "The About and Privacy pages linked at the bottom of every page.": "ទំព័រ អំពីយើង និង គោលការណ៍ឯកជនភាព ដែលភ្ជាប់នៅបាតទំព័រគ្រប់ទំព័រ។",
+    "Title": "ចំណងជើង",
+    "Body": "ខ្លឹមសារ",
+    "When off, the page is hidden and its footer link disappears.": "ពេលបិទ ទំព័រនេះត្រូវលាក់ ហើយតំណនៅបាតទំព័របាត់។",
+    "© :year :name. All rights reserved.": "© :year :name. រក្សាសិទ្ធិគ្រប់យ៉ាង។"
 }
