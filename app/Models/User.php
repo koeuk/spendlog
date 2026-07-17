@@ -126,9 +126,30 @@ class User extends Authenticatable implements MustVerifyEmail
         return $permission === null || $this->hasPermissionTo($permission->value);
     }
 
+    /**
+     * Administers the app — either role.
+     *
+     * A super admin is included on purpose. This backs the API-docs gate, the
+     * shared `is_admin` flag and the token abilities, and if it asked for the
+     * admin role alone a super admin would come out *less* capable than an
+     * admin: no docs, no admin UI, a narrower token. "Super" would be a lie.
+     */
     public function isAdmin(): bool
     {
-        return $this->hasRole(RoleName::Admin->value);
+        return $this->hasAnyRole([RoleName::Admin->value, RoleName::SuperAdmin->value]);
+    }
+
+    /**
+     * The owner account, which the user-management screen cannot touch at all.
+     *
+     * Deliberately not folded into isAdmin(): every caller of that one is asking
+     * "may this person administer the app", and the answer is the same for both.
+     * This asks the different question — "is this person out of reach" — and only
+     * UserPolicy cares.
+     */
+    public function isSuperAdmin(): bool
+    {
+        return $this->hasRole(RoleName::SuperAdmin->value);
     }
 
     public function isSuspended(): bool

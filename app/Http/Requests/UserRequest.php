@@ -40,7 +40,11 @@ class UserRequest extends FormRequest
                 'confirmed',
                 Password::defaults(),
             ],
-            'role' => ['required', Rule::enum(RoleName::class)],
+            // Only the assignable roles, never Rule::enum(RoleName::class) —
+            // that would accept role=super_admin from a hand-made POST and let
+            // any admin mint an account nobody can touch afterwards. Leaving it
+            // out of the dropdown is presentation; this is the rule.
+            'role' => ['required', Rule::in(array_column(RoleName::assignable(), 'value'))],
             'status' => ['required', Rule::enum(UserStatus::class)],
         ];
     }

@@ -39,7 +39,10 @@ class UserController extends Controller
                 'uuid' => $user->uuid,
                 'name' => $user->name,
                 'email' => $user->email,
-                'role' => $user->roles->first()?->name ?? RoleName::User->value,
+                'role' => $role = $user->roles->first()?->name ?? RoleName::User->value,
+                // Rendered instead of capitalising the raw value, which turns
+                // super_admin into "Super_admin".
+                'role_label' => (RoleName::tryFrom($role) ?? RoleName::User)->label(),
                 'status' => $user->status->value,
                 'status_label' => $user->status->label(),
                 'status_classes' => $user->status->badgeClasses(),
@@ -65,9 +68,11 @@ class UserController extends Controller
         return Inertia::render('Settings/Users', [
             'users' => $users,
             'pagination' => $this->paginationMeta($paginator),
+            // assignable(), not cases(): super admin must not be offerable from
+            // the form. UserRequest enforces the same thing on the way back in.
             'roles' => array_map(
-                fn (RoleName $role) => ['value' => $role->value, 'label' => ucfirst($role->value)],
-                RoleName::cases(),
+                fn (RoleName $role) => ['value' => $role->value, 'label' => $role->label()],
+                RoleName::assignable(),
             ),
             'statuses' => UserStatus::options(),
             // Grouped server-side so the drawer, the seeder and the policies all

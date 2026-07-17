@@ -177,7 +177,9 @@ const passwordHint = computed(() =>
                             </p>
                         </td>
                         <td class="px-2 py-3">
-                            <span class="text-xs font-medium capitalize">{{ user.role }}</span>
+                            <!-- Labelled server-side: `capitalize` on the raw
+                                 value would render "Super_admin". -->
+                            <span class="text-xs font-medium">{{ user.role_label }}</span>
                         </td>
                         <td class="px-2 py-3">
                             <span

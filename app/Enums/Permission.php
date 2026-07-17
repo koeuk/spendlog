@@ -199,7 +199,10 @@ enum Permission: string
     public static function defaultsFor(RoleName $role): array
     {
         return match ($role) {
-            RoleName::Admin => self::forAdmin(),
+            // Identical sets. A super admin is not protected by holding more
+            // permissions — there are none left to hold — but by UserPolicy
+            // refusing to let anything touch the account.
+            RoleName::SuperAdmin, RoleName::Admin => self::forAdmin(),
             RoleName::User => self::forUser(),
         };
     }

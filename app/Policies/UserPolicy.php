@@ -33,6 +33,10 @@ class UserPolicy
 
     public function update(User $user, User $target): bool
     {
+        if ($this->isOutOfReach($target)) {
+            return false;
+        }
+
         return $user->hasPermissionTo(Permission::UsersManage->value);
     }
 
@@ -46,6 +50,10 @@ class UserPolicy
      */
     public function managePermissions(User $user, User $target): bool
     {
+        if ($this->isOutOfReach($target)) {
+            return false;
+        }
+
         // Editing your own permissions is how an admin accidentally locks
         // themselves out of the very screen they are standing on.
         return $user->isAdmin() && ! $user->is($target);
@@ -57,6 +65,10 @@ class UserPolicy
      */
     public function delete(User $user, User $target): bool
     {
+        if ($this->isOutOfReach($target)) {
+            return false;
+        }
+
         if (! $user->hasPermissionTo(Permission::UsersManage->value) || $user->is($target)) {
             return false;
         }
@@ -67,6 +79,10 @@ class UserPolicy
     /** Suspending yourself would end your own session on the next request. */
     public function suspend(User $user, User $target): bool
     {
+        if ($this->isOutOfReach($target)) {
+            return false;
+        }
+
         if (! $user->hasPermissionTo(Permission::UsersManage->value) || $user->is($target)) {
             return false;
         }
@@ -80,6 +96,10 @@ class UserPolicy
      */
     public function changeRole(User $user, User $target): bool
     {
+        if ($this->isOutOfReach($target)) {
+            return false;
+        }
+
         if (! $user->hasPermissionTo(Permission::UsersManage->value) || $user->is($target)) {
             return false;
         }
@@ -88,8 +108,29 @@ class UserPolicy
     }
 
     /**
-     * Only counts admins who could actually sign in — a suspended admin is not a
-     * way back into the install.
+     * A super admin cannot be acted on from the user-management screen — by
+     * anyone, including another super admin and including itself.
+     *
+     * Not "admins may not touch it, super admins may": that rule sounds stronger
+     * and is weaker, because it still leaves a path from the UI to demoting or
+     * deleting the owner account. The account maintains itself through its own
+     * profile page, which does not come through this policy.
+     *
+     * This is the first check in every ability below rather than the last, so a
+     * new permission can never quietly reopen the door.
+     */
+    private function isOutOfReach(User $target): bool
+    {
+        return $target->isSuperAdmin();
+    }
+
+    /**
+     * Only counts administrators who could actually sign in — a suspended one is
+     * not a way back into the install.
+     *
+     * Super admins count. They administer the app like any admin, so an install
+     * holding one is not locked out, and refusing to count them would block the
+     * last *admin* from being demoted when a perfectly good owner account exists.
      */
     private function isLastAdmin(User $target): bool
     {
@@ -100,7 +141,10 @@ class UserPolicy
         $others = User::query()
             ->whereKeyNot($target->getKey())
             ->where('status', UserStatus::Active->value)
-            ->whereHas('roles', fn ($query) => $query->where('name', RoleName::Admin->value))
+            ->whereHas('roles', fn ($query) => $query->whereIn('name', [
+                RoleName::Admin->value,
+                RoleName::SuperAdmin->value,
+            ]))
             ->count();
 
         return $others === 0;
