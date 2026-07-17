@@ -4,7 +4,7 @@ import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import BudgetProgress from '@/Components/BudgetProgress.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
-import { CARD, EYEBROW } from '@/lib/appStyles';
+import { CARD, CARD_ALERT, EYEBROW } from '@/lib/appStyles';
 import CategoryBadge from '@/Components/CategoryBadge.vue';
 import { useNavigating } from '@/composables/useNavigating';
 import { trans } from '@/lib/i18n';
@@ -19,7 +19,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/Components/ui/select';
-import { ChevronLeft, ChevronRight } from 'lucide-vue-next';
+import { ChevronLeft, ChevronRight, TriangleAlert } from 'lucide-vue-next';
 import {
     Dialog,
     DialogContent,
@@ -207,6 +207,34 @@ function clearBudget() {
             <!-- Width and gutters come from the layout's one container, so the
                  column never resizes when navigating between pages. -->
             <div class="space-y-4">
+                <!-- Only when the overall budget is blown. A category going over
+                     on its own keeps the red figure on its own row: a banner for
+                     each would train the eye to skip them all. -->
+                <div
+                    v-if="summary.overall.status === 'over'"
+                    role="alert"
+                    :class="[CARD_ALERT, 'flex items-start gap-3 p-4']"
+                >
+                    <TriangleAlert
+                        class="mt-0.5 size-5 shrink-0 text-red-600 dark:text-red-400"
+                        aria-hidden="true"
+                    />
+                    <div class="min-w-0">
+                        <p class="text-sm font-semibold text-red-900 dark:text-red-200">
+                            {{ __('Over budget this month') }}
+                        </p>
+                        <p class="mt-0.5 text-xs leading-relaxed text-red-700 dark:text-red-300">
+                            {{
+                                __('You have spent :spent of your :budget overall budget — :over over.', {
+                                    spent: money.format(summary.overall.spent),
+                                    budget: money.format(summary.overall.budget),
+                                    over: money.format(Math.abs(summary.overall.remaining)),
+                                })
+                            }}
+                        </p>
+                    </div>
+                </div>
+
                 <!-- Overall -->
                 <div :class="[CARD, 'p-5']">
                     <div class="flex items-start justify-between gap-4">

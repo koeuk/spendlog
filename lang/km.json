@@ -60,6 +60,8 @@
     "Page :current of :last": "ទំព័រ :current ក្នុងចំណោម :last",
     ":amount left": "នៅសល់ :amount",
     ":amount over budget": "លើសថវិកា :amount",
+    "Over budget this month": "លើសថវិកាក្នុងខែនេះ",
+    "You have spent :spent of your :budget overall budget — :over over.": "អ្នកបានចំណាយ :spent ក្នុងចំណោមថវិកាសរុប :budget — លើស :over។",
     "Expense added successfully.": "បានបញ្ចូលចំណាយដោយជោគជ័យ។",
     "Expense updated successfully.": "បានកែចំណាយដោយជោគជ័យ។",
     "Expense deleted successfully.": "បានលុបចំណាយដោយជោគជ័យ។",

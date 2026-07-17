@@ -75,6 +75,19 @@ export const CARD_TINT =
     'dark:border-[#6cc182]/15 dark:bg-[#16281a]/60';
 
 /**
+ * CARD_TINT's alarm state — same glass, red — for a message the page needs read
+ * before the numbers under it.
+ *
+ * No CARD_LIFT: everything else that lifts is a thing you click, and lifting
+ * under the pointer would promise an action this does not have. Red is spelled
+ * out for both themes rather than taken from --destructive, which is a *fill*
+ * for buttons: at 70% opacity behind text it is a solid red slab, not a wash.
+ */
+export const CARD_ALERT =
+    'rounded-[28px] border border-red-500/20 bg-red-50/70 backdrop-blur-xl backdrop-saturate-150 ' +
+    'dark:border-red-500/25 dark:bg-red-950/40';
+
+/**
  * A lighter pane for nested surfaces (modals, popovers) that sit above a card
  * and would otherwise blur an already-blurred layer — stacking backdrop filters
  * costs a lot and muddies both.
