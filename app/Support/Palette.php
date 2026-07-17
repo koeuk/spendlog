@@ -6,9 +6,15 @@ namespace App\Support;
  * Derives a whole theme from one background colour.
  *
  * The problem this solves: setting only --background paints the page and leaves
- * everything else behind. Cards stay translucent white, text stays near-black,
- * borders stay grey — so a gold page gets washed-out gold cards and unreadable
- * muted text. Every token has to move together or none of them should.
+ * everything else behind. Cards stay translucent white and text stays near-black
+ * — so a gold page gets washed-out gold cards and unreadable muted text. Every
+ * surface and text token has to move together or none of them should.
+ *
+ * Borders are the deliberate exception: --border and --input are left to app.css
+ * and stay neutral grey on every theme. A derived edge tinted itself to match the
+ * page, which is the one place that reads as a mistake rather than a family — and
+ * it kept landing fainter than the stock grey it replaced, because the step that
+ * separates surfaces is far smaller than the contrast an edge needs.
  *
  * The method is relative lightness. Take the chosen colour's hue and saturation,
  * then place every surface and text token at a fixed lightness *distance* from
@@ -52,9 +58,6 @@ final class Palette
     /** Muted sits just off the card — a hint of a step, not another layer. */
     private const STACK_SEPARATION = 0.015;
 
-    /** The border has to read as an edge, so it is the biggest step. */
-    private const BORDER_SEPARATION = 0.05;
-
     /**
      * Every design token, as bare HSL triplets ready for a custom property.
      *
@@ -71,10 +74,9 @@ final class Palette
          *
          * Stepping each from the page independently looks equivalent and is not.
          * On a saturated yellow a single lightness step moves luminance by more
-         * than 0.09, so the card (needing 0.02) and the border (needing 0.09)
-         * both stop at that same first step and come out identical: a border you
-         * cannot see. Chaining them keeps the hierarchy intact whatever the hue
-         * does.
+         * than either separation asks for, so the card and muted both stop at
+         * that same first step and come out identical: a stack with no hierarchy
+         * in it. Chaining them keeps the surfaces apart whatever the hue does.
          */
         $saturation = $s * self::SURFACE_SATURATION;
         // Near the top there is nowhere lighter to go, so the stack descends.
@@ -82,7 +84,6 @@ final class Palette
 
         $card = self::step($h, $saturation, $l, self::hexOf(self::triplet($h, $s, $l)), self::CARD_SEPARATION, $direction);
         $muted = self::step($h, $saturation, self::lightnessOf($card), self::hexOf($card), self::STACK_SEPARATION, $direction);
-        $border = self::step($h, $saturation, self::lightnessOf($muted), self::hexOf($muted), self::BORDER_SEPARATION, $direction);
 
         $background = self::triplet($h, $s, $l);
         $foreground = self::textOn($h, $s, $background, self::AAA);
@@ -112,8 +113,10 @@ final class Palette
             // to AAA would make it as loud as the text it is meant to sit under.
             'muted-foreground' => self::mutedTextOn($h, $s, $card),
 
-            'border' => $border,
-            'input' => $border,
+            // No 'border' or 'input': edges stay app.css's neutral grey on every
+            // theme. Deriving them tinted the one element that should read as
+            // structure rather than colour, and the surface-sized step they were
+            // built from left the edge fainter than the grey it replaced.
             'ring' => $foreground,
         ];
     }

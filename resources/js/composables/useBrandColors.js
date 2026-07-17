@@ -5,6 +5,10 @@ import { usePage } from '@inertiajs/vue3';
  * Every token the generated palette can set. Kept explicit so removing a theme
  * clears exactly what it added — iterating the *new* palette would strip nothing
  * when there is no new palette, which is the case that matters.
+ *
+ * --border and --input are deliberately absent: the palette does not derive them
+ * (see Palette::from), so app.css owns them and nothing here may clear them.
+ * This list must stay in step with that one.
  */
 const PALETTE_TOKENS = [
     'background',
@@ -19,8 +23,6 @@ const PALETTE_TOKENS = [
     'accent-foreground',
     'muted',
     'muted-foreground',
-    'border',
-    'input',
     'ring',
 ];
 
