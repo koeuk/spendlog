@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AppSetting;
 use App\Models\Expense;
 use App\Models\User;
 use App\Services\BudgetSummary;
@@ -43,6 +44,9 @@ class DashboardController extends Controller
             'breakdown' => $this->breakdown($summary),
             'trend' => $this->trendPayload($request),
             'recent' => $this->recent($user),
+            // Admin-authored, already resolved to the active locale. Null when the
+            // feature is off or unwritten, and the card then renders nothing.
+            'guidance' => AppSetting::current()->spendingGuidance(),
         ]);
     }
 

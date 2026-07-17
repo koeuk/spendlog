@@ -7,6 +7,7 @@ use App\Support\Palette;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Translatable\HasTranslations;
 
 /**
  * Branding for the whole app, stored as one row.
@@ -16,7 +17,18 @@ use Illuminate\Support\Facades\Storage;
  */
 class AppSetting extends Model
 {
+    use HasTranslations;
+
     private const CACHE_KEY = 'app_settings.current';
+
+    /**
+     * Reading $settings->spending_warning returns the active locale's value,
+     * falling back to fallback_locale when it is missing — same as Category name.
+     * The Settings form edits both locales at once via getTranslations().
+     *
+     * @var array<int, string>
+     */
+    public array $translatable = ['spending_warning', 'spending_advice'];
 
     /**
      * Doubles as a sentinel for "no brand colour chosen" — see cssVariables().
@@ -41,7 +53,20 @@ class AppSetting extends Model
         'favicon_path',
         'button_color',
         'body_color',
+        'spending_guidance_enabled',
+        'spending_warning',
+        'spending_advice',
     ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'spending_guidance_enabled' => 'boolean',
+        ];
+    }
 
     /**
      * The attributes that should be hidden for serialization.
@@ -169,6 +194,34 @@ class AppSetting extends Model
     public function plainBackground(): bool
     {
         return $this->body_color !== self::DEFAULT_BODY_COLOR;
+    }
+
+    /**
+     * The dashboard guidance block for the active locale, or null when there is
+     * nothing to render.
+     *
+     * Null in two cases, both meaning "show nothing": the feature is switched
+     * off, or both messages are blank. A message set in only one locale resolves
+     * through spatie's fallback, so filling in English alone still reaches a
+     * Khmer reader rather than showing them a gap.
+     *
+     * @return array{warning: string|null, advice: string|null}|null
+     */
+    public function spendingGuidance(): ?array
+    {
+        if (! $this->spending_guidance_enabled) {
+            return null;
+        }
+
+        // Empty locales are dropped on save, so a value here is real text, not ''.
+        $warning = $this->spending_warning ?: null;
+        $advice = $this->spending_advice ?: null;
+
+        if ($warning === null && $advice === null) {
+            return null;
+        }
+
+        return ['warning' => $warning, 'advice' => $advice];
     }
 
     /** Null when unset — the frontend falls back to the built-in wordmark. */

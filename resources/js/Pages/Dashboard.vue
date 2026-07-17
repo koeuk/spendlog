@@ -6,7 +6,7 @@ import BudgetProgress from '@/Components/BudgetProgress.vue';
 import SpendingTrendChart from '@/Components/SpendingTrendChart.vue';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
 import { CARD, CARD_TINT, EYEBROW, FIGURE, MUTED } from '@/lib/appStyles';
-import { ArrowRight } from 'lucide-vue-next';
+import { ArrowRight, Lightbulb, TriangleAlert } from 'lucide-vue-next';
 
 const props = defineProps({
     today: { type: Object, required: true },
@@ -14,6 +14,9 @@ const props = defineProps({
     breakdown: { type: Array, required: true },
     trend: { type: Object, required: true },
     recent: { type: Array, required: true },
+    // { warning, advice } resolved to the active locale, or null when the admin
+    // has the feature off or blank.
+    guidance: { type: Object, default: null },
 });
 
 const money = new Intl.NumberFormat('en-US', {
@@ -66,6 +69,27 @@ const statusText = {
         </template>
 
         <div class="space-y-3">
+            <!-- Admin-authored guidance. Each line only renders if its text is
+                 set, so an admin can show just one of the two. -->
+            <div
+                v-if="guidance"
+                :class="[CARD, 'anim space-y-3 p-6 sm:p-7']"
+                style="--d: 40ms"
+            >
+                <div v-if="guidance.warning" class="flex items-start gap-3">
+                    <TriangleAlert class="mt-0.5 size-5 shrink-0 text-amber-500 dark:text-amber-400" />
+                    <p class="text-sm leading-relaxed text-amber-900 dark:text-amber-200">
+                        {{ guidance.warning }}
+                    </p>
+                </div>
+                <div v-if="guidance.advice" class="flex items-start gap-3">
+                    <Lightbulb class="mt-0.5 size-5 shrink-0 text-emerald-500 dark:text-emerald-400" />
+                    <p class="text-sm leading-relaxed" :class="MUTED">
+                        {{ guidance.advice }}
+                    </p>
+                </div>
+            </div>
+
             <!-- Hero: the month, and how much room is left in it -->
             <div class="grid gap-3 lg:grid-cols-3">
                 <div :class="[CARD_TINT, 'anim p-6 sm:p-8 lg:col-span-2']" style="--d: 60ms">

@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Enums\BodyColor;
 use App\Enums\ButtonColor;
 use App\Enums\Permission;
+use App\Enums\Locale;
 use App\Http\Requests\BrandingRequest;
 use App\Http\Requests\ColorRequest;
+use App\Http\Requests\SpendingRequest;
 use App\Models\AppSetting;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
@@ -65,6 +67,59 @@ class SettingsController extends Controller
             'button_presets' => ButtonColor::presets(),
             'body_presets' => BodyColor::presets(),
         ]);
+    }
+
+    public function spending(Request $request): Response
+    {
+        $this->authorizeAdmin($request);
+
+        $settings = AppSetting::current();
+
+        return Inertia::render('Settings/Spending', [
+            'spending' => [
+                'enabled' => $settings->spending_guidance_enabled,
+                // Both locales, always present, so the form has a box for each
+                // even before anything is written.
+                'warning' => $this->localeMap($settings, 'spending_warning'),
+                'advice' => $this->localeMap($settings, 'spending_advice'),
+            ],
+            'locales' => array_map(
+                fn (Locale $locale) => ['value' => $locale->value, 'label' => $locale->label()],
+                Locale::cases(),
+            ),
+        ]);
+    }
+
+    public function updateSpending(SpendingRequest $request): RedirectResponse
+    {
+        $this->authorizeAdmin($request);
+
+        $settings = AppSetting::current();
+
+        $settings->spending_guidance_enabled = $request->boolean('enabled');
+        // Empty locales are dropped by translationsFor(), and an empty array
+        // clears the field, so unchecking everything genuinely blanks it.
+        $settings->replaceTranslations('spending_warning', $request->translationsFor('warning'));
+        $settings->replaceTranslations('spending_advice', $request->translationsFor('advice'));
+
+        $settings->save();
+
+        return back()->with('success', __('Spending guidance updated.'));
+    }
+
+    /**
+     * Every locale's stored value for a translatable field, keyed by locale, with
+     * a blank string for any that is unset — the shape the settings form binds to.
+     *
+     * @return array<string, string>
+     */
+    private function localeMap(AppSetting $settings, string $field): array
+    {
+        $translations = $settings->getTranslations($field);
+
+        return collect(Locale::cases())
+            ->mapWithKeys(fn (Locale $locale) => [$locale->value => $translations[$locale->value] ?? ''])
+            ->all();
     }
 
     public function updateColors(ColorRequest $request): RedirectResponse

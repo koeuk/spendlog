@@ -52,6 +52,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
           )
         "
         v-bind="{ ...$attrs, ...forwarded }"
+        @interact-outside="(e) => e.preventDefault()"
         @pointer-down-outside="
           (event) => {
             const originalEvent = event.detail.originalEvent;

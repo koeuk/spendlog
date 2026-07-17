@@ -356,7 +356,7 @@ const filtered = computed(() =>
                         <li
                             v-for="expense in day.expenses"
                             :key="expense.uuid"
-                            class="group flex items-center gap-3 px-4 py-3"
+                            class="group flex items-center gap-3 px-4 py-3 transition-transform duration-150 ease-out active:scale-[0.98]"
                         >
                             <span
                                 class="flex size-8 shrink-0 items-center justify-center rounded-full ring-1 ring-inset"

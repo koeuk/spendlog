@@ -65,6 +65,10 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/colors', [SettingsController::class, 'colors'])->name('colors.edit');
         Route::post('/colors', [SettingsController::class, 'updateColors'])->name('colors.update');
+
+        // Admin only — enforced in the controller. Dashboard spending guidance.
+        Route::get('/spending', [SettingsController::class, 'spending'])->name('spending.edit');
+        Route::post('/spending', [SettingsController::class, 'updateSpending'])->name('spending.update');
     });
 });
 
