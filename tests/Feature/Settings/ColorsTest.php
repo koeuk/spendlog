@@ -292,9 +292,12 @@ class ColorsTest extends TestCase
         $this->assertSame('0 0% 98%', $vars['primaryForeground']);
 
         // The whole theme, not just the page — that is the point of the palette.
-        foreach (['card', 'border', 'muted-foreground', 'foreground'] as $token) {
+        // Edges are the exception: app.css keeps --border neutral on every theme.
+        foreach (['card', 'muted-foreground', 'foreground'] as $token) {
             $this->assertArrayHasKey($token, $vars['palette']);
         }
+
+        $this->assertArrayNotHasKey('border', $vars['palette']);
 
         foreach ($vars['palette'] as $token => $triplet) {
             $this->assertMatchesRegularExpression('/^[\d.]+ [\d.]+% [\d.]+%$/', $triplet, $token);

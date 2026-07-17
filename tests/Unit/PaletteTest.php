@@ -114,17 +114,25 @@ class PaletteTest extends TestCase
         );
     }
 
+    /**
+     * Edges are not the palette's business. app.css keeps --border and --input
+     * neutral grey on every theme, so the palette must not emit them at all —
+     * a derived edge tinted itself to match the page and came out fainter than
+     * the grey it replaced.
+     *
+     * The test this replaces asserted only that the border differed from the
+     * card, while its own comment claimed it checked the border was not lighter
+     * than the card. It was not: a pure-white border differs from the card, so
+     * the mint page rendered a white edge on a white card for as long as it
+     * shipped, green the whole way.
+     */
     #[DataProvider('backgrounds')]
-    public function test_the_border_sits_between_the_card_and_the_text(string $background): void
+    public function test_it_never_derives_an_edge(string $background): void
     {
         $palette = Palette::from($background);
 
-        // A border darker than the text, or lighter than the card, is not an edge
-        // — it is either a bar or nothing.
-        $border = Color::luminance(self::hexOf($palette['border']));
-        $card = Color::luminance(self::hexOf($palette['card']));
-
-        $this->assertNotEqualsWithDelta($card, $border, 0.002, "{$background}: border is invisible on the card");
+        $this->assertArrayNotHasKey('border', $palette, "{$background}: the palette derived a border");
+        $this->assertArrayNotHasKey('input', $palette, "{$background}: the palette derived an input edge");
     }
 
     /**
@@ -135,7 +143,7 @@ class PaletteTest extends TestCase
     {
         $palette = Palette::from('#1e293b'); // slate — hue 217
 
-        foreach (['background', 'card', 'muted', 'border', 'secondary'] as $token) {
+        foreach (['background', 'card', 'muted', 'secondary'] as $token) {
             $hue = (float) explode(' ', $palette[$token])[0];
 
             $this->assertEqualsWithDelta(
@@ -176,12 +184,14 @@ class PaletteTest extends TestCase
 
     public function test_it_fills_every_token_the_stylesheet_defines(): void
     {
-        // A token left out falls back to app.css's stock value — a grey border on
-        // a gold page — which is exactly the drift this replaces.
+        // A surface or text token left out falls back to app.css's stock value —
+        // a white card on a gold page — which is exactly the drift this replaces.
+        // border and input are the deliberate exception: app.css owns them, and
+        // that stock grey edge is the wanted outcome, not drift.
         $expected = [
             'background', 'foreground', 'card', 'card-foreground', 'popover',
             'popover-foreground', 'secondary', 'secondary-foreground', 'accent',
-            'accent-foreground', 'muted', 'muted-foreground', 'border', 'input', 'ring',
+            'accent-foreground', 'muted', 'muted-foreground', 'ring',
         ];
 
         $this->assertSame($expected, array_keys(Palette::from('#ffffff')));
