@@ -38,8 +38,8 @@ export const APP_PAGE =
  */
 const CARD_LIFT =
     'transition-shadow duration-[400ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:duration-300 ' +
-    'hover:shadow-[0_12px_28px_-8px_rgba(15,23,42,0.16),0_4px_10px_-4px_rgba(15,23,42,0.10)] ' +
-    'dark:hover:shadow-[0_12px_28px_-8px_rgba(0,0,0,0.65),0_4px_10px_-4px_rgba(0,0,0,0.5)]';
+    'hover:shadow-[0_8px_18px_-8px_rgba(15,23,42,0.14),0_2px_6px_-3px_rgba(15,23,42,0.08)] ' +
+    'dark:hover:shadow-[0_8px_18px_-8px_rgba(0,0,0,0.6),0_2px_6px_-3px_rgba(0,0,0,0.45)]';
 
 /**
  * The glass surface.
