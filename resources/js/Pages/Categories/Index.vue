@@ -5,7 +5,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import CategoryBadge from '@/Components/CategoryBadge.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import SearchInput from '@/Components/SearchInput.vue';
-import { CARD } from '@/lib/appStyles';
+import { ACTIVE, CARD } from '@/lib/appStyles';
 import CategoryStylePicker from '@/Components/CategoryStylePicker.vue';
 import LocaleTabs from '@/Components/LocaleTabs.vue';
 import { localized } from '@/lib/i18n';
@@ -201,7 +201,7 @@ function destroy() {
                          capped at max-w-sm, so the gap has to be pushed from this
                          side or the toggle just trails it. -->
                     <div
-                        class="inline-flex self-start rounded-md border border-gray-200 bg-white p-0.5 sm:ms-auto dark:border-neutral-800 dark:bg-neutral-800"
+                        class="inline-flex self-start rounded-md border border-gray-200 bg-white p-0.5 sm:ms-auto dark:border-neutral-700 dark:bg-neutral-800"
                         role="group"
                         :aria-label="__('Sort categories')"
                     >
@@ -212,8 +212,8 @@ function destroy() {
                             class="rounded px-2.5 py-1 text-xs font-medium transition"
                             :class="
                                 sort === option.key
-                                    ? 'bg-gray-900 text-white'
-                                    : 'text-gray-600 dark:text-neutral-400 hover:bg-gray-50 dark:hover:bg-neutral-800'
+                                    ? ACTIVE
+                                    : 'text-gray-600 hover:bg-gray-50 dark:text-neutral-400 dark:hover:bg-neutral-700'
                             "
                             :aria-pressed="sort === option.key"
                             @click="applySort(option.key)"
