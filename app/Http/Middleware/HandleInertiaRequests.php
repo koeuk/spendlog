@@ -3,7 +3,10 @@
 namespace App\Http\Middleware;
 
 use App\Enums\Locale;
+use App\Enums\Permission;
 use App\Models\AppSetting;
+use App\Services\BudgetSummary;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -47,6 +50,9 @@ class HandleInertiaRequests extends Middleware
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
             ],
+            // The layout warns on every page once this month's overall budget is
+            // blown, so it is shared rather than asked for per controller.
+            'over_budget' => fn () => $this->overBudget($request),
             // Every page renders the wordmark, so this is shared rather than
             // repeated in each controller. AppSetting::current() is cached.
             'branding' => fn () => $this->branding(),
@@ -62,6 +68,30 @@ class HandleInertiaRequests extends Middleware
             // frontend resolve __() without a round trip per string.
             'translations' => fn () => $this->translations(app()->getLocale()),
         ];
+    }
+
+    /**
+     * This month's overspend, or null when there is nothing to say.
+     *
+     * Always *this* month, never the month the Budgets page happens to be
+     * browsing: the banner rides every page, and "you are over" has to mean now
+     * or it means nothing.
+     *
+     * Gated on budgets.view because the banner is only actionable to someone who
+     * can open the page it is about — telling anyone else would be a warning
+     * with nowhere to go.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function overBudget(Request $request): ?array
+    {
+        $user = $request->user();
+
+        if (! $user || ! $user->hasPermissionTo(Permission::BudgetsView->value)) {
+            return null;
+        }
+
+        return app(BudgetSummary::class)->overspendFor($user, CarbonImmutable::now());
     }
 
     /**

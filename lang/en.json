@@ -61,6 +61,8 @@
     ":amount left": ":amount left",
     ":amount over budget": ":amount over budget",
     "Over budget this month": "Over budget this month",
+    ":amount over your budget this month": ":amount over your budget this month",
+    "Dismiss": "Dismiss",
     "You have spent :spent of your :budget overall budget — :over over.": "You have spent :spent of your :budget overall budget — :over over.",
     "Expense added successfully.": "Expense added successfully.",
     "Expense updated successfully.": "Expense updated successfully.",

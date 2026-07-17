@@ -19,6 +19,52 @@ class BudgetSummary
     private const WARNING_AT = 80;
 
     /**
+     * The overall row for a month, but only once it is over budget.
+     *
+     * Every authenticated page asks this, so it must not pay for the
+     * per-category work forMonth() does: two indexed reads, and it gives up at
+     * the first one when there is no overall budget to be over.
+     *
+     * Goes through the same row() as everything else on purpose. "Over" is a
+     * rounded percentage above 100, not spent > budget — the two disagree for a
+     * few cents, and a banner that fires while the page it links to says you are
+     * fine is worse than no banner.
+     *
+     * @return array{spent: float, budget: float, remaining: float, percent: int, month: string}|null
+     */
+    public function overspendFor(User $user, CarbonImmutable $month): ?array
+    {
+        $start = $month->startOfMonth();
+
+        // The overall budget is stored with a null category_id.
+        $amount = Budget::query()
+            ->where('user_id', $user->id)
+            ->whereNull('category_id')
+            ->whereDate('month', $start->toDateString())
+            ->value('amount');
+
+        if ($amount === null) {
+            return null;
+        }
+
+        $spent = (float) Expense::query()
+            ->where('user_id', $user->id)
+            ->whereBetween('spent_on', [
+                $start->toDateString(),
+                $start->endOfMonth()->toDateString(),
+            ])
+            ->sum('price');
+
+        $row = $this->row(spent: $spent, amount: (float) $amount);
+
+        if ($row['status'] !== 'over') {
+            return null;
+        }
+
+        return [...$row, 'month' => $start->format('Y-m')];
+    }
+
+    /**
      * Per-category spend and budget for one user in one month.
      *
      * @return array{month: string, overall: array, categories: array}

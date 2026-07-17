@@ -22,10 +22,11 @@ import LocaleSwitcher from '@/Components/LocaleSwitcher.vue';
 import ThemeToggle from '@/Components/ThemeToggle.vue';
 import { Toaster } from '@/Components/ui/sonner';
 import { useFlashToasts } from '@/composables/useFlashToasts';
+import { useOverBudget } from '@/composables/useOverBudget';
 import { useTheme } from '@/composables/useTheme';
 import { useBrandColors } from '@/composables/useBrandColors';
 import { APP_PAGE, CARD } from '@/lib/appStyles';
-import { ChevronDown, Menu, X } from 'lucide-vue-next';
+import { ChevronDown, Menu, TriangleAlert, X } from 'lucide-vue-next';
 import { Link, usePage } from '@inertiajs/vue3';
 
 const showingNavigationDropdown = ref(false);
@@ -52,6 +53,13 @@ const branding = computed(
 const brandInitial = computed(() => (branding.value.name || 'S').charAt(0).toUpperCase());
 
 useFlashToasts();
+
+const { overBudget, showOverBudget, dismissOverBudget } = useOverBudget();
+
+const money = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+});
 
 // Re-applies the admin's colours when they change mid-session — blade only
 // applies them on a full document load.
@@ -324,6 +332,71 @@ watch(() => page.url, () => nextTick(measurePill));
                     </div>
                 </div>
             </div>
+
+            <!-- Inside the sticky block, so it travels with the nav instead of
+                 being left at the top of the page on the first scroll.
+
+                 origin-top on the scale: growing from its own middle would have
+                 it push out of the nav's underside on the way in. -->
+            <Transition
+                enter-active-class="origin-top transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+                enter-from-class="scale-95 opacity-0"
+                enter-to-class="scale-100 opacity-100"
+                leave-active-class="origin-top transition-[transform,opacity] duration-200 ease-[cubic-bezier(0.4,0,1,1)] motion-reduce:transition-none"
+                leave-from-class="scale-100 opacity-100"
+                leave-to-class="scale-95 opacity-0"
+            >
+                <div
+                    v-if="showOverBudget"
+                    role="alert"
+                    class="mb-3 flex items-center gap-4 rounded-2xl border border-red-500/20 bg-red-50/80 px-5 py-4 backdrop-blur-xl dark:border-red-500/25 dark:bg-red-950/50"
+                >
+                    <!-- The mark: a badge with a ring leaving it. Both layers are
+                         absolutely placed inside a fixed-size box so neither the
+                         breath nor the ring can change the row's height. -->
+                    <span class="relative grid size-10 shrink-0 place-items-center">
+                        <span
+                            class="alert-ring absolute inset-0 rounded-full bg-red-500/40"
+                            aria-hidden="true"
+                        />
+                        <span
+                            class="alert-breathe relative grid size-10 place-items-center rounded-full bg-red-500/15 dark:bg-red-500/20"
+                        >
+                            <TriangleAlert
+                                class="size-5 text-red-600 dark:text-red-400"
+                                aria-hidden="true"
+                            />
+                        </span>
+                    </span>
+
+                    <div class="min-w-0 flex-1">
+                        <Link
+                            :href="route('budgets.index')"
+                            class="text-sm font-semibold text-red-900 hover:underline dark:text-red-200"
+                        >
+                            {{ __('Over budget this month') }}
+                        </Link>
+                        <p class="mt-0.5 truncate text-xs text-red-700 dark:text-red-300">
+                            {{
+                                __('You have spent :spent of your :budget overall budget — :over over.', {
+                                    spent: money.format(overBudget.spent),
+                                    budget: money.format(overBudget.budget),
+                                    over: money.format(Math.abs(overBudget.remaining)),
+                                })
+                            }}
+                        </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="grid size-8 shrink-0 place-items-center rounded-full text-red-600/70 transition hover:bg-red-500/10 hover:text-red-700 dark:text-red-400/70 dark:hover:text-red-300"
+                        :aria-label="__('Dismiss')"
+                        @click="dismissOverBudget"
+                    >
+                        <X class="size-4" />
+                    </button>
+                </div>
+            </Transition>
             </div>
             <!-- /sticky bar — the mobile menu lives inside it so an open menu
                  scrolls with the bar rather than being left behind. -->

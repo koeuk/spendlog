@@ -61,6 +61,8 @@
     ":amount left": "នៅសល់ :amount",
     ":amount over budget": "លើសថវិកា :amount",
     "Over budget this month": "លើសថវិកាក្នុងខែនេះ",
+    ":amount over your budget this month": "លើសថវិកាខែនេះ :amount",
+    "Dismiss": "បិទ",
     "You have spent :spent of your :budget overall budget — :over over.": "អ្នកបានចំណាយ :spent ក្នុងចំណោមថវិកាសរុប :budget — លើស :over។",
     "Expense added successfully.": "បានបញ្ចូលចំណាយដោយជោគជ័យ។",
     "Expense updated successfully.": "បានកែចំណាយដោយជោគជ័យ។",

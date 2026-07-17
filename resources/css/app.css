@@ -158,8 +158,62 @@
     }
 }
 
+/*
+ * The over-budget mark: a slow breath, plus a ring leaving it.
+ *
+ * Deliberately slow and small. This sits on every page for as long as the month
+ * is over, so it has to survive being looked at all day — a fast or wide pulse
+ * reads as an emergency for the first minute and as noise ever after.
+ *
+ * Only transform and opacity move, so it composites on the GPU and never asks
+ * the sticky bar above it to lay out again.
+ */
+@layer components {
+    .alert-breathe {
+        animation: alert-breathe 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    .alert-ring {
+        animation: alert-ring 2.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+    }
+}
+
+@keyframes alert-breathe {
+    0%,
+    100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+@keyframes alert-ring {
+    0% {
+        opacity: 0.45;
+        transform: scale(0.85);
+    }
+    /* Gone well before the cycle ends: the pause is what keeps it a heartbeat
+       rather than a spinner. */
+    70%,
+    100% {
+        opacity: 0;
+        transform: scale(1.9);
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .anim {
         animation: none;
+    }
+
+    /* The icon still says what it says without moving. */
+    .alert-breathe,
+    .alert-ring {
+        animation: none;
+    }
+
+    .alert-ring {
+        opacity: 0;
     }
 }
