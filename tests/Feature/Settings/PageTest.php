@@ -6,6 +6,7 @@ use App\Enums\Permission;
 use App\Enums\RoleName;
 use App\Models\Page;
 use App\Models\User;
+use Database\Seeders\PageSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -56,7 +57,7 @@ class PageTest extends TestCase
 
     public function test_the_page_seeder_fills_starter_copy_as_drafts(): void
     {
-        $this->seed(\Database\Seeders\PageSeeder::class);
+        $this->seed(PageSeeder::class);
 
         $about = $this->about()->fresh();
         $this->assertSame('About', $about->getTranslation('title', 'en'));
@@ -70,7 +71,7 @@ class PageTest extends TestCase
         $this->about()->update(['title' => ['en' => 'My own about'], 'published' => true]);
 
         // Runs on every deploy, so it must leave an admin's words alone.
-        $this->seed(\Database\Seeders\PageSeeder::class);
+        $this->seed(PageSeeder::class);
 
         $about = $this->about()->fresh();
         $this->assertSame('My own about', $about->getTranslation('title', 'en'));
