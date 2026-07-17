@@ -64,6 +64,7 @@
     ":amount over your budget this month": "លើសថវិកាខែនេះ :amount",
     "Dismiss": "បិទ",
     "You have spent :spent of your :budget overall budget — :over over.": "អ្នកបានចំណាយ :spent ក្នុងចំណោមថវិកាសរុប :budget — លើស :over។",
+    "You work hard all month, yet spend everything in just a few days. When the money is gone, you blame your salary, your life, or your luck. But the truth is, the problem isn't a lack of money—the problem is spending without thinking.": "អ្នកខំរកលុយពេញមួយខែ ប៉ុន្តែចាយអស់ក្នុងប៉ុន្មានថ្ងៃ។ ពេលលុយអស់ អ្នកបន្ទោសប្រាក់ខែ បន្ទោសជីវិត និងបន្ទោសសំណាង។ តែការពិត បញ្ហាមិនមែនមកពីលុយតិចទេ... បញ្ហាគឺការចាយដោយមិនចេះគិត។",
     "Expense added successfully.": "បានបញ្ចូលចំណាយដោយជោគជ័យ។",
     "Expense updated successfully.": "បានកែចំណាយដោយជោគជ័យ។",
     "Expense deleted successfully.": "បានលុបចំណាយដោយជោគជ័យ។",

@@ -159,7 +159,7 @@ const change = computed(() => {
                             :class="
                                 granularity === option.key
                                     ? ACTIVE
-                                    : 'text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100'
+                                    : 'text-neutral-500 hover:text-neutral-900 dark:text-white dark:hover:text-white'
                             "
                             :aria-pressed="granularity === option.key"
                             @click="load(option.key)"

@@ -385,6 +385,12 @@ watch(() => page.url, () => nextTick(measurePill));
                                 })
                             }}
                         </p>
+                        <!-- A nudge, not a number. Kept quieter than the figures
+                             above and allowed to wrap, since it is a full sentence
+                             and reads as a couple of lines in both locales. -->
+                        <p class="mt-2 text-xs italic leading-relaxed text-red-700/80 dark:text-red-300/80">
+                            {{ __("You work hard all month, yet spend everything in just a few days. When the money is gone, you blame your salary, your life, or your luck. But the truth is, the problem isn't a lack of money—the problem is spending without thinking.") }}
+                        </p>
                     </div>
 
                     <button
