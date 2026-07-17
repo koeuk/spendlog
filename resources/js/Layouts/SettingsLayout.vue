@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
-import { CircleHelp, HandCoins, Palette, ShieldCheck, SwatchBook, UserRound, Users } from 'lucide-vue-next';
+import { CircleHelp, FileText, HandCoins, Palette, ShieldCheck, SwatchBook, UserRound, Users } from 'lucide-vue-next';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { CARD, EYEBROW, MUTED, SEGMENT_ON, SEGMENT_OFF } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
@@ -40,6 +40,9 @@ const items = computed(() =>
             : null,
         can('settings.faq')
             ? { key: 'faqs', label: trans('Help / FAQ'), href: route('faqs.index'), icon: CircleHelp, pattern: 'faqs.*' }
+            : null,
+        can('settings.pages')
+            ? { key: 'pages', label: trans('Footer pages'), href: route('pages.index'), icon: FileText, pattern: 'pages.*' }
             : null,
     ].filter(Boolean),
 );

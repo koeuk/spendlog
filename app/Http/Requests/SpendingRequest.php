@@ -7,7 +7,8 @@ use Illuminate\Foundation\Http\FormRequest;
 
 /**
  * The dashboard spending-guidance copy: an enabled flag plus a warning and an
- * advice message, each per locale.
+ * advice message, each a translatable field — the same shape CategoryRequest
+ * validates for a category name.
  */
 class SpendingRequest extends FormRequest
 {
@@ -29,9 +30,8 @@ class SpendingRequest extends FormRequest
     {
         $rules = [
             'enabled' => ['required', 'boolean'],
-            // present, not required: an empty message is a valid choice (show
-            // only the other one, or none). The nested locale keys carry the
-            // real constraints.
+            // Every locale is optional — the whole feature can be left blank,
+            // unlike a category name where English is required.
             'warning' => ['array'],
             'advice' => ['array'],
         ];
@@ -45,27 +45,34 @@ class SpendingRequest extends FormRequest
     }
 
     /**
+     * The columns to mass-assign, mirroring CategoryRequest::categoryAttributes().
+     *
+     * @return array<string, mixed>
+     */
+    public function spendingAttributes(): array
+    {
+        return [
+            'spending_guidance_enabled' => $this->boolean('enabled'),
+            'spending_warning' => $this->translations('warning'),
+            'spending_advice' => $this->translations('advice'),
+        ];
+    }
+
+    /**
      * The non-empty translations for one field, keyed by locale.
      *
-     * Empty locales are dropped rather than stored as '': spatie only falls back
-     * to another locale when the key is absent, so keeping a blank string here
-     * would show a Khmer reader an empty line instead of the English an admin did
-     * fill in. Returning [] clears the field entirely.
+     * Blank locales are dropped rather than stored as '' — the same array_filter
+     * CategoryRequest uses — so spatie can fall back to another locale instead of
+     * showing an empty line, and an all-blank field clears to {}.
      *
      * @return array<string, string>
      */
-    public function translationsFor(string $field): array
+    private function translations(string $field): array
     {
-        $values = [];
-
-        foreach (Locale::cases() as $locale) {
-            $value = trim((string) $this->input("{$field}.{$locale->value}", ''));
-
-            if ($value !== '') {
-                $values[$locale->value] = $value;
-            }
-        }
-
-        return $values;
+        return array_filter(
+            (array) $this->input($field, []),
+            fn ($value, $locale) => filled($value) && Locale::tryFrom($locale),
+            ARRAY_FILTER_USE_BOTH,
+        );
     }
 }

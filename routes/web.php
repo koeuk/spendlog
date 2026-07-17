@@ -7,6 +7,7 @@ use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\HelpController;
 use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SettingsController;
@@ -78,10 +79,17 @@ Route::middleware('auth')->group(function () {
         Route::post('/faqs/reorder', [FaqController::class, 'reorder'])->name('faqs.reorder');
         Route::patch('/faqs/{faq}', [FaqController::class, 'update'])->name('faqs.update');
         Route::delete('/faqs/{faq}', [FaqController::class, 'destroy'])->name('faqs.destroy');
+
+        // Footer pages (About, Privacy). Gated on settings.pages in the controller.
+        Route::get('/pages', [PageController::class, 'index'])->name('pages.index');
+        Route::patch('/pages/{page}', [PageController::class, 'update'])->name('pages.update');
     });
 
     // The reading side of the FAQ. Open to any signed-in user.
     Route::get('/help', [HelpController::class, 'index'])->name('help');
+
+    // Public footer pages, addressed by slug. Drafts 404 in the controller.
+    Route::get('/p/{page}', [PageController::class, 'show'])->name('pages.show');
 });
 
 require __DIR__.'/auth.php';

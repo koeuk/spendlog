@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Enums\Locale;
 use App\Enums\Permission;
 use App\Models\AppSetting;
+use App\Models\Page;
 use App\Services\BudgetSummary;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
@@ -53,6 +54,9 @@ class HandleInertiaRequests extends Middleware
             // The layout warns on every page once this month's overall budget is
             // blown, so it is shared rather than asked for per controller.
             'over_budget' => fn () => $this->overBudget($request),
+            // The footer links to published pages on every page, so the list of
+            // them is shared globally like branding.
+            'footer_pages' => fn () => $this->footerPages(),
             // Every page renders the wordmark, so this is shared rather than
             // repeated in each controller. AppSetting::current() is cached.
             'branding' => fn () => $this->branding(),
@@ -92,6 +96,25 @@ class HandleInertiaRequests extends Middleware
         }
 
         return app(BudgetSummary::class)->overspendFor($user, CarbonImmutable::now());
+    }
+
+    /**
+     * The published footer pages, as {slug, title} resolved to the active locale.
+     * A page with no title in any locale is skipped rather than shown as a blank
+     * link.
+     *
+     * @return array<int, array{slug: string, title: string}>
+     */
+    private function footerPages(): array
+    {
+        return Page::query()
+            ->where('published', true)
+            ->orderBy('slug')
+            ->get()
+            ->map(fn (Page $page) => ['slug' => $page->slug, 'title' => (string) $page->title])
+            ->filter(fn (array $page) => $page['title'] !== '')
+            ->values()
+            ->all();
     }
 
     /**

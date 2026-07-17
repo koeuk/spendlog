@@ -420,6 +420,8 @@ watch(() => page.url, () => nextTick(measurePill));
             <main>
                 <slot />
             </main>
+
+            <AppFooter />
         </div>
 
         <Toaster

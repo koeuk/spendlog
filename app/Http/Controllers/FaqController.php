@@ -43,10 +43,7 @@ class FaqController extends Controller
                 fn (FaqStatus $status) => ['value' => $status->value, 'label' => $status->label()],
                 FaqStatus::cases(),
             ),
-            'locales' => array_map(
-                fn (Locale $locale) => ['value' => $locale->value, 'label' => $locale->label()],
-                Locale::cases(),
-            ),
+            // Locales come from the globally shared list (LocaleTabs reads it).
         ]);
     }
 

@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import SettingsLayout from '@/Layouts/SettingsLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
+import LocaleTabs from '@/Components/LocaleTabs.vue';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
@@ -25,8 +26,6 @@ const props = defineProps({
     faqs: { type: Array, required: true },
     // [{ value, label }]
     statuses: { type: Array, required: true },
-    // [{ value, label }]
-    locales: { type: Array, required: true },
 });
 
 const showDialog = ref(false);
@@ -221,48 +220,37 @@ const statusLabel = (value) => props.statuses.find((s) => s.value === value)?.la
                 </DialogHeader>
 
                 <form class="space-y-5" @submit.prevent="submit">
-                    <fieldset class="space-y-3">
-                        <legend class="text-sm font-semibold">{{ __('Question') }}</legend>
-                        <div v-for="locale in locales" :key="`q_${locale.value}`">
-                            <Label :for="`q_${locale.value}`" class="text-xs" :class="MUTED">
-                                {{ locale.label }}
-                            </Label>
+                    <!-- One tab per language over each field, mounting only the
+                         active locale — the same pattern the Category form uses. -->
+                    <LocaleTabs :form="form" field="question">
+                        <template #label>
+                            <Label class="text-sm font-semibold">{{ __('Question') }}</Label>
+                        </template>
+                        <template #default="{ locale, isRequired }">
                             <Input
-                                :id="`q_${locale.value}`"
-                                v-model="form.question[locale.value]"
-                                class="mt-1"
-                                :aria-invalid="!!form.errors[`question.${locale.value}`]"
+                                :id="`q_${locale}`"
+                                v-model="form.question[locale]"
+                                autocomplete="off"
+                                :required="isRequired"
+                                :aria-invalid="!!form.errors[`question.${locale}`]"
                             />
-                            <p
-                                v-if="form.errors[`question.${locale.value}`]"
-                                class="mt-1 text-sm text-red-600 dark:text-red-400"
-                            >
-                                {{ form.errors[`question.${locale.value}`] }}
-                            </p>
-                        </div>
-                    </fieldset>
+                        </template>
+                    </LocaleTabs>
 
-                    <fieldset class="space-y-3">
-                        <legend class="text-sm font-semibold">{{ __('Answer') }}</legend>
-                        <div v-for="locale in locales" :key="`a_${locale.value}`">
-                            <Label :for="`a_${locale.value}`" class="text-xs" :class="MUTED">
-                                {{ locale.label }}
-                            </Label>
+                    <LocaleTabs :form="form" field="answer">
+                        <template #label>
+                            <Label class="text-sm font-semibold">{{ __('Answer') }}</Label>
+                        </template>
+                        <template #default="{ locale, isRequired }">
                             <Textarea
-                                :id="`a_${locale.value}`"
-                                v-model="form.answer[locale.value]"
-                                class="mt-1"
+                                :id="`a_${locale}`"
+                                v-model="form.answer[locale]"
                                 rows="4"
-                                :aria-invalid="!!form.errors[`answer.${locale.value}`]"
+                                :required="isRequired"
+                                :aria-invalid="!!form.errors[`answer.${locale}`]"
                             />
-                            <p
-                                v-if="form.errors[`answer.${locale.value}`]"
-                                class="mt-1 text-sm text-red-600 dark:text-red-400"
-                            >
-                                {{ form.errors[`answer.${locale.value}`] }}
-                            </p>
-                        </div>
-                    </fieldset>
+                        </template>
+                    </LocaleTabs>
 
                     <div>
                         <Label for="faq_status" class="text-xs" :class="MUTED">{{ __('Status') }}</Label>
