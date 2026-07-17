@@ -35,6 +35,26 @@ const emit = defineEmits(['update:open', 'confirm']);
 
 const cancelRef = ref(null);
 
+// An outside click already can't dismiss an AlertDialog — give a brief in-place
+// zoom "pulse" so the click is acknowledged and points back to the buttons.
+const pulsing = ref(false);
+let pulseTimer;
+
+function pulse(event) {
+    event.preventDefault();
+    // Restart the animation even on rapid repeated clicks.
+    pulsing.value = false;
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            pulsing.value = true;
+        });
+    });
+    clearTimeout(pulseTimer);
+    pulseTimer = setTimeout(() => {
+        pulsing.value = false;
+    }, 300);
+}
+
 /**
  * Focus Cancel, not Confirm, when the dialog opens.
  *
@@ -55,8 +75,12 @@ function focusCancel(event) {
             />
 
             <AlertDialogContent
-                class="bg-popover text-popover-foreground data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 ring-foreground/10 fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl p-6 text-sm ring-1 duration-100 outline-none sm:max-w-md"
+                :class="[
+                    'bg-popover text-popover-foreground data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-90 data-open:zoom-in-90 data-open:ease-[cubic-bezier(0.34,1.56,0.64,1)] ring-foreground/10 fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl p-6 text-sm ring-1 duration-300 outline-none sm:max-w-md',
+                    pulsing && 'dialog-pulse',
+                ]"
                 @open-auto-focus="focusCancel"
+                @interact-outside="pulse"
             >
                 <div class="space-y-1.5">
                     <AlertDialogTitle class="text-base font-bold tracking-[-0.02em]">
@@ -96,3 +120,23 @@ function focusCancel(event) {
         </AlertDialogPortal>
     </AlertDialogRoot>
 </template>
+
+<style>
+/* Unscoped: the dialog is teleported to a portal. Animate the standalone
+   `scale` property so it zooms in place without shifting position. */
+@keyframes dialog-pulse {
+  0% {
+    scale: 1;
+  }
+  45% {
+    scale: 1.02;
+  }
+  100% {
+    scale: 1;
+  }
+}
+
+.dialog-pulse {
+  animation: dialog-pulse 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+</style>

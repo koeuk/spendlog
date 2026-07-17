@@ -272,6 +272,9 @@ watch(() => page.url, () => nextTick(measurePill));
                                 <DropdownLink :href="route('settings')">
                                     {{ __('Settings') }}
                                 </DropdownLink>
+                                <DropdownLink :href="route('help')">
+                                    {{ __('Help') }}
+                                </DropdownLink>
                                 <DropdownLink :href="route('logout')" method="post" as="button">
                                     {{ __('Log Out') }}
                                 </DropdownLink>
@@ -320,6 +323,9 @@ watch(() => page.url, () => nextTick(measurePill));
                     <div class="flex flex-col gap-0.5">
                         <ResponsiveNavLink :href="route('settings')">
                             {{ __('Settings') }}
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink :href="route('help')">
+                            {{ __('Help') }}
                         </ResponsiveNavLink>
                         <ResponsiveNavLink :href="route('logout')" method="post" as="button">
                             {{ __('Log Out') }}
