@@ -54,6 +54,7 @@ enum Permission: string
     case UsersView = 'users.view';
     case UsersManage = 'users.manage';
     case SettingsBranding = 'settings.branding';
+    case SettingsFaq = 'settings.faq';
 
     public function label(): string
     {
@@ -85,6 +86,7 @@ enum Permission: string
             self::UsersView => __('View users'),
             self::UsersManage => __('Create, edit and suspend users'),
             self::SettingsBranding => __('Change branding and colours'),
+            self::SettingsFaq => __('Manage the help / FAQ entries'),
         };
     }
 
@@ -118,6 +120,7 @@ enum Permission: string
             self::UsersView => __('See the user list in settings.'),
             self::UsersManage => __('Includes assigning roles. Granting permissions stays admin-only.'),
             self::SettingsBranding => __('The app name, logo, favicon and colours.'),
+            self::SettingsFaq => __('Write and order the questions on the help page.'),
         };
     }
 
@@ -138,7 +141,7 @@ enum Permission: string
 
             self::ProfileUpdate, self::PasswordUpdate => __('Account'),
 
-            self::UsersView, self::UsersManage, self::SettingsBranding => __('Administration'),
+            self::UsersView, self::UsersManage, self::SettingsBranding, self::SettingsFaq => __('Administration'),
         };
     }
 

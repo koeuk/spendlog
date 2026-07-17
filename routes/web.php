@@ -4,6 +4,8 @@ use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\FaqController;
+use App\Http\Controllers\HelpController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
@@ -69,7 +71,17 @@ Route::middleware('auth')->group(function () {
         // Admin only — enforced in the controller. Dashboard spending guidance.
         Route::get('/spending', [SettingsController::class, 'spending'])->name('spending.edit');
         Route::post('/spending', [SettingsController::class, 'updateSpending'])->name('spending.update');
+
+        // Gated on the settings.faq permission in the controller, not just the UI.
+        Route::get('/faqs', [FaqController::class, 'index'])->name('faqs.index');
+        Route::post('/faqs', [FaqController::class, 'store'])->name('faqs.store');
+        Route::post('/faqs/reorder', [FaqController::class, 'reorder'])->name('faqs.reorder');
+        Route::patch('/faqs/{faq}', [FaqController::class, 'update'])->name('faqs.update');
+        Route::delete('/faqs/{faq}', [FaqController::class, 'destroy'])->name('faqs.destroy');
     });
+
+    // The reading side of the FAQ. Open to any signed-in user.
+    Route::get('/help', [HelpController::class, 'index'])->name('help');
 });
 
 require __DIR__.'/auth.php';

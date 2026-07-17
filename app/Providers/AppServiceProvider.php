@@ -47,6 +47,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('viewReports', fn (User $user) => $user->hasPermissionTo(Permission::ReportsView->value));
         Gate::define('updateProfile', fn (User $user) => $user->hasPermissionTo(Permission::ProfileUpdate->value));
         Gate::define('updatePassword', fn (User $user) => $user->hasPermissionTo(Permission::PasswordUpdate->value));
+        Gate::define('manageFaqs', fn (User $user) => $user->hasPermissionTo(Permission::SettingsFaq->value));
     }
 
     /**

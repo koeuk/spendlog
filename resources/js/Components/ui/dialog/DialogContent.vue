@@ -7,6 +7,7 @@ import {
   DialogPortal,
   useForwardPropsEmits,
 } from "reka-ui";
+import { ref } from "vue";
 import { cn } from "@/lib/utils";
 import { Button } from '@/Components/ui/button';
 import DialogOverlay from "./DialogOverlay.vue";
@@ -39,6 +40,27 @@ const emits = defineEmits([
 const delegatedProps = reactiveOmit(props, "class");
 
 const forwarded = useForwardPropsEmits(delegatedProps, emits);
+
+// Clicking outside no longer closes the dialog — instead give a brief
+// zoom/bounce "pulse" so the click feels acknowledged and points the user
+// back to the action buttons.
+const pulsing = ref(false);
+let pulseTimer;
+
+const onInteractOutside = (e) => {
+  e.preventDefault();
+  // Restart the animation even on rapid repeated clicks.
+  pulsing.value = false;
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      pulsing.value = true;
+    });
+  });
+  clearTimeout(pulseTimer);
+  pulseTimer = setTimeout(() => {
+    pulsing.value = false;
+  }, 300);
+};
 </script>
 
 <template>
@@ -47,10 +69,11 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
     <DialogContent
       data-slot="dialog-content"
       v-bind="{ ...$attrs, ...forwarded }"
-      @interact-outside="(e) => e.preventDefault()"
+      @interact-outside="onInteractOutside"
       :class="
         cn(
-          'bg-popover text-popover-foreground data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 ring-foreground/10 grid max-w-[calc(100%-2rem)] gap-6 rounded-xl p-6 text-sm ring-1 duration-100 sm:max-w-md fixed top-1/2 left-1/2 z-50 w-full -translate-x-1/2 -translate-y-1/2 outline-none',
+          'bg-popover text-popover-foreground data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-90 data-open:zoom-in-90 data-open:ease-[cubic-bezier(0.34,1.56,0.64,1)] ring-foreground/10 grid max-w-[calc(100%-2rem)] gap-6 rounded-xl p-6 text-sm ring-1 duration-300 sm:max-w-md fixed top-1/2 left-1/2 z-50 w-full -translate-x-1/2 -translate-y-1/2 outline-none',
+          pulsing && 'dialog-pulse',
           props.class,
         )
       "
@@ -66,3 +89,26 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
     </DialogContent>
   </DialogPortal>
 </template>
+
+<style>
+/* Unscoped: DialogContent is teleported to a portal, so a scoped attribute
+   selector wouldn't reach it. Keyed to the .dialog-pulse class we toggle. */
+/* Animate the standalone `scale` property (not `transform`) so it composes
+   with Tailwind's centering translate — the dialog zooms in place instead of
+   jumping out of position. */
+@keyframes dialog-pulse {
+  0% {
+    scale: 1;
+  }
+  45% {
+    scale: 1.02;
+  }
+  100% {
+    scale: 1;
+  }
+}
+
+.dialog-pulse {
+  animation: dialog-pulse 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+</style>

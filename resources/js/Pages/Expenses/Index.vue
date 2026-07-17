@@ -356,7 +356,8 @@ const filtered = computed(() =>
                         <li
                             v-for="expense in day.expenses"
                             :key="expense.uuid"
-                            class="group flex items-center gap-3 px-4 py-3 transition-transform duration-150 ease-out active:scale-[0.98]"
+                            class="group flex cursor-pointer items-center gap-3 px-4 py-3 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:bg-gray-50 active:scale-[0.97] dark:hover:bg-neutral-800/50"
+                            @click="openEdit(expense)"
                         >
                             <span
                                 class="flex size-8 shrink-0 items-center justify-center rounded-full ring-1 ring-inset"
@@ -396,7 +397,7 @@ const filtered = computed(() =>
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    @click="openEdit(expense)"
+                                    @click.stop="openEdit(expense)"
                                 >
                                     {{ __('Edit') }}
                                 </Button>
@@ -405,7 +406,7 @@ const filtered = computed(() =>
                                     size="sm"
                                     class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
                                     :disabled="deleting === expense.uuid"
-                                    @click="confirmDestroy(expense)"
+                                    @click.stop="confirmDestroy(expense)"
                                 >
                                     {{ __('Delete') }}
                                 </Button>

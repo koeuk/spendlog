@@ -8,6 +8,7 @@ import {
   DialogPortal,
   useForwardPropsEmits,
 } from "reka-ui";
+import { ref } from "vue";
 import { cn } from "@/lib/utils";
 
 defineOptions({
@@ -37,6 +38,26 @@ const emits = defineEmits([
 const delegatedProps = reactiveOmit(props, "class");
 
 const forwarded = useForwardPropsEmits(delegatedProps, emits);
+
+// Clicking outside no longer closes the dialog — give a brief in-place zoom
+// "pulse" instead, pointing the user back to the action buttons.
+const pulsing = ref(false);
+let pulseTimer;
+
+const onInteractOutside = (e) => {
+  e.preventDefault();
+  // Restart the animation even on rapid repeated clicks.
+  pulsing.value = false;
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      pulsing.value = true;
+    });
+  });
+  clearTimeout(pulseTimer);
+  pulseTimer = setTimeout(() => {
+    pulsing.value = false;
+  }, 300);
+};
 </script>
 
 <template>
@@ -48,11 +69,12 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
         :class="
           cn(
             'relative z-50 grid w-full max-w-lg my-8 gap-4 border border-border bg-background p-6 shadow-lg duration-200 sm:rounded-lg md:w-full',
+            pulsing && 'dialog-pulse',
             props.class,
           )
         "
         v-bind="{ ...$attrs, ...forwarded }"
-        @interact-outside="(e) => e.preventDefault()"
+        @interact-outside="onInteractOutside"
         @pointer-down-outside="
           (event) => {
             const originalEvent = event.detail.originalEvent;
@@ -78,3 +100,23 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
     </DialogOverlay>
   </DialogPortal>
 </template>
+
+<style>
+/* Unscoped: DialogContent is teleported to a portal. Animate the standalone
+   `scale` property so the dialog zooms in place without shifting position. */
+@keyframes dialog-pulse {
+  0% {
+    scale: 1;
+  }
+  45% {
+    scale: 1.02;
+  }
+  100% {
+    scale: 1;
+  }
+}
+
+.dialog-pulse {
+  animation: dialog-pulse 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+</style>
