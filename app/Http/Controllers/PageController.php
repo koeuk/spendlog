@@ -9,7 +9,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
-use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 /**
  * The footer's editable pages. The admin edits a fixed set (About, Privacy); the
@@ -56,12 +55,23 @@ class PageController extends Controller
     }
 
     /**
-     * The public read-only page. A draft 404s rather than leaking a half-written
-     * page to whoever guesses the slug.
+     * The public read-only page.
+     *
+     * The footer links here even before an admin has published the page, so a
+     * draft shows a short "not published yet" placeholder rather than 404-ing —
+     * and never its half-written body. Only the fixed label (About / Privacy
+     * Policy) is exposed, which is not draft content.
      */
     public function show(Page $page): Response
     {
-        abort_unless($page->published, HttpResponse::HTTP_NOT_FOUND);
+        if (! $page->published) {
+            return Inertia::render('Pages/Show', [
+                'page' => [
+                    'title' => self::LABELS[$page->slug] ?? $page->slug,
+                    'body' => __('This page has not been published yet. Please check back soon.'),
+                ],
+            ]);
+        }
 
         return Inertia::render('Pages/Show', [
             'page' => [

@@ -54,6 +54,29 @@ class PageTest extends TestCase
         $this->assertFalse($this->about()->published);
     }
 
+    public function test_the_page_seeder_fills_starter_copy_as_drafts(): void
+    {
+        $this->seed(\Database\Seeders\PageSeeder::class);
+
+        $about = $this->about()->fresh();
+        $this->assertSame('About', $about->getTranslation('title', 'en'));
+        $this->assertSame('អំពី', $about->getTranslation('title', 'km'));
+        // Starter copy is never auto-published — an admin reads it first.
+        $this->assertFalse($about->published);
+    }
+
+    public function test_the_page_seeder_never_overwrites_edited_copy(): void
+    {
+        $this->about()->update(['title' => ['en' => 'My own about'], 'published' => true]);
+
+        // Runs on every deploy, so it must leave an admin's words alone.
+        $this->seed(\Database\Seeders\PageSeeder::class);
+
+        $about = $this->about()->fresh();
+        $this->assertSame('My own about', $about->getTranslation('title', 'en'));
+        $this->assertTrue($about->published);
+    }
+
     // --- Permission gating -------------------------------------------------
 
     public function test_an_admin_can_open_the_pages_editor(): void
@@ -142,12 +165,25 @@ class PageTest extends TestCase
         $this->assertSame('About', $response->viewData('page')['props']['page']['title']);
     }
 
-    public function test_a_draft_page_is_not_found(): void
+    public function test_a_draft_page_shows_a_placeholder_not_its_draft_body(): void
     {
-        // about is seeded as a draft.
-        $this->actingAs($this->user())
-            ->get(route('pages.show', $this->about()))
-            ->assertNotFound();
+        // The footer links to About/Policy even before they are published, so a
+        // draft must not 404 — but it must not leak its half-written body either.
+        $this->about()->update([
+            'title' => ['en' => 'Secret draft title'],
+            'body' => ['en' => 'Half-written internal draft.'],
+            'published' => false,
+        ]);
+
+        $response = $this->actingAs($this->user())->get(route('pages.show', $this->about()));
+
+        $response->assertOk();
+
+        $page = $response->viewData('page')['props']['page'];
+        // The fixed label, never the draft title or body.
+        $this->assertSame('About', $page['title']);
+        $this->assertStringNotContainsString('Secret draft title', $page['title']);
+        $this->assertStringNotContainsString('Half-written internal draft.', $page['body']);
     }
 
     public function test_the_public_page_resolves_to_the_readers_locale(): void
