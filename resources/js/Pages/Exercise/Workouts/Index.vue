@@ -110,14 +110,25 @@ function grouped(workout) {
         groups.get(key).sets.push(set);
     }
 
-    return [...groups.values()];
+    // Sets logged from the movement dropdown alone have no numbers to print, so
+    // they contribute no pill — a row of empty dashes says less than no row.
+    return [...groups.values()].map((group) => ({
+        ...group,
+        labels: group.sets
+            .map((set) => ({ uuid: set.uuid, label: setLabel(set) }))
+            .filter((entry) => entry.label !== null),
+    }));
 }
 
 function setLabel(set) {
     if (set.is_cardio) {
         return [formatDistance(set.distance_m), formatDuration(set.duration_seconds)]
             .filter((part) => part !== '—')
-            .join(' · ') || '—';
+            .join(' · ') || null;
+    }
+
+    if (set.reps === null && set.weight_kg === null) {
+        return null;
     }
 
     const reps = set.reps ?? '—';
@@ -246,13 +257,13 @@ function formatDate(value) {
                             class="text-sm font-semibold"
                         />
 
-                        <div class="mt-1 flex flex-wrap gap-1.5 ps-[38px]">
+                        <div v-if="group.labels.length" class="mt-1 flex flex-wrap gap-1.5 ps-[38px]">
                             <span
-                                v-for="set in group.sets"
-                                :key="set.uuid"
+                                v-for="entry in group.labels"
+                                :key="entry.uuid"
                                 class="rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold tabular-nums"
                             >
-                                {{ setLabel(set) }}
+                                {{ entry.label }}
                             </span>
                         </div>
                     </li>

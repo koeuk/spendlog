@@ -132,15 +132,39 @@ const convertedPreview = computed(() => {
     });
 });
 
+/**
+ * A stored USD budget, written in the currency the field is about to start on.
+ *
+ * Budgets are always stored in USD, so prefilling the raw figure while the
+ * toggle says KHR would label $0.02 as ៛0.02 — and saving it would divide it by
+ * the rate a second time. The figure has to be converted to match the label, or
+ * the label has to be forced to USD; this converts, so that an admin who set
+ * riel as the default edits in riel like they entered in riel.
+ *
+ * Rounded to whole riel, the smallest unit actually in circulation, which also
+ * makes the round-trip stable: riel → USD stores at 4 decimals (Currency::SCALE),
+ * which is finer than one riel, so reopening the row returns the same number
+ * rather than drifting a little further on every save.
+ */
+function amountIn(usd, currency) {
+    if (usd === null) {
+        return '';
+    }
+
+    return currency === 'KHR'
+        ? String(Math.round(Number(usd) * khrPerUsd.value))
+        : String(usd);
+}
+
 function openEdit(row, categoryUuid = null) {
     target.value = row;
     choosingCategory.value = false;
     form.category_uuid = categoryUuid;
     form.month = props.month;
-    form.amount = row.budget !== null ? String(row.budget) : '';
-    // Stored budgets are USD, so the prefilled figure is too — a currency left
-    // on KHR from a previous open would relabel it as riel and divide it away.
-    form.currency = 'USD';
+    // Same configured currency as openAdd — editing a budget and setting one
+    // should not disagree about which currency this app works in.
+    form.currency = defaultCurrency;
+    form.amount = amountIn(row.budget, defaultCurrency);
     form.clearErrors();
     showDialog.value = true;
 }
