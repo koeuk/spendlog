@@ -5,7 +5,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import BudgetProgress from '@/Components/BudgetProgress.vue';
 import SpendingTrendChart from '@/Components/SpendingTrendChart.vue';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
-import { ACTIVE, CARD, CARD_TINT, EYEBROW, FIGURE, MUTED } from '@/lib/appStyles';
+import { CARD, CARD_TINT, EYEBROW, FIGURE, MUTED } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 import { ArrowRight, Lightbulb, TriangleAlert } from 'lucide-vue-next';
@@ -14,8 +14,14 @@ const props = defineProps({
     today: { type: Object, required: true },
     summary: { type: Object, required: true },
     breakdown: { type: Array, required: true },
-    // 'week' | 'month' | 'year' — which span the breakdown card is showing.
-    breakdown_period: { type: String, default: 'month' },
+    // 'YYYY-MM' — which month the breakdown card is showing, plus the options
+    // its two selects offer.
+    breakdown_month: { type: String, required: true },
+    breakdown_months: { type: Array, default: () => [] },
+    breakdown_years: { type: Array, default: () => [] },
+    // The Budgets card's own rows, for its own month. Separate from `summary`
+    // so picking a month here cannot move the hero above.
+    budgets: { type: Array, default: () => [] },
     // 'YYYY-MM' — which month's budgets the Budgets card is showing, plus the
     // options its two selects offer.
     budget_month: { type: String, required: true },
@@ -35,25 +41,19 @@ const money = new Intl.NumberFormat('en-US', {
     currency: 'USD',
 });
 
-const BREAKDOWN_PERIODS = [
-    { key: 'week', label: 'Week' },
-    { key: 'month', label: 'Month' },
-    { key: 'year', label: 'Year' },
-];
-
 const breakdownLoading = ref(false);
 const budgetLoading = ref(false);
 
 /*
  * This page has three independent controls — the trend period, the breakdown
- * period and the budget month — and router.get replaces the whole query string.
+ * month and the budget month — and router.get replaces the whole query string.
  * So every reload has to resend the other two, or changing one would drop the
  * others' params. Each control reloads only its own props, which hides that:
  * the other cards keep their contents and only spring back to their defaults on
  * the next full page load.
  */
 const chartBaseQuery = computed(() => ({
-    breakdown: props.breakdown_period,
+    breakdown_month: props.breakdown_month,
     budget_month: props.budget_month,
 }));
 
@@ -77,18 +77,27 @@ function reload(changes, only, flag) {
     );
 }
 
-function loadBreakdown(period) {
-    reload({ breakdown: period }, ['breakdown', 'breakdown_period'], breakdownLoading);
+// Both selects rebuild the same 'YYYY-MM', so one loader serves each card.
+function loadBreakdownMonth(month) {
+    reload(
+        { breakdown_month: month },
+        ['breakdown', 'breakdown_month', 'breakdown_years'],
+        breakdownLoading,
+    );
 }
 
-// Both selects rebuild the same 'YYYY-MM', so one loader serves them.
+// Reloads `budgets`, never `summary` — the hero above is anchored to the real
+// current month and must not follow this picker.
 function loadBudgetMonth(month) {
     reload(
         { budget_month: month },
-        ['summary', 'budget_month', 'budget_years'],
+        ['budgets', 'budget_month', 'budget_years'],
         budgetLoading,
     );
 }
+
+const breakdownMonthPart = computed(() => props.breakdown_month.split('-')[1]);
+const breakdownYearPart = computed(() => props.breakdown_month.split('-')[0]);
 
 const budgetMonthPart = computed(() => props.budget_month.split('-')[1]);
 const budgetYearPart = computed(() => props.budget_month.split('-')[0]);
@@ -97,6 +106,11 @@ const budgetYearPart = computed(() => props.budget_month.split('-')[0]);
 const budgetMonthOptions = computed(() => props.budget_months);
 const budgetYearOptions = computed(() =>
     props.budget_years.map((year) => ({ value: String(year), label: String(year) })),
+);
+
+const breakdownMonthOptions = computed(() => props.breakdown_months);
+const breakdownYearOptions = computed(() =>
+    props.breakdown_years.map((year) => ({ value: String(year), label: String(year) })),
 );
 
 // Both pickers wear the same quiet skin — SearchableSelect renders no element of
@@ -109,15 +123,10 @@ const BUDGET_PICKER =
     'h-7 rounded-full border border-border bg-card/70 px-2.5 text-xs font-semibold ' +
     'transition-colors duration-200 hover:bg-muted';
 
-// The empty state names the span that came up empty, so "nothing here" does not
-// read as "you have never logged anything".
-const breakdownEmptyText = computed(
-    () =>
-        ({
-            week: trans('Nothing logged this week yet.'),
-            month: trans('Nothing logged this month yet.'),
-            year: trans('Nothing logged this year yet.'),
-        })[props.breakdown_period] ?? trans('Nothing logged yet.'),
+// Names the month that came up empty, so "nothing here" does not read as "you
+// have never logged anything" — especially when the picker is on a past month.
+const breakdownEmptyText = computed(() =>
+    trans('Nothing logged in :month.', { month: formatMonth(props.breakdown_month) }),
 );
 
 function formatMonth(month) {
@@ -139,8 +148,10 @@ function formatDay(date) {
 const overall = computed(() => props.summary.overall);
 
 // Only categories the user actually budgeted — an unset budget has nothing to track.
+// From `budgets` (the card's own month), not `summary` (the hero's current
+// month) — reading it off summary is what let this picker move the hero.
 const budgeted = computed(() =>
-    props.summary.categories.filter((category) => category.budget !== null),
+    props.budgets.filter((category) => category.budget !== null),
 );
 
 const statusText = {
@@ -267,29 +278,30 @@ const statusText = {
                             {{ __('Where it went') }}
                         </h2>
 
-                        <!-- Same segmented pill the trend chart and Reports use.
-                             No "All": this card is about where money is going
-                             now, and an all-time split flattens that. -->
-                        <div
-                            class="inline-flex rounded-full border border-neutral-200 bg-white/70 p-0.5 dark:border-neutral-700 dark:bg-neutral-800/70"
-                            role="group"
-                            :aria-label="__('Period')"
-                        >
-                            <button
-                                v-for="option in BREAKDOWN_PERIODS"
-                                :key="option.key"
-                                type="button"
-                                class="rounded-full px-2.5 py-1 text-xs font-semibold transition-colors duration-200"
-                                :class="
-                                    breakdown_period === option.key
-                                        ? ACTIVE
-                                        : 'text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white'
-                                "
-                                :aria-pressed="breakdown_period === option.key"
-                                @click="loadBreakdown(option.key)"
-                            >
-                                {{ __(option.label) }}
-                            </button>
+                        <!-- The same two selects the Budgets card uses, so both
+                             cards are filtered the same way. -->
+                        <div class="flex items-center gap-1">
+                            <SearchableSelect
+                                :options="breakdownMonthOptions"
+                                :model-value="breakdownMonthPart"
+                                :label="__('Month')"
+                                :search-placeholder="__('Search month')"
+                                :empty-text="__('No month found.')"
+                                :trigger-class="BUDGET_PICKER"
+                                content-class="w-44"
+                                @update:model-value="loadBreakdownMonth(`${breakdownYearPart}-${$event}`)"
+                            />
+
+                            <SearchableSelect
+                                :options="breakdownYearOptions"
+                                :model-value="breakdownYearPart"
+                                :label="__('Year')"
+                                :search-placeholder="__('Search year')"
+                                :empty-text="__('No year found.')"
+                                :trigger-class="[BUDGET_PICKER, 'tabular-nums']"
+                                content-class="w-32"
+                                @update:model-value="loadBreakdownMonth(`${$event}-${breakdownMonthPart}`)"
+                            />
                         </div>
                     </div>
 

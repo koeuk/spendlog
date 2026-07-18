@@ -161,6 +161,11 @@ function todayString() {
     return new Date(now.getTime() - offset).toISOString().slice(0, 10);
 }
 
+// Which currency an amount field starts on, set in Settings → Spending. Read
+// once rather than as a computed: it seeds the form's initial value, which is
+// what form.reset() restores.
+const defaultCurrency = usePage().props.default_currency ?? 'USD';
+
 const showDialog = ref(false);
 const editing = ref(null);
 
@@ -170,7 +175,9 @@ const form = useForm({
     price: '',
     // What the price field is denominated in. Only ever 'USD' or 'KHR', and the
     // server converts to USD before storing — see App\Enums\Currency.
-    currency: 'USD',
+    // Seeded from the app default so somewhere that spends mostly in riel does
+    // not retoggle on every expense; form.reset() returns to it.
+    currency: defaultCurrency,
     category_uuid: '',
     // Set instead of category_uuid when naming a category inline.
     new_category: '',

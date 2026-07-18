@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\BodyColor;
+use App\Enums\Currency;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -53,6 +54,10 @@ return new class extends Migration
             // the USD that is actually stored. The riel is pegged near 4000, so
             // a fixed editable rate is enough — no live feed to depend on.
             $table->decimal('khr_per_usd', 10, 2)->default(4100);
+            // Which currency the amount fields start on. Only the *entry*
+            // default — every amount is still stored in USD (see Currency) —
+            // so a shop pricing in riel does not retoggle on every expense.
+            $table->string('default_currency', 3)->default(Currency::Usd->value);
 
             $table->timestamps();
         });

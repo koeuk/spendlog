@@ -86,6 +86,9 @@ function formatMonth(month) {
     });
 }
 
+// Which currency an amount field starts on, set in Settings → Spending.
+const defaultCurrency = usePage().props.default_currency ?? 'USD';
+
 const showDialog = ref(false);
 // null target = the overall budget.
 const target = ref(null);
@@ -95,7 +98,7 @@ const form = useForm({
     month: props.month,
     amount: '',
     // What the amount is typed in. Stored as USD either way — see Currency.
-    currency: 'USD',
+    currency: defaultCurrency,
     // CategoryPicker writes this key; budgets.store ignores it (creation is
     // disabled there), but it has to exist for the picker to bind to.
     new_category: '',
@@ -164,7 +167,9 @@ function openAdd() {
     form.category_uuid = null;
     form.month = props.month;
     form.amount = '';
-    form.currency = 'USD';
+    // Unlike openEdit, there is no stored USD figure to preserve here, so a new
+    // budget starts on the configured currency.
+    form.currency = defaultCurrency;
     form.clearErrors();
     showDialog.value = true;
 }

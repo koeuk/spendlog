@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ExpenseRequest;
 use App\Http\Resources\ExpenseResource;
 use App\Enums\Permission;
+use App\Models\Category;
 use App\Models\Expense;
 use App\Support\TranslatableQuery;
 use Illuminate\Http\JsonResponse;
@@ -53,6 +54,10 @@ class ExpenseController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
+        // The ability is a property of the token; the policy is a property of the
+        // user. A permission revoked after a token was issued has to still bite.
+        Gate::authorize('viewAny', Expense::class);
+
         // The permission, not the role: granting expenses.view_all to a
         // non-admin has to actually open the Everyone view.
         $isAdmin = $request->user()->hasPermissionTo(Permission::ExpensesViewAll->value);
@@ -139,6 +144,14 @@ class ExpenseController extends Controller
      */
     public function store(ExpenseRequest $request): JsonResponse
     {
+        Gate::authorize('create', Expense::class);
+
+        // Naming a category inline creates one, so it goes through the same gate
+        // the Categories endpoints use. The token's expenses:write ability says
+        // nothing about categories, and ExpenseRequest::resolveCategoryId() will
+        // firstOrCreate one without asking.
+        $this->authorizeInlineCategory($request);
+
         // Created through the relationship so user_id comes from the token's
         // owner and is never mass-assignable from the payload.
         $expense = DB::transaction(
@@ -170,6 +183,7 @@ class ExpenseController extends Controller
     public function update(ExpenseRequest $request, Expense $expense): ExpenseResource
     {
         Gate::authorize('update', $expense);
+        $this->authorizeInlineCategory($request);
 
         DB::transaction(fn () => $expense->update($request->expenseAttributes()));
 
@@ -191,6 +205,20 @@ class ExpenseController extends Controller
         DB::transaction(fn () => $expense->delete());
 
         return response()->json([], 204);
+    }
+
+    /**
+     * Gate the category an inline `new_category` would create.
+     *
+     * Mirrors the web ExpenseController: the dialog and the API both let a name
+     * stand in for a uuid, and both have to ask CategoryPolicy before that name
+     * becomes a row every other user can see.
+     */
+    private function authorizeInlineCategory(ExpenseRequest $request): void
+    {
+        if (filled($request->input('new_category'))) {
+            Gate::authorize('create', Category::class);
+        }
     }
 
     private function perPage(Request $request): int

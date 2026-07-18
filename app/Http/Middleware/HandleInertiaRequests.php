@@ -64,6 +64,9 @@ class HandleInertiaRequests extends Middleware
             // so the rate has to reach a plain user — not just the admin settings
             // page. AppSetting::current() is cached, so this is free.
             'khr_per_usd' => fn () => AppSetting::current()->khrPerUsd(),
+            // Which currency the amount fields start on — needed wherever an
+            // amount is entered, so it is shared alongside the rate.
+            'default_currency' => fn () => AppSetting::current()->defaultCurrency()->value,
             'locale' => fn () => app()->getLocale(),
             'locales' => fn () => collect(Locale::cases())
                 ->map(fn (Locale $locale) => [

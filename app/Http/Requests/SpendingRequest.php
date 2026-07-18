@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\Currency;
 use App\Enums\Locale;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 /**
  * The dashboard spending-guidance copy: an enabled flag plus a warning and an
@@ -43,6 +45,9 @@ class SpendingRequest extends FormRequest
              * resend the rate to avoid clearing it.
              */
             'khr_per_usd' => ['sometimes', 'required', 'numeric', 'min:1', 'max:99999999.99'],
+            // Which currency the amount fields start on. `sometimes` for the
+            // same reason as the rate above.
+            'default_currency' => ['sometimes', 'required', Rule::enum(Currency::class)],
         ];
 
         foreach (Locale::cases() as $locale) {
@@ -66,9 +71,13 @@ class SpendingRequest extends FormRequest
             'spending_advice' => $this->translations('advice'),
         ];
 
-        // Omitted means "leave it as it is" — see the `sometimes` rule above.
+        // Omitted means "leave it as it is" — see the `sometimes` rules above.
         if ($this->has('khr_per_usd')) {
             $attributes['khr_per_usd'] = (float) $this->validated('khr_per_usd');
+        }
+
+        if ($this->has('default_currency')) {
+            $attributes['default_currency'] = $this->validated('default_currency');
         }
 
         return $attributes;

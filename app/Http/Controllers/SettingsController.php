@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\BodyColor;
 use App\Enums\ButtonColor;
+use App\Enums\Currency;
 use App\Enums\Permission;
 use App\Http\Requests\BrandingRequest;
 use App\Http\Requests\ColorRequest;
@@ -85,7 +86,16 @@ class SettingsController extends Controller
                 'warning' => $settings->getTranslations('spending_warning'),
                 'advice' => $settings->getTranslations('spending_advice'),
                 'khr_per_usd' => $settings->khrPerUsd(),
+                'default_currency' => $settings->defaultCurrency()->value,
             ],
+            // Value/label pairs rather than a bare enum dump, so the select can
+            // show the symbol without the page knowing what a Currency is.
+            'currencies' => collect(Currency::cases())
+                ->map(fn (Currency $currency) => [
+                    'value' => $currency->value,
+                    'label' => $currency->symbol().' '.$currency->value,
+                ])
+                ->all(),
         ]);
     }
 

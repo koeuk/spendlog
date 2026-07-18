@@ -8,7 +8,7 @@ use App\Http\Resources\BudgetResource;
 use App\Http\Resources\BudgetSummaryResource;
 use App\Models\Budget;
 use App\Services\BudgetSummary;
-use Carbon\CarbonImmutable;
+use App\Support\CalendarOptions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -39,10 +39,14 @@ class BudgetController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
+        // The ability is a property of the token; the policy is a property of the
+        // user. A permission revoked after a token was issued has to still bite.
+        Gate::authorize('viewAny', Budget::class);
+
         $query = $request->user()->budgets()->with('category');
 
         if ($month = $request->query('month')) {
-            $query->whereDate('month', $this->resolveMonth($month)->toDateString());
+            $query->whereDate('month', CalendarOptions::resolveMonth($month)->toDateString());
         }
 
         return BudgetResource::collection($query->orderBy('month')->get());
@@ -66,9 +70,11 @@ class BudgetController extends Controller
      */
     public function summary(Request $request): JsonResponse
     {
+        Gate::authorize('viewAny', Budget::class);
+
         $summary = $this->summary->forMonth(
             $request->user(),
-            $this->resolveMonth($request->query('month')),
+            CalendarOptions::resolveMonth($request->query('month')),
         );
 
         return response()->json([
@@ -93,6 +99,8 @@ class BudgetController extends Controller
      */
     public function store(BudgetRequest $request): JsonResponse
     {
+        Gate::authorize('create', Budget::class);
+
         $attributes = $request->budgetAttributes();
 
         $budget = DB::transaction(fn () => $request->user()->budgets()->updateOrCreate(
@@ -126,20 +134,4 @@ class BudgetController extends Controller
         return response()->json([], 204);
     }
 
-    /**
-     * Accepts 'YYYY-MM'; anything else falls back to the current month rather
-     * than throwing, matching the web controller's behaviour.
-     */
-    private function resolveMonth(?string $month): CarbonImmutable
-    {
-        if ($month && preg_match('/^\d{4}-\d{2}$/', $month)) {
-            try {
-                return CarbonImmutable::createFromFormat('Y-m-d', $month.'-01')->startOfMonth();
-            } catch (\Throwable) {
-                // fall through
-            }
-        }
-
-        return CarbonImmutable::now()->startOfMonth();
-    }
 }
