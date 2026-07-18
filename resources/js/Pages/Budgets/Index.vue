@@ -289,7 +289,10 @@ function clearBudget() {
                         >
                             <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
+                        <!-- mobile-sheet: this pill sits mid-header in a 430px
+                             toolbar, where a dropdown opens over the header and
+                             off the right edge. See app.css. -->
+                        <SelectContent mobile-sheet>
                             <SelectItem v-for="m in months" :key="m.value" :value="m.value">
                                 {{ m.label }}
                             </SelectItem>
@@ -303,7 +306,7 @@ function clearBudget() {
                         >
                             <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent mobile-sheet>
                             <SelectItem v-for="y in years" :key="y" :value="String(y)">
                                 {{ y }}
                             </SelectItem>

@@ -202,6 +202,64 @@
     }
 }
 
+/*
+ * Bottom-sheet mode for <SelectContent mobile-sheet />.
+ *
+ * Opt-in per call site rather than global: a select in a wide settings form has
+ * room to drop downwards and gains nothing from being thrown to the bottom of
+ * the screen. It is the ones sitting in a cramped toolbar that need this.
+ *
+ * !important throughout, reluctantly. reka measures the trigger and writes the
+ * wrapper's position/height/margin as *inline* styles, which no class can beat
+ * on specificity. The wrapper carries no class or data attribute of its own, so
+ * it is reached through the content that it holds.
+ */
+@media (max-width: 639px) {
+    div:has(> [data-slot='select-content'][data-mobile-sheet]) {
+        position: fixed !important;
+        top: auto !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        /* Height and min-height are sized to the trigger by reka; here the
+           panel is as tall as its content instead, up to the cap below. */
+        height: auto !important;
+        min-height: 0 !important;
+        /* dvh, not vh: with the browser chrome showing, 75vh on mobile Safari
+           reaches past the bottom of what is actually on screen. */
+        max-height: 75dvh !important;
+        margin: 0 !important;
+    }
+
+    /* The scrim. A pseudo-element rather than a real overlay node, since the
+       select has no overlay of its own to hang one off. z-index is safe to take
+       negative: the wrapper sets z-index 50 and so opens its own stacking
+       context, which this cannot escape upwards through. */
+    div:has(> [data-slot='select-content'][data-mobile-sheet])::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        background: rgb(0 0 0 / 0.5);
+    }
+
+    [data-slot='select-content'][data-mobile-sheet] {
+        max-height: 75dvh !important;
+        border-radius: 1rem 1rem 0 0;
+        /* Clear of the home indicator, so the last row is not half under it. */
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    /* Comfortable to hit with a thumb. The desktop row is built for a cursor. */
+    [data-slot='select-content'][data-mobile-sheet] [data-slot='select-item'] {
+        min-height: 2.75rem;
+        padding-top: 0.625rem;
+        padding-bottom: 0.625rem;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .anim {
         animation: none;

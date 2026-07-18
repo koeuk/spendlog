@@ -364,11 +364,26 @@ const filtered = computed(() =>
             <!-- Width and gutters come from the layout's one container, so the
                  column never resizes when navigating between pages. -->
             <div class="space-y-4">
-                <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <!--
+                    A two-column grid on a phone, the same flex row as before
+                    from sm: up.
+
+                    Stacked, these four controls spent most of the first screen
+                    on filters nobody had touched yet. Search and category keep
+                    the full width — one is typed into, the other holds the
+                    longest labels — while month and year pair off on one line,
+                    which is also what they are: two halves of a single date,
+                    not two unrelated dropdowns.
+
+                    Each select is placed by its own trigger-class, because
+                    SearchableSelect's root is a Popover that renders no element
+                    and would drop a class set on the component.
+                -->
+                <div class="grid grid-cols-2 gap-2 sm:flex sm:flex-row sm:items-center">
                     <SearchInput
                         v-model="search"
                         :placeholder="__('Search expenses…')"
-                        class="sm:max-w-sm sm:flex-1"
+                        class="col-span-2 min-w-0 sm:max-w-sm sm:flex-1"
                     />
 
                     <SearchableSelect
@@ -379,7 +394,7 @@ const filtered = computed(() =>
                         :empty-text="__('No category found.')"
                         align="start"
                         content-class="w-52"
-                        trigger-class="border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 rounded-md border bg-transparent px-2.5 py-2 text-sm shadow-xs sm:w-52"
+                        trigger-class="border-input dark:bg-input/30 dark:hover:bg-input/50 col-span-2 h-9 w-full rounded-md border bg-transparent px-2.5 py-2 text-sm shadow-xs sm:w-52"
                         @update:model-value="applyCategoryFilter"
                     />
 
@@ -393,7 +408,7 @@ const filtered = computed(() =>
                         :empty-text="__('Nothing found.')"
                         align="start"
                         content-class="w-44"
-                        trigger-class="border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 rounded-md border bg-transparent px-2.5 py-2 text-sm shadow-xs sm:w-40"
+                        trigger-class="border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 w-full min-w-0 rounded-md border bg-transparent px-2.5 py-2 text-sm shadow-xs sm:w-40"
                         @update:model-value="applyMonthFilter"
                     />
 
@@ -406,7 +421,7 @@ const filtered = computed(() =>
                         match-value
                         align="start"
                         content-class="w-36"
-                        trigger-class="border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 rounded-md border bg-transparent px-2.5 py-2 text-sm shadow-xs sm:w-32"
+                        trigger-class="border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 w-full min-w-0 rounded-md border bg-transparent px-2.5 py-2 text-sm shadow-xs sm:w-32"
                         @update:model-value="applyYearFilter"
                     />
                 </div>

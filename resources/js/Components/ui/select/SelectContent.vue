@@ -45,6 +45,16 @@ const props = defineProps({
     required: false,
     skipCheck: true,
   },
+  /*
+   * Below sm, drop the popper and dock the list to the bottom of the screen.
+   * A dropdown anchored to a pill in a narrow toolbar has nowhere to go: it
+   * opens over the very control it belongs to and runs off the side.
+   *
+   * The positioning lives in app.css, not here — reka writes the wrapper's
+   * position as an inline style, which no class can outrank. This prop only
+   * marks the content for that rule to find.
+   */
+  mobileSheet: { type: Boolean, required: false, default: false },
 });
 const emits = defineEmits([
   "closeAutoFocus",
@@ -52,7 +62,7 @@ const emits = defineEmits([
   "pointerDownOutside",
 ]);
 
-const delegatedProps = reactiveOmit(props, "class");
+const delegatedProps = reactiveOmit(props, "class", "mobileSheet");
 
 const forwarded = useForwardPropsEmits(delegatedProps, emits);
 </script>
@@ -62,6 +72,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
     <SelectContent
       data-slot="select-content"
       :data-align-trigger="position === 'item-aligned'"
+      :data-mobile-sheet="mobileSheet ? '' : undefined"
       v-bind="{ ...$attrs, ...forwarded }"
       :class="
         cn(
