@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Enums\WeightUnit;
+use App\Models\AppSetting;
 use App\Models\ExerciseType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -110,7 +111,10 @@ class WorkoutRequest extends FormRequest
             return [];
         }
 
-        $unit = WeightUnit::tryFrom((string) $this->input('weight_unit')) ?? WeightUnit::Kg;
+        // Absent means the configured default, not a hardcoded kilogram — an
+        // API client that never sends the field then behaves like the UI does.
+        $unit = WeightUnit::tryFrom((string) $this->input('weight_unit'))
+            ?? AppSetting::current()->defaultWeightUnit();
         $ids = $this->exerciseTypeIds($sets);
 
         $rows = [];

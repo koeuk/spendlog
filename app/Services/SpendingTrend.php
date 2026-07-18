@@ -78,13 +78,18 @@ class SpendingTrend
     /**
      * Turn the picker's value back into a date, falling back to today when it is
      * missing or malformed — a bad query string should not 500 the dashboard.
+     *
+     * Typed mixed for the same reason as CalendarOptions::resolveMonth: callers
+     * pass $request->query('at') through unfiltered, and '?at[]=1' makes that an
+     * array, which a ?string signature rejected with a TypeError before any of
+     * the fallback logic ran.
      */
-    public function resolveAnchor(TrendGranularity $granularity, ?string $value, ?CarbonImmutable $now = null): CarbonImmutable
+    public function resolveAnchor(TrendGranularity $granularity, mixed $value, ?CarbonImmutable $now = null): CarbonImmutable
     {
         $now ??= CarbonImmutable::now();
 
         // All time has no anchor to resolve — the span is the whole history.
-        if ($granularity === TrendGranularity::All || ! $value) {
+        if ($granularity === TrendGranularity::All || ! is_string($value) || $value === '') {
             return $now;
         }
 
@@ -98,8 +103,28 @@ class SpendingTrend
             return $now;
         }
 
+        if (! $date) {
+            return $now;
+        }
+
+        /*
+         * Carbon does not throw on an overflow, it rolls forward: '2025-13'
+         * parses to January 2026 and would have been reported under that
+         * heading, a plausible-looking answer to a question nobody asked.
+         * resolveMonth guards this by formatting back; so does this now.
+         */
+        $canonical = match ($granularity) {
+            TrendGranularity::Week => $date->format('Y-m-d'),
+            TrendGranularity::Month => $date->format('Y-m'),
+            TrendGranularity::Year => $date->format('Y'),
+        };
+
+        if ($canonical !== $value) {
+            return $now;
+        }
+
         // Never anchor to the future: there is nothing logged there to show.
-        return $date && $date->lte($now) ? $date : $now;
+        return $date->lte($now) ? $date : $now;
     }
 
     /**
