@@ -118,6 +118,8 @@ class SettingsController extends Controller
         $settings = AppSetting::current();
 
         $settings->app_name = $request->validated('app_name');
+        // Trimmed to null when blank, so copyrightHolder() falls back cleanly.
+        $settings->copyright_holder = trim((string) $request->validated('copyright_holder')) ?: null;
 
         $this->applyImage($request, $settings, 'logo', 'logo_path');
         $this->applyImage($request, $settings, 'favicon', 'favicon_path');

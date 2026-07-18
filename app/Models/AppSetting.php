@@ -49,6 +49,7 @@ class AppSetting extends Model
      */
     protected $fillable = [
         'app_name',
+        'copyright_holder',
         'logo_path',
         'favicon_path',
         'button_color',
@@ -233,6 +234,15 @@ class AppSetting extends Model
     public function faviconUrl(): ?string
     {
         return $this->fileUrl($this->favicon_path);
+    }
+
+    /**
+     * Who the footer credits. Defaults to the app name, so a deployment that
+     * never sets it still shows a sensible "© YEAR AppName".
+     */
+    public function copyrightHolder(): string
+    {
+        return trim((string) $this->copyright_holder) ?: $this->app_name;
     }
 
     private function fileUrl(?string $path): ?string

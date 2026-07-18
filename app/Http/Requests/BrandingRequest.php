@@ -19,6 +19,9 @@ class BrandingRequest extends FormRequest
         return [
             'app_name' => ['required', 'string', 'max:50'],
 
+            // Optional: blank falls back to the app name in the footer.
+            'copyright_holder' => ['nullable', 'string', 'max:80'],
+
             // No dimension limit: the img tags scale with object-contain, so any
             // size renders fine. The file-size cap is what actually protects the
             // page weight.

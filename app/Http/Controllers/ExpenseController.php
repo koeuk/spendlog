@@ -181,6 +181,27 @@ class ExpenseController extends Controller
     }
 
     /**
+     * The inclusive [start, end] of the current week, month or year.
+     *
+     * "This" period, anchored on today — the same reading the dashboard's month
+     * total uses. All is handled by the caller (no range), so it never reaches
+     * here.
+     *
+     * @return array{0: CarbonImmutable, 1: CarbonImmutable}
+     */
+    private function periodRange(TrendGranularity $period): array
+    {
+        $now = CarbonImmutable::now();
+
+        return match ($period) {
+            TrendGranularity::Week => [$now->startOfWeek(), $now->endOfWeek()],
+            TrendGranularity::Month => [$now->startOfMonth(), $now->endOfMonth()],
+            TrendGranularity::Year => [$now->startOfYear(), $now->endOfYear()],
+            TrendGranularity::All => [$now->startOfCentury(), $now->endOfCentury()],
+        };
+    }
+
+    /**
      * Shape the flat list into the daily-grouped structure the page renders.
      *
      * @param  array<int, Expense>  $expenses

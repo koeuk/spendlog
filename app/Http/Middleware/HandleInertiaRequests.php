@@ -126,6 +126,9 @@ class HandleInertiaRequests extends Middleware
 
         return [
             'name' => $settings->app_name,
+            // The footer's copyright line — a person or company, defaulting to
+            // the app name.
+            'copyright' => $settings->copyrightHolder(),
             'logo' => $settings->logoUrl(),
             'favicon' => $settings->faviconUrl(),
             // The layout drops the ambient wash when a background colour has been

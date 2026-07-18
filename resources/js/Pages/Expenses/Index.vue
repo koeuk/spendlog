@@ -29,6 +29,8 @@ const props = defineProps({
     can: { type: Object, default: () => ({ view_all: false, create_category: false }) },
     users: { type: Array, default: () => [] },
     filters: { type: Object, default: () => ({}) },
+    // 'all' | 'week' | 'month' | 'year' — the active date filter.
+    period: { type: String, default: 'all' },
 });
 
 const viewingAll = computed(() => props.scope === 'all');
@@ -43,7 +45,7 @@ const { navigating } = useNavigating();
  * Empty values are dropped rather than sent blank: ?filter[item]= is a filter
  * for the empty string, not the absence of one.
  */
-function navigate({ scope, ...changes } = {}) {
+function navigate({ scope, period, ...changes } = {}) {
     const filter = { ...(props.filters?.filter ?? {}), ...changes };
     const query = {};
 
@@ -51,6 +53,15 @@ function navigate({ scope, ...changes } = {}) {
 
     if (nextScope === 'all') {
         query.scope = 'all';
+    }
+
+    // Carried as a top-level param, not a filter (spatie would reject an unknown
+    // filter). Preserved across every other control so changing the category
+    // does not silently clear the chosen date range.
+    const nextPeriod = period !== undefined ? period : props.period;
+
+    if (nextPeriod && nextPeriod !== 'all') {
+        query.period = nextPeriod;
     }
 
     for (const [key, value] of Object.entries(filter)) {
@@ -91,6 +102,22 @@ const categoryOptions = computed(() => [
 function applyCategoryFilter(uuid) {
     categoryFilter.value = uuid;
     navigate({ category: uuid });
+}
+
+// Date range. 'all' is the no-filter option so it round-trips through
+// navigate()'s drop untouched, same as the empty category value.
+const dateFilter = ref(props.period ?? 'all');
+
+const dateOptions = computed(() => [
+    { value: 'all', label: trans('All dates') },
+    { value: 'week', label: trans('This week') },
+    { value: 'month', label: trans('This month') },
+    { value: 'year', label: trans('This year') },
+]);
+
+function applyDateFilter(value) {
+    dateFilter.value = value;
+    navigate({ period: value });
 }
 
 // Admin-only: narrow the everyone view to a single person.
@@ -315,6 +342,18 @@ const filtered = computed(() =>
                         content-class="w-52"
                         trigger-class="border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 rounded-md border bg-transparent px-2.5 py-2 text-sm shadow-xs sm:w-52"
                         @update:model-value="applyCategoryFilter"
+                    />
+
+                    <SearchableSelect
+                        :options="dateOptions"
+                        :model-value="dateFilter"
+                        :label="__('Filter by date')"
+                        :search-placeholder="__('Search…')"
+                        :empty-text="__('Nothing found.')"
+                        align="start"
+                        content-class="w-44"
+                        trigger-class="border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 rounded-md border bg-transparent px-2.5 py-2 text-sm shadow-xs sm:w-44"
+                        @update:model-value="applyDateFilter"
                     />
                 </div>
 
