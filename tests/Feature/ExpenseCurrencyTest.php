@@ -49,7 +49,7 @@ class ExpenseCurrencyTest extends TestCase
     {
         $this->submit(['price' => '4.50', 'currency' => 'USD'])->assertRedirect();
 
-        $this->assertSame('4.50', Expense::sole()->price);
+        $this->assertSame('4.5000', Expense::sole()->price);
     }
 
     public function test_a_khr_price_is_converted_to_usd_at_the_configured_rate(): void
@@ -58,24 +58,39 @@ class ExpenseCurrencyTest extends TestCase
 
         $this->submit(['price' => '20000', 'currency' => 'KHR'])->assertRedirect();
 
-        $this->assertSame('5.00', Expense::sole()->price);
+        $this->assertSame('5.0000', Expense::sole()->price);
     }
 
-    public function test_conversion_rounds_to_cents_rather_than_truncating(): void
+    public function test_conversion_rounds_rather_than_truncating(): void
     {
         AppSetting::current()->update(['khr_per_usd' => 4100]);
 
-        // 10000 / 4100 = 2.4390…, which truncates to 2.43 and rounds to 2.44.
+        // 10000 / 4100 = 2.43902…, which truncates to 2.4390 and rounds the same
+        // way here; the fifth place is what the cast would have dropped.
         $this->submit(['price' => '10000', 'currency' => 'KHR'])->assertRedirect();
 
-        $this->assertSame('2.44', Expense::sole()->price);
+        $this->assertSame('2.4390', Expense::sole()->price);
+    }
+
+    public function test_a_small_riel_amount_survives_the_round_trip(): void
+    {
+        AppSetting::current()->update(['khr_per_usd' => 4100]);
+
+        // The reason the column holds four places: at two, 100៛ stored as $0.02
+        // and read back as 82៛. At four it lands within a riel of itself.
+        $this->submit(['price' => '100', 'currency' => 'KHR'])->assertRedirect();
+
+        $stored = (float) Expense::sole()->price;
+
+        $this->assertSame('0.0244', Expense::sole()->price);
+        $this->assertEqualsWithDelta(100, $stored * 4100, 1.0);
     }
 
     public function test_an_omitted_currency_is_treated_as_usd(): void
     {
         $this->submit(['price' => '12.34'])->assertRedirect();
 
-        $this->assertSame('12.34', Expense::sole()->price);
+        $this->assertSame('12.3400', Expense::sole()->price);
     }
 
     public function test_an_unknown_currency_is_rejected(): void
@@ -93,6 +108,6 @@ class ExpenseCurrencyTest extends TestCase
 
         $this->submit(['price' => '4100', 'currency' => 'KHR'])->assertRedirect();
 
-        $this->assertSame('1.00', Expense::sole()->price);
+        $this->assertSame('1.0000', Expense::sole()->price);
     }
 }

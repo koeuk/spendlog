@@ -120,7 +120,7 @@ class DashboardBreakdownPeriodTest extends TestCase
 
     public function test_the_budgets_card_stays_monthly_whatever_the_breakdown_asks(): void
     {
-        // The summary drives the Budgets card; it must not follow the picker.
+        // The summary drives the Budgets card; it must not follow this picker.
         $summary = $this->visit('year')->viewData('page')['props']['summary'];
 
         $this->assertSame('2026-07', $summary['month']);

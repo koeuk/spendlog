@@ -7,6 +7,13 @@ import SpendingTrendChart from '@/Components/SpendingTrendChart.vue';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
 import { ACTIVE, CARD, CARD_TINT, EYEBROW, FIGURE, MUTED } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/Components/ui/select';
 import { ArrowRight, Lightbulb, TriangleAlert } from 'lucide-vue-next';
 
 const props = defineProps({
@@ -15,6 +22,13 @@ const props = defineProps({
     breakdown: { type: Array, required: true },
     // 'week' | 'month' | 'year' — which span the breakdown card is showing.
     breakdown_period: { type: String, default: 'month' },
+    // 'YYYY-MM' — which month's budgets the Budgets card is showing, plus the
+    // options its two selects offer.
+    budget_month: { type: String, required: true },
+    budget_months: { type: Array, default: () => [] },
+    budget_years: { type: Array, default: () => [] },
+    // The real current month, for the page heading — see the controller.
+    current_month: { type: String, required: true },
     trend: { type: Object, required: true },
     recent: { type: Array, required: true },
     // { warning, advice } resolved to the active locale, or null when the admin
@@ -34,32 +48,56 @@ const BREAKDOWN_PERIODS = [
 ];
 
 const breakdownLoading = ref(false);
+const budgetLoading = ref(false);
 
 /*
- * Reloads only the breakdown, leaving the budget and trend queries alone.
- *
- * The trend params ride along because router.get replaces the whole query
- * string — without them, changing the breakdown period would drop ?trend= and
- * the chart would spring back to its default on the next full load.
+ * This page has three independent controls — the trend period, the breakdown
+ * period and the budget month — and router.get replaces the whole query string.
+ * So every reload has to resend the other two, or changing one would drop the
+ * others' params. Each control reloads only its own props, which hides that:
+ * the other cards keep their contents and only spring back to their defaults on
+ * the next full page load.
  */
-function loadBreakdown(period) {
+const chartBaseQuery = computed(() => ({
+    breakdown: props.breakdown_period,
+    budget_month: props.budget_month,
+}));
+
+function reload(changes, only, flag) {
     router.get(
         route('dashboard'),
         {
-            breakdown: period,
+            ...chartBaseQuery.value,
             trend: props.trend.granularity,
             ...(props.trend.anchor ? { at: props.trend.anchor } : {}),
+            ...changes,
         },
         {
-            only: ['breakdown', 'breakdown_period'],
+            only,
             preserveState: true,
             preserveScroll: true,
             replace: true,
-            onStart: () => (breakdownLoading.value = true),
-            onFinish: () => (breakdownLoading.value = false),
+            onStart: () => (flag.value = true),
+            onFinish: () => (flag.value = false),
         },
     );
 }
+
+function loadBreakdown(period) {
+    reload({ breakdown: period }, ['breakdown', 'breakdown_period'], breakdownLoading);
+}
+
+// Both selects rebuild the same 'YYYY-MM', so one loader serves them.
+function loadBudgetMonth(month) {
+    reload(
+        { budget_month: month },
+        ['summary', 'budget_month', 'budget_years'],
+        budgetLoading,
+    );
+}
+
+const budgetMonthPart = computed(() => props.budget_month.split('-')[1]);
+const budgetYearPart = computed(() => props.budget_month.split('-')[0]);
 
 // The empty state names the span that came up empty, so "nothing here" does not
 // read as "you have never logged anything".
@@ -109,7 +147,7 @@ const statusText = {
     <AuthenticatedLayout>
         <template #header>
             <div>
-                <p :class="EYEBROW">{{ formatMonth(summary.month) }}</p>
+                <p :class="EYEBROW">{{ formatMonth(current_month) }}</p>
                 <h1 class="mt-1 text-3xl font-extrabold tracking-[-0.03em] sm:text-4xl">
                     {{ __('Dashboard') }}
                 </h1>
@@ -206,12 +244,9 @@ const statusText = {
 
             <!-- Trend: how this period is tracking, at three zoom levels -->
             <div :class="[CARD, 'anim p-6 sm:p-7']" style="--d: 150ms">
-                <!-- Carries the breakdown period through, so changing the chart
-                     period does not reset the card beside it. -->
-                <SpendingTrendChart
-                    :trend="trend"
-                    :base-query="{ breakdown: breakdown_period }"
-                />
+                <!-- Carries the other controls' params through, so changing the
+                     chart period does not reset the cards below it. -->
+                <SpendingTrendChart :trend="trend" :base-query="chartBaseQuery" />
             </div>
 
             <!-- Breakdown + budgets -->
@@ -293,19 +328,75 @@ const statusText = {
                 <div :class="[CARD, 'anim p-6 sm:p-7']" style="--d: 240ms">
                     <div class="flex items-center justify-between gap-3">
                         <h2 class="text-base font-bold tracking-tight">{{ __('Budgets') }}</h2>
-                        <Link
-                            :href="route('budgets.index')"
-                            :class="[MUTED, 'text-xs font-semibold underline-offset-4 hover:underline']"
-                        >
-                            {{ __('Manage') }}
-                        </Link>
+
+                        <div class="flex items-center gap-1">
+                            <!-- Month and year, not a week/month/year span: a
+                                 budget IS a monthly amount, so the only question
+                                 is which month. Same two selects as the Budgets
+                                 page, fed from the same server-built lists. -->
+                            <Select
+                                :model-value="budgetMonthPart"
+                                @update:model-value="loadBudgetMonth(`${budgetYearPart}-${$event}`)"
+                            >
+                                <SelectTrigger
+                                    class="h-7 w-[6.5rem] rounded-full border-0 bg-transparent px-2 text-xs font-semibold shadow-none focus-visible:ring-0 dark:bg-transparent"
+                                    :aria-label="__('Month')"
+                                >
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem
+                                        v-for="m in budget_months"
+                                        :key="m.value"
+                                        :value="m.value"
+                                    >
+                                        {{ m.label }}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+
+                            <Select
+                                :model-value="budgetYearPart"
+                                @update:model-value="loadBudgetMonth(`${$event}-${budgetMonthPart}`)"
+                            >
+                                <SelectTrigger
+                                    class="h-7 w-[4.5rem] rounded-full border-0 bg-transparent px-2 text-xs font-semibold tabular-nums shadow-none focus-visible:ring-0 dark:bg-transparent"
+                                    :aria-label="__('Year')"
+                                >
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem
+                                        v-for="y in budget_years"
+                                        :key="y"
+                                        :value="String(y)"
+                                    >
+                                        {{ y }}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+
+                            <Link
+                                :href="route('budgets.index', { month: budget_month })"
+                                :class="[MUTED, 'ms-1 text-xs font-semibold underline-offset-4 hover:underline']"
+                            >
+                                {{ __('Manage') }}
+                            </Link>
+                        </div>
                     </div>
 
-                    <p v-if="!budgeted.length" :class="[MUTED, 'py-10 text-center text-sm']">
+                    <p
+                        v-if="!budgeted.length"
+                        :class="[MUTED, 'py-10 text-center text-sm']"
+                    >
                         {{ __('No budget set') }}
                     </p>
 
-                    <ul v-else class="mt-5 space-y-4">
+                    <ul
+                        v-else
+                        class="mt-5 space-y-4 transition-opacity duration-200"
+                        :class="budgetLoading && 'opacity-50'"
+                    >
                         <li v-for="row in budgeted" :key="row.uuid">
                             <div class="mb-2 flex items-baseline justify-between gap-3 text-sm">
                                 <span class="truncate font-medium">{{ row.name }}</span>

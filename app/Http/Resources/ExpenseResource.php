@@ -25,9 +25,11 @@ class ExpenseResource extends JsonResource
             // trip it back to POST/PATCH, which take item[en]/item[km].
             'item_translations' => $this->getTranslations('item'),
             // Money is a string throughout this API — see the money note in
-            // DEVELOPMENT_PLAN.md. The decimal:2 cast already yields "12.50",
-            // so this preserves the trailing zero a float would drop.
-            'price' => (string) $this->price,
+            // DEVELOPMENT_PLAN.md. Formatted to two places rather than cast
+            // straight through: the column holds four so that riel amounts
+            // survive conversion (see Currency::SCALE), but this API has always
+            // emitted "12.50" and clients parse it as a USD figure.
+            'price' => number_format((float) $this->price, 2, '.', ''),
             'spent_on' => $this->spent_on?->toDateString(),
             'category' => new CategoryResource($this->whenLoaded('category')),
             // Deliberately not UserResource: the owner is only meaningful to an

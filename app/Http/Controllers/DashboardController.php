@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\BudgetSummary;
 use App\Enums\TrendGranularity;
 use App\Services\SpendingTrend;
+use App\Support\CalendarOptions;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\Request;
@@ -32,16 +33,30 @@ class DashboardController extends Controller
         $user = $request->user();
         $today = CarbonImmutable::now();
 
+        // Which month's budgets the card is showing. A budget is a monthly
+        // amount, so the filter picks a month rather than a span the way the
+        // breakdown's does.
+        $budgetMonth = CalendarOptions::resolveMonth($request->query('budget_month'));
+
         // The month totals and every budget figure come from the same service the
         // Budgets page uses, so the two screens can never disagree.
-        $summary = $this->summary->forMonth($user, $today->startOfMonth());
+        $summary = $this->summary->forMonth($user, $budgetMonth);
 
         return Inertia::render('Dashboard', [
             'today' => [
                 'date' => $today->toDateString(),
                 'total' => $this->todayTotal($user, $today),
             ],
+            // The page heading, which stays on the real current month however
+            // the cards below are filtered — retitling the whole dashboard to a
+            // month whose spend it is not showing would be a lie.
+            'current_month' => $today->format('Y-m'),
             'summary' => $summary,
+            'budget_month' => $budgetMonth->format('Y-m'),
+            // Names come from the server so they follow the app locale, and from
+            // the same source as the Budgets page so the lists cannot drift.
+            'budget_months' => CalendarOptions::months(),
+            'budget_years' => CalendarOptions::years($user, $budgetMonth),
             // Its own period, independent of the budget figures above: a budget
             // is a monthly amount, but "where it went" is just spend, so it can
             // be asked over any span.

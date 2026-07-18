@@ -3,6 +3,13 @@ import { computed } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next';
 import { MUTED } from '@/lib/appStyles';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/Components/ui/select';
 
 const props = defineProps({
     // The meta half of a paginated payload — see PaginatesLists::paginationMeta.
@@ -61,17 +68,38 @@ function setPerPage(size) {
         class="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-100 px-4 py-3 sm:px-7 dark:border-neutral-800"
     >
         <div class="flex items-center gap-2">
-            <select
-                :value="meta.per_page"
-                class="h-8 rounded-full border-neutral-200 bg-white/70 py-0 pe-7 ps-2.5 text-xs font-semibold text-neutral-700 focus:border-neutral-400 focus:ring-0 dark:border-neutral-700 dark:bg-neutral-800/70 dark:text-neutral-200"
-                :aria-label="__('Per page')"
+            <!--
+                The app's own select rather than a native one: a native <select>
+                hands its list to the OS, which draws it in the system theme —
+                a white popup over the dark app, ignoring the brand colour and
+                the rounded card geometry everything else here uses.
+            -->
+            <Select
+                :model-value="String(meta.per_page)"
                 :disabled="disabled"
-                @change="setPerPage($event.target.value)"
+                @update:model-value="setPerPage"
             >
-                <option v-for="size in meta.per_page_options" :key="size" :value="size">
-                    {{ size }}
-                </option>
-            </select>
+                <SelectTrigger
+                    size="sm"
+                    class="w-[4.5rem] rounded-full border-neutral-200 bg-white/70 px-2.5 text-xs font-semibold text-neutral-700 shadow-none dark:border-neutral-700 dark:bg-neutral-800/70 dark:text-neutral-200"
+                    :aria-label="__('Per page')"
+                >
+                    <SelectValue />
+                </SelectTrigger>
+
+                <!-- Aligned to the trigger and only as wide as the numbers need,
+                     so it does not hang off the card's edge. -->
+                <SelectContent align="start" class="min-w-[4.5rem]">
+                    <SelectItem
+                        v-for="size in meta.per_page_options"
+                        :key="size"
+                        :value="String(size)"
+                        class="text-xs font-semibold"
+                    >
+                        {{ size }}
+                    </SelectItem>
+                </SelectContent>
+            </Select>
             <span :class="[MUTED, 'text-xs font-medium']">{{ __('per page') }}</span>
         </div>
 
