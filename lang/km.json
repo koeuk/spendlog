@@ -204,5 +204,6 @@
     "When off, the page is hidden and its footer link disappears.": "ពេលបិទ ទំព័រនេះត្រូវលាក់ ហើយតំណនៅបាតទំព័របាត់។",
     "© :year :name. All rights reserved.": "© :year :name. រក្សាសិទ្ធិគ្រប់យ៉ាង។",
     "Copyright holder": "ម្ចាស់កម្មសិទ្ធិ",
-    "Shown in the footer. Leave blank to use the app name.": "បង្ហាញនៅបាតទំព័រ។ ទុកទទេ ដើម្បីប្រើឈ្មោះកម្មវិធី។"
+    "Shown in the footer. Leave blank to use the app name.": "បង្ហាញនៅបាតទំព័រ។ ទុកទទេ ដើម្បីប្រើឈ្មោះកម្មវិធី។",
+    "Something went wrong. Please try again.": "មានបញ្ហាបានកើតឡើង។ សូមព្យាយាមម្តងទៀត។"
 }
