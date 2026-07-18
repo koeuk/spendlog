@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\TrendGranularity;
 use App\Models\AppSetting;
-use App\Models\Category;
 use App\Models\Expense;
 use App\Models\User;
 use App\Services\BudgetSummary;
-use App\Enums\TrendGranularity;
+use App\Services\CategoryBreakdown;
 use App\Services\SpendingTrend;
 use App\Support\CalendarOptions;
 use Carbon\CarbonImmutable;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -24,6 +24,7 @@ class DashboardController extends Controller
     public function __construct(
         private readonly BudgetSummary $summary,
         private readonly SpendingTrend $trend,
+        private readonly CategoryBreakdown $breakdown,
     ) {}
 
     public function index(Request $request): Response
@@ -67,7 +68,7 @@ class DashboardController extends Controller
             'budget_months' => CalendarOptions::months(),
             'budget_years' => CalendarOptions::years($user, $budgetMonth),
             // Its own month, independent of both the hero and the budget card.
-            'breakdown' => $this->breakdown($user, $breakdownMonth),
+            'breakdown' => $this->breakdown->forMonth($user, $breakdownMonth),
             'breakdown_month' => $breakdownMonth->format('Y-m'),
             'breakdown_months' => CalendarOptions::months(),
             'breakdown_years' => CalendarOptions::years($user, $breakdownMonth),
@@ -110,58 +111,6 @@ class DashboardController extends Controller
             ->where('user_id', $user->id)
             ->whereDate('spent_on', $today->toDateString())
             ->sum('price'), 2);
-    }
-
-    /**
-     * Categories that actually saw spend in the chosen month, largest first,
-     * each with its share of that month's total — the share is what the bars
-     * encode.
-     *
-     * Queried directly rather than read off the budget summary, so this card can
-     * be pointed at any month without dragging the hero's figures along with it.
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function breakdown(User $user, CarbonImmutable $month): array
-    {
-        $spend = Expense::query()
-            ->where('user_id', $user->id)
-            ->whereBetween('spent_on', [
-                $month->startOfMonth()->toDateString(),
-                $month->endOfMonth()->toDateString(),
-            ])
-            ->groupBy('category_id')
-            ->selectRaw('category_id, SUM(price) as total')
-            ->pluck('total', 'category_id');
-
-        $total = (float) $spend->sum();
-
-        if ($total <= 0) {
-            return [];
-        }
-
-        // Only the categories that appear — an empty row would draw a zero-width
-        // bar and take a line for nothing.
-        return Category::query()
-            ->whereIn('id', $spend->keys())
-            ->get(['id', 'uuid', 'name', 'color', 'icon'])
-            ->map(function (Category $category) use ($spend, $total) {
-                $spent = (float) $spend[$category->id];
-
-                return [
-                    'uuid' => $category->uuid,
-                    // Read through the accessor, so the active locale resolves —
-                    // toArray() would hand the raw {"en":…,"km":…} to the card.
-                    'name' => $category->name,
-                    'color' => $category->color?->value,
-                    'icon' => $category->icon?->value,
-                    'spent' => round($spent, 2),
-                    'share' => round(($spent / $total) * 100, 1),
-                ];
-            })
-            ->sortByDesc('spent')
-            ->values()
-            ->all();
     }
 
     /**
