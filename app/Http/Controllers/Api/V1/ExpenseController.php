@@ -135,11 +135,13 @@ class ExpenseController extends Controller
      * @bodyParam item.en string required Example: Coffee
      * @bodyParam item.km string Optional Khmer name. Example: កាហ្វេ
      * @bodyParam price number required Max 99999999.99. Example: 4.50
+     * @bodyParam currency string USD (default) or KHR. A riel amount is converted and stored in USD. Example: KHR
      * @bodyParam category_uuid string required Must be an existing category. Example: 0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
      * @bodyParam spent_on date required Cannot be in the future. Example: 2026-07-16
      *
      * @response 201 {"data": {"uuid": "0198f...", "item": "Coffee", "item_translations": {"en": "Coffee"}, "price": "4.50", "spent_on": "2026-07-16", "category": {"uuid": "0198a...", "name": "Food"}}}
      * @response 403 scenario="token lacks expenses:write" {"message": "Invalid ability provided."}
+     * @response 403 scenario="new_category without categories.create" {"message": "This action is unauthorized."}
      * @response 422 scenario="future date" {"message": "You cannot log an expense in the future.", "errors": {"spent_on": ["You cannot log an expense in the future."]}}
      */
     public function store(ExpenseRequest $request): JsonResponse
@@ -174,6 +176,7 @@ class ExpenseController extends Controller
      * @bodyParam item.en string required Example: Coffee
      * @bodyParam item.km string Optional Khmer name. Example: កាហ្វេ
      * @bodyParam price number required Example: 4.50
+     * @bodyParam currency string USD (default) or KHR. A riel amount is converted and stored in USD. Example: KHR
      * @bodyParam category_uuid string required Example: 0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
      * @bodyParam spent_on date required Cannot be in the future. Example: 2026-07-16
      *

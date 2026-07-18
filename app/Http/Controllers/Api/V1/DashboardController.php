@@ -43,6 +43,8 @@ class DashboardController extends Controller
      * be meaningless.
      *
      * @response 200 {"data": {"today": {"date": "2026-07-16", "total": "12.50"}, "summary": {"month": "2026-07", "overall": {"spent": "75.00", "budget": "200.00", "remaining": "125.00", "percent": 38, "bar_percent": 38, "status": "ok"}, "categories": []}, "breakdown": [{"uuid": "0198a...", "name": "Food", "color": "amber", "icon": "utensils", "spent": "75.00", "share": 75}], "recent": [{"uuid": "0198f...", "item": "Coffee", "price": "4.50", "spent_on": "2026-07-16", "category": {"uuid": "0198a...", "name": "Food"}}]}}
+     * @queryParam budget_month string YYYY-MM. Which month's budgets `summary` reports. Defaults to the current month. Example: 2026-06
+     * @queryParam breakdown_month string YYYY-MM. Which month `breakdown` splits. Independent of budget_month. Example: 2026-03
      * @response 403 scenario="token lacks dashboard:read" {"message": "Invalid ability provided."}
      */
     public function __invoke(Request $request): JsonResponse
