@@ -1,9 +1,9 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
-import { Check, Play, RotateCcw, Square, Timer } from 'lucide-vue-next';
+import { Check, Pause, Play, RotateCcw, Square, Timer } from 'lucide-vue-next';
 import { CARD, CARD_ALERT, EYEBROW, MUTED, SEGMENT, SEGMENT_ON, SEGMENT_OFF } from '@/lib/appStyles';
 import { formatClock } from '@/lib/exerciseStyles';
-import { useRestTimer } from '@/composables/useSessionTimer';
+import { useRestTimer, useSessionTimer } from '@/composables/useSessionTimer';
 import { Button } from '@/Components/ui/button';
 import {
     Dialog,
@@ -176,31 +176,58 @@ const editable = computed(() => !timer.running.value && !done.value);
             </button>
         </div>
 
-        <!-- Set the length. Hidden mid-countdown, where these would be offering
-             a length other than the one on the clock. -->
-        <div v-if="editable" class="flex w-full flex-wrap items-center gap-1.5">
-            <button
-                v-for="preset in PRESETS"
-                :key="preset"
-                type="button"
-                class="h-8 rounded-full border border-border px-3 text-xs font-semibold tabular-nums transition hover:bg-muted"
-                :class="timer.duration.value === preset ? 'bg-primary text-primary-foreground' : ''"
-                @click="setDuration(preset)"
-            >
-                {{ formatClock(preset) }}
-            </button>
+        <!-- One row: the lengths on the left, the direction on the right. The
+             row itself always renders — the lengths are what hide mid-run,
+             where they would be offering a length other than the one on the
+             clock, while the direction stays switchable throughout. -->
+        <div class="flex w-full flex-wrap items-center gap-1.5">
+            <template v-if="editable">
+                <button
+                    v-for="preset in PRESETS"
+                    :key="preset"
+                    type="button"
+                    class="h-8 rounded-full border border-border px-3 text-xs font-semibold tabular-nums transition hover:bg-muted"
+                    :class="timer.duration.value === preset ? 'bg-primary text-primary-foreground' : ''"
+                    @click="setDuration(preset)"
+                >
+                    {{ formatClock(preset) }}
+                </button>
 
-            <!-- Anything off the presets. A dialog rather than two more fields
-                 on the card: this is the rare case, and the card is read at a
-                 glance mid-session. -->
-            <button
-                type="button"
-                class="h-8 rounded-full border border-border px-3 text-xs font-semibold transition hover:bg-muted"
-                :class="PRESETS.includes(timer.duration.value) ? '' : 'bg-primary text-primary-foreground'"
-                @click="openCustom()"
-            >
-                {{ __('Custom') }}
-            </button>
+                <!-- Anything off the presets. A dialog rather than two more
+                     fields on the card: this is the rare case, and the card is
+                     read at a glance mid-session. -->
+                <button
+                    type="button"
+                    class="h-8 rounded-full border border-border px-3 text-xs font-semibold transition hover:bg-muted"
+                    :class="PRESETS.includes(timer.duration.value) ? '' : 'bg-primary text-primary-foreground'"
+                    @click="openCustom()"
+                >
+                    {{ __('Custom') }}
+                </button>
+            </template>
+
+            <!-- Switchable mid-run: it changes how the same clock is read, not
+                 what it is doing. -->
+            <div :class="[SEGMENT, 'ms-auto']" role="group" :aria-label="__('Direction')">
+                <button
+                    type="button"
+                    class="px-3 py-1 text-xs font-semibold transition"
+                    :class="mode === 'down' ? SEGMENT_ON : SEGMENT_OFF"
+                    :aria-pressed="mode === 'down'"
+                    @click="mode = 'down'"
+                >
+                    {{ __('Down') }}
+                </button>
+                <button
+                    type="button"
+                    class="px-3 py-1 text-xs font-semibold transition"
+                    :class="mode === 'up' ? SEGMENT_ON : SEGMENT_OFF"
+                    :aria-pressed="mode === 'up'"
+                    @click="mode = 'up'"
+                >
+                    {{ __('Up') }}
+                </button>
+            </div>
         </div>
 
         <Dialog v-model:open="customOpen">
