@@ -47,14 +47,18 @@ const props = defineProps({
   },
   /*
    * Below sm, drop the popper and dock the list to the bottom of the screen.
-   * A dropdown anchored to a pill in a narrow toolbar has nowhere to go: it
-   * opens over the very control it belongs to and runs off the side.
+   * A dropdown anchored to a control on a 430px screen has nowhere to go: it
+   * opens over the very trigger it belongs to and runs off the side.
+   *
+   * On by default, so every select on the site behaves the same way on a phone
+   * and a new one picks it up without anyone remembering to opt in. Pass
+   * :mobile-sheet="false" for a select that genuinely wants to stay a popper.
    *
    * The positioning lives in app.css, not here — reka writes the wrapper's
    * position as an inline style, which no class can outrank. This prop only
    * marks the content for that rule to find.
    */
-  mobileSheet: { type: Boolean, required: false, default: false },
+  mobileSheet: { type: Boolean, required: false, default: true },
 });
 const emits = defineEmits([
   "closeAutoFocus",

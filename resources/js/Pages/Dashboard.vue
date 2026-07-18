@@ -5,10 +5,10 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import BudgetProgress from '@/Components/BudgetProgress.vue';
 import SpendingTrendChart from '@/Components/SpendingTrendChart.vue';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
-import { CARD, CARD_BRAND, CARD_TINT, EYEBROW, FIGURE, MUTED } from '@/lib/appStyles';
+import { CARD, CARD_BRAND, CARD_TINT, EYEBROW, FIGURE, MUTED, PILL_ACTION } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
-import { ArrowRight, Lightbulb, TriangleAlert } from 'lucide-vue-next';
+import { ArrowRight, Lightbulb, Plus, TriangleAlert } from 'lucide-vue-next';
 
 const props = defineProps({
     today: { type: Object, required: true },
@@ -160,6 +160,45 @@ const statusText = {
     ok: 'text-[#4b9d5f] dark:text-[#6cc182]',
     none: 'text-neutral-400',
 };
+
+/**
+ * How far through the month you are, against how far through the budget.
+ *
+ * "14% spent" says nothing on its own — 14% is excellent on the 28th and
+ * alarming on the 2nd. The percentage was already on the card; what was missing
+ * was the only thing that makes it mean anything.
+ *
+ * Derived here rather than served: every input is already on the page, so this
+ * costs one date calculation instead of another field on every dashboard
+ * response.
+ *
+ * Null unless the hero is showing the real current month and a budget exists —
+ * pace through a month that has already ended is not a pace, it is a result.
+ */
+const pace = computed(() => {
+    if (overall.value.budget === null || overall.value.month !== props.current_month) {
+        return null;
+    }
+
+    const [year, month] = props.current_month.split('-').map(Number);
+    // Day 0 of the next month is the last day of this one.
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const day = Math.min(Math.max(Number(props.today.date.slice(8, 10)), 1), daysInMonth);
+
+    // What an even spend would have reached by the end of today.
+    const expected = (overall.value.budget * day) / daysInMonth;
+    const delta = expected - overall.value.spent;
+
+    return {
+        day,
+        daysInMonth,
+        markerPercent: (day / daysInMonth) * 100,
+        // A day's worth of the budget, which is what the Today card compares to.
+        daily: overall.value.budget / daysInMonth,
+        delta: Math.abs(delta),
+        under: delta >= 0,
+    };
+});
 </script>
 
 <template>
@@ -224,9 +263,22 @@ const statusText = {
                         <BudgetProgress
                             :status="overall.status"
                             :bar-percent="overall.bar_percent"
+                            :marker="pace?.markerPercent ?? null"
+                            size="lg"
+                            animate
                         />
-                        <div class="mt-2.5 flex items-center justify-between text-xs font-semibold">
-                            <span :class="statusText[overall.status]">
+
+                        <!--
+                            What is left leads, and the percentage follows it.
+
+                            These were both text-xs before, which put the number
+                            you act on — how much room is left — at the same
+                            weight as the one you only glance at, and below the
+                            weight of the passive "of $800.00" above. The
+                            hierarchy now matches what the card is for.
+                        -->
+                        <div class="mt-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                            <span class="text-base font-bold" :class="statusText[overall.status]">
                                 {{
                                     overall.remaining < 0
                                         ? __(':amount over budget', {
@@ -237,8 +289,26 @@ const statusText = {
                                           })
                                 }}
                             </span>
-                            <span :class="statusText[overall.status]">{{ overall.percent }}%</span>
+                            <span :class="[MUTED, 'text-xs font-semibold tabular-nums']">
+                                {{ overall.percent }}%
+                            </span>
                         </div>
+
+                        <!-- The tick above, said in words. Without this the
+                             marker is a line on a bar that nobody can read. -->
+                        <p v-if="pace" :class="[MUTED, 'mt-1.5 text-xs font-medium']">
+                            {{ __('Day :day of :days', { day: pace.day, days: pace.daysInMonth }) }}
+                            <span aria-hidden="true" class="px-1">·</span>
+                            {{
+                                pace.under
+                                    ? __(':amount under an even pace', {
+                                          amount: money.format(pace.delta),
+                                      })
+                                    : __(':amount ahead of an even pace', {
+                                          amount: money.format(pace.delta),
+                                      })
+                            }}
+                        </p>
                     </div>
 
                     <Link
@@ -251,20 +321,43 @@ const statusText = {
                     </Link>
                 </div>
 
-                <div
-                    :class="[CARD, 'anim flex flex-col justify-between p-6 sm:p-8']"
-                    style="--d: 120ms"
-                >
+                <!--
+                    justify-between is gone on purpose. It spread three items
+                    across a box whose height comes from the taller card beside
+                    it, so on a phone — where that card is the tall one directly
+                    above — this became a short stack with a hole in the middle.
+                    Explicit spacing now, and the button is pushed to the foot
+                    only from lg, which is the breakpoint where the two cards
+                    actually share a row and want a common baseline.
+                -->
+                <div :class="[CARD, 'anim flex flex-col p-6 sm:p-8']" style="--d: 120ms">
                     <p :class="EYEBROW">{{ __('Today') }}</p>
                     <span :class="[FIGURE, 'mt-2 text-[2.6rem] leading-none']">
                         {{ money.format(today.total) }}
                     </span>
+
+                    <!-- Ties this card to the meter beside it: the same budget,
+                         divided into the day it is actually spent in. -->
+                    <p v-if="pace" :class="[MUTED, 'mt-1.5 text-xs font-medium']">
+                        {{ __('of a :amount daily pace', { amount: money.format(pace.daily) }) }}
+                    </p>
+
+                    <!--
+                        A button, not an underlined link. This is the one thing
+                        the dashboard exists to get you to do, and it was styled
+                        exactly like the "Set a budget" fallback next to it.
+                        bg-primary so it follows the admin's brand colour, as the
+                        lettermark does.
+                    -->
                     <Link
                         :href="route('expenses.index')"
-                        class="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-neutral-900 underline-offset-4 hover:underline dark:text-neutral-100"
+                        :class="[
+                            PILL_ACTION,
+                            'mt-6 inline-flex items-center justify-center gap-1.5 bg-primary text-primary-foreground transition hover:opacity-90 lg:mt-auto',
+                        ]"
                     >
+                        <Plus class="size-4" aria-hidden="true" />
                         {{ __('Add an expense') }}
-                        <ArrowRight class="size-4" />
                     </Link>
                 </div>
             </div>

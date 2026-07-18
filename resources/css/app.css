@@ -203,17 +203,40 @@
 }
 
 /*
- * Bottom-sheet mode for <SelectContent mobile-sheet />.
+ * Bottom-sheet mode for <SelectContent />, on below sm.
  *
- * Opt-in per call site rather than global: a select in a wide settings form has
- * room to drop downwards and gains nothing from being thrown to the bottom of
- * the screen. It is the ones sitting in a cramped toolbar that need this.
+ * On for every select by default (see the prop in SelectContent.vue), so a
+ * dropdown never opens over its own trigger on a phone.
  *
  * !important throughout, reluctantly. reka measures the trigger and writes the
  * wrapper's position/height/margin as *inline* styles, which no class can beat
  * on specificity. The wrapper carries no class or data attribute of its own, so
  * it is reached through the content that it holds.
  */
+@keyframes select-sheet-in {
+    from {
+        transform: translateY(100%);
+    }
+}
+
+@keyframes select-sheet-out {
+    to {
+        transform: translateY(100%);
+    }
+}
+
+@keyframes select-scrim-in {
+    from {
+        opacity: 0;
+    }
+}
+
+@keyframes select-scrim-out {
+    to {
+        opacity: 0;
+    }
+}
+
 @media (max-width: 639px) {
     div:has(> [data-slot='select-content'][data-mobile-sheet]) {
         position: fixed !important;
@@ -233,6 +256,28 @@
         margin: 0 !important;
     }
 
+    /*
+     * The slide rides on the wrapper, not the content. The content's own class
+     * list carries `data-[align-trigger=true]:animate-none` — trigger-aligned
+     * content is positioned by measurement, so upstream turns its animation off
+     * — which is why the panel currently just appears. The wrapper is outside
+     * that rule and free to move.
+     *
+     * The easing is the standard sheet curve: leaves quickly, settles slowly,
+     * no overshoot. A plain ease-out reads as sluggish over this distance.
+     */
+    div:has(> [data-slot='select-content'][data-mobile-sheet][data-state='open']) {
+        animation: select-sheet-in 300ms cubic-bezier(0.32, 0.72, 0, 1);
+    }
+
+    /* Shorter on the way out. reka's Presence keeps the node mounted until the
+       animation ends, so this plays in full rather than being cut off. */
+    div:has(
+            > [data-slot='select-content'][data-mobile-sheet][data-state='closed']
+        ) {
+        animation: select-sheet-out 200ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+    }
+
     /* The scrim. A pseudo-element rather than a real overlay node, since the
        select has no overlay of its own to hang one off. z-index is safe to take
        negative: the wrapper sets z-index 50 and so opens its own stacking
@@ -245,6 +290,18 @@
         background: rgb(0 0 0 / 0.5);
     }
 
+    /* Fades on its own timing rather than sliding with the panel — a scrim that
+       travels with the sheet looks like it is attached to it. */
+    div:has(> [data-slot='select-content'][data-mobile-sheet][data-state='open'])::before {
+        animation: select-scrim-in 300ms ease-out;
+    }
+
+    div:has(
+            > [data-slot='select-content'][data-mobile-sheet][data-state='closed']
+        )::before {
+        animation: select-scrim-out 200ms ease-in forwards;
+    }
+
     [data-slot='select-content'][data-mobile-sheet] {
         max-height: 75dvh !important;
         border-radius: 1rem 1rem 0 0;
@@ -252,17 +309,43 @@
         padding-bottom: env(safe-area-inset-bottom);
     }
 
-    /* Comfortable to hit with a thumb. The desktop row is built for a cursor. */
+    /* Comfortable to hit with a thumb. The desktop row is built for a cursor,
+       so every side is reset: the inherited pl-2/pr-8 leaves the label hard
+       against the left edge and is nowhere near a 44px target vertically. */
     [data-slot='select-content'][data-mobile-sheet] [data-slot='select-item'] {
-        min-height: 2.75rem;
-        padding-top: 0.625rem;
-        padding-bottom: 0.625rem;
+        min-height: 3.5rem;
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+        /* Right stays wider than left: the check mark sits in that gutter. */
+        padding-left: 1.25rem;
+        padding-right: 2.75rem;
+    }
+
+    /* The rows carry their own spacing now, so the viewport's own padding is
+       only there to keep the first and last from touching the panel edges. */
+    /* reka's own attribute — the viewport carries no data-slot of its own. */
+    [data-slot='select-content'][data-mobile-sheet] [data-reka-select-viewport] {
+        padding: 0.5rem;
+    }
+
+    /* Balances the wider row padding; at the inherited right-2 the tick sits
+       almost against the panel edge while the label starts 1.25rem in. */
+    [data-slot='select-content'][data-mobile-sheet]
+        [data-slot='select-item']
+        > span:first-child {
+        right: 1.25rem;
     }
 }
 
 @media (prefers-reduced-motion: reduce) {
     .anim {
         animation: none;
+    }
+
+    /* The sheet still docks to the bottom, it just gets there instantly. */
+    div:has(> [data-slot='select-content'][data-mobile-sheet]),
+    div:has(> [data-slot='select-content'][data-mobile-sheet])::before {
+        animation: none !important;
     }
 
     /* The icon still says what it says without moving. */

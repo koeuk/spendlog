@@ -383,7 +383,7 @@ const filtered = computed(() =>
                     <SearchInput
                         v-model="search"
                         :placeholder="__('Search expenses…')"
-                        class="col-span-2 min-w-0 sm:max-w-sm sm:flex-1"
+                        class="col-span-2 min-w-0 rounded-md bg-card sm:max-w-sm sm:flex-1"
                     />
 
                     <SearchableSelect
@@ -394,7 +394,7 @@ const filtered = computed(() =>
                         :empty-text="__('No category found.')"
                         align="start"
                         content-class="w-52"
-                        trigger-class="border-input dark:bg-input/30 dark:hover:bg-input/50 col-span-2 h-9 w-full rounded-md border bg-transparent px-2.5 py-2 text-sm shadow-xs sm:w-52"
+                        trigger-class="border-input dark:hover:bg-input/50 col-span-2 h-9 w-full rounded-md border bg-card px-2.5 py-2 text-sm shadow-xs sm:w-52"
                         @update:model-value="applyCategoryFilter"
                     />
 
@@ -408,7 +408,7 @@ const filtered = computed(() =>
                         :empty-text="__('Nothing found.')"
                         align="start"
                         content-class="w-44"
-                        trigger-class="border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 w-full min-w-0 rounded-md border bg-transparent px-2.5 py-2 text-sm shadow-xs sm:w-40"
+                        trigger-class="border-input dark:hover:bg-input/50 h-9 w-full min-w-0 rounded-md border bg-card px-2.5 py-2 text-sm shadow-xs sm:w-40"
                         @update:model-value="applyMonthFilter"
                     />
 
@@ -421,7 +421,7 @@ const filtered = computed(() =>
                         match-value
                         align="start"
                         content-class="w-36"
-                        trigger-class="border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 w-full min-w-0 rounded-md border bg-transparent px-2.5 py-2 text-sm shadow-xs sm:w-32"
+                        trigger-class="border-input dark:hover:bg-input/50 h-9 w-full min-w-0 rounded-md border bg-card px-2.5 py-2 text-sm shadow-xs sm:w-32"
                         @update:model-value="applyYearFilter"
                     />
                 </div>
