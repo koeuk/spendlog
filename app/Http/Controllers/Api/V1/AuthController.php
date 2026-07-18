@@ -29,12 +29,15 @@ class AuthController extends Controller
      *
      * Issues a personal access token for a device.
      *
-     * A wrong password and an unknown email return the identical 422 — a
+     * Accepts an email or a username in the `email` field; a value containing
+     * '@' is treated as an email.
+     *
+     * A wrong password and an unknown account return the identical 422 — a
      * distinguishable response would be a free user-enumeration oracle.
      *
      * @unauthenticated
      *
-     * @bodyParam email string required The account's email. Example: sam@example.com
+     * @bodyParam email string required The account's email or username. Example: sam@example.com
      * @bodyParam password string required Example: secret
      * @bodyParam device_name string required Names the token so it can be revoked on its own later. Example: iPhone 15
      * @bodyParam abilities string[] Ask for a narrower token than the default. Intersected with what the user may grant, so it can never widen. Example: ["expenses:read"]
@@ -45,7 +48,13 @@ class AuthController extends Controller
      */
     public function login(LoginRequest $request): JsonResponse
     {
-        $user = User::where('email', $request->email)->first();
+        // Email or username, resolved on the '@' the way the web LoginRequest
+        // does — usernames cannot contain one, which is why UsernameRules bars it.
+        $login = (string) $request->string('email');
+
+        $user = User::query()
+            ->where(str_contains($login, '@') ? 'email' : 'username', $login)
+            ->first();
 
         // One combined check with one message: telling an attacker that the
         // email exists but the password is wrong is a free user-enumeration oracle.

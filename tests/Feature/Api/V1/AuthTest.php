@@ -81,6 +81,43 @@ class AuthTest extends TestCase
         );
     }
 
+    /**
+     * The login check only covers a client that comes back for a new token. A
+     * phone holding one already never revisits it, and status is not carried on
+     * the token — so without a checkpoint on every API request, suspension did
+     * not reach an existing session at all.
+     */
+    public function test_an_existing_token_stops_working_once_the_account_is_suspended(): void
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('iPhone 15', [TokenAbility::ExpensesRead->value])->plainTextToken;
+
+        $this->withToken($token)->getJson('/api/v1/expenses')->assertOk();
+
+        $user->update(['status' => UserStatus::Suspended]);
+
+        // The guard caches the user it resolved for the previous request, and
+        // the test process keeps one container across both. Production gets a
+        // fresh one per request; without this the second call would re-check the
+        // stale Active instance and the assertion would prove nothing.
+        $this->app['auth']->forgetGuards();
+
+        $this->withToken($token)->getJson('/api/v1/expenses')->assertForbidden();
+    }
+
+    /** The refused request also burns the token, so it cannot be retried. */
+    public function test_the_suspended_account_token_is_revoked_on_the_way_out(): void
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('iPhone 15', [TokenAbility::ExpensesRead->value])->plainTextToken;
+
+        $user->update(['status' => UserStatus::Suspended]);
+
+        $this->withToken($token)->getJson('/api/v1/expenses')->assertForbidden();
+
+        $this->assertSame(0, $user->tokens()->count());
+    }
+
     public function test_login_returns_a_token_and_the_user(): void
     {
         $user = User::factory()->create(['email' => 'sam@example.com']);

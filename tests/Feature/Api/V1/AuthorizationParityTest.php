@@ -144,4 +144,26 @@ class AuthorizationParityTest extends TestCase
 
         $this->assertSame(0, Budget::count());
     }
+
+    /**
+     * The web half of the test above. It was the surface that had no check at
+     * all: the Budgets page 403d and the nav link hid, while POST /budgets kept
+     * accepting writes — and because store upserts, a user locked out of the
+     * page could still overwrite every amount on it.
+     */
+    public function test_the_web_budget_store_honours_a_revoked_create_permission_too(): void
+    {
+        $user = User::factory()->create();
+        $user->revokePermissionTo(Permission::BudgetsCreate->value);
+
+        $category = Category::factory()->create();
+
+        $this->actingAs($user)->post('/budgets', [
+            'category_uuid' => $category->uuid,
+            'month' => now()->format('Y-m'),
+            'amount' => '100.00',
+        ])->assertForbidden();
+
+        $this->assertSame(0, Budget::count());
+    }
 }
