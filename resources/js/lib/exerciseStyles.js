@@ -68,21 +68,33 @@ export function exerciseIcon(icon) {
 export { categoryColor as exerciseColor, CATEGORY_COLOR_NAMES as EXERCISE_COLOR_NAMES } from '@/lib/categoryStyles';
 
 /**
- * Seconds as a human duration: 45m, 1h 20m, 0m.
+ * Seconds as a human duration: 45s, 20m 30s, 1h 10m 8s.
  *
- * Minutes are the unit people talk in for a session, so hours only appear once
- * there is at least one — "0h 45m" reads like a form field, not a sentence.
+ * Every unit that has a value shows, largest first. Rounding to minutes hid
+ * anything under thirty seconds behind "0m", which made a short session look
+ * like it had not been timed at all.
+ *
+ * Empty units are dropped rather than padded — "1h 8s" is what happened, where
+ * "1h 0m 8s" reads like a form field. A session of nothing still needs a
+ * reading, so zero falls through to "0s".
  */
 export function formatDuration(seconds) {
     if (seconds === null || seconds === undefined) {
         return '—';
     }
 
-    const total = Math.max(0, Math.round(seconds / 60));
-    const hours = Math.floor(total / 60);
-    const minutes = total % 60;
+    const total = Math.max(0, Math.round(seconds));
 
-    return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+    const parts = [
+        [Math.floor(total / 3600), 'h'],
+        [Math.floor((total % 3600) / 60), 'm'],
+        [total % 60, 's'],
+    ];
+
+    return parts
+        .filter(([value]) => value > 0)
+        .map(([value, suffix]) => `${value}${suffix}`)
+        .join(' ') || '0s';
 }
 
 /**

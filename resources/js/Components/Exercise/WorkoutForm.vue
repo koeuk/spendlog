@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { useForm, usePage } from '@inertiajs/vue3';
-import { Pause, Play, Plus, RotateCcw, Trash2 } from 'lucide-vue-next';
+import { Pause, Play, Plus, RotateCcw, Timer, Trash2 } from 'lucide-vue-next';
 import { getLocalTimeZone, today as currentDate } from '@internationalized/date';
 import { MUTED, PILL_ACTION } from '@/lib/appStyles';
 import { formatClock } from '@/lib/exerciseStyles';
@@ -138,6 +138,13 @@ watch(timer.elapsedSeconds, (seconds) => {
     }
 });
 
+/*
+ * The number on the card. Reads the form, not the clock: a duration handed over
+ * by the dashboard timer arrives with the stopwatch still at zero, and showing
+ * the clock would report 00:00 for a session that already has a length.
+ */
+const duration = computed(() => form.duration_seconds ?? 0);
+
 // What the form opened on, to fall back to when the clock is wound back.
 const openedWith = props.workout?.duration_seconds ?? props.initialDurationSeconds;
 
@@ -174,18 +181,32 @@ function submit() {
 
 <template>
     <form class="space-y-5" @submit.prevent="submit">
-        <!-- Date and duration have no fields of their own: the stopwatch below
-             sets both. The date is stamped when the clock starts, the duration
-             when you take the reading. -->
-
-        <!-- The stopwatch. Client-side: it fills the duration field, and the
-             workout is what gets saved. -->
+        <!-- Date and duration have no fields of their own: the stopwatch sets
+             both. The date is stamped when the clock starts, and the duration
+             tracks the reading — hence the caption, which is the only thing
+             saying so now that neither field is on screen. -->
         <div class="flex items-center gap-3 rounded-2xl border border-border bg-muted/40 px-4 py-3">
-            <span class="text-2xl font-extrabold tabular-nums tracking-tight">
-                {{ formatClock(timer.elapsedSeconds.value) }}
+            <span
+                class="grid size-11 shrink-0 place-items-center rounded-full transition-colors"
+                :class="timer.running.value ? 'bg-primary/15' : 'bg-muted'"
+            >
+                <Timer
+                    class="size-5 transition-colors"
+                    :class="timer.running.value ? 'text-primary' : MUTED"
+                    aria-hidden="true"
+                />
             </span>
 
-            <div class="ms-auto flex items-center gap-1.5">
+            <div class="min-w-0">
+                <p class="text-2xl font-extrabold tabular-nums tracking-tight">
+                    {{ formatClock(duration) }}
+                </p>
+                <p class="text-[11px] font-semibold" :class="MUTED">
+                    {{ __("This session's length") }}
+                </p>
+            </div>
+
+            <div class="ms-auto flex shrink-0 items-center gap-1.5">
                 <button
                     type="button"
                     class="grid size-9 place-items-center rounded-full border border-border transition hover:bg-card"
@@ -196,20 +217,13 @@ function submit() {
                 </button>
 
                 <button
+                    v-if="duration > 0"
                     type="button"
                     class="grid size-9 place-items-center rounded-full border border-border transition hover:bg-card"
                     :aria-label="__('Reset')"
-                    @click="timer.reset()"
+                    @click="resetTimer()"
                 >
                     <RotateCcw class="size-4" />
-                </button>
-
-                <button
-                    type="button"
-                    class="rounded-full border border-border px-3 py-1.5 text-xs font-semibold transition hover:bg-card"
-                    @click="applyTimer"
-                >
-                    {{ __('Use as duration') }}
                 </button>
             </div>
         </div>
