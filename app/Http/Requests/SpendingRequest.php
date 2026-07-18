@@ -34,6 +34,15 @@ class SpendingRequest extends FormRequest
             // unlike a category name where English is required.
             'warning' => ['array'],
             'advice' => ['array'],
+            /*
+             * Bounded well away from zero: the rate is a divisor, and a near-zero
+             * one turns a ៛20,000 coffee into a five-figure expense.
+             *
+             * `sometimes`, not `required` — this page is guidance copy first, and
+             * a caller that only means to edit the messages should not have to
+             * resend the rate to avoid clearing it.
+             */
+            'khr_per_usd' => ['sometimes', 'required', 'numeric', 'min:1', 'max:99999999.99'],
         ];
 
         foreach (Locale::cases() as $locale) {
@@ -55,6 +64,17 @@ class SpendingRequest extends FormRequest
             'spending_guidance_enabled' => $this->boolean('enabled'),
             'spending_warning' => $this->translations('warning'),
             'spending_advice' => $this->translations('advice'),
+            'khr_per_usd' => (float) $this->validated('khr_per_usd'),
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        return [
+            'khr_per_usd' => __('exchange rate'),
         ];
     }
 

@@ -3,7 +3,9 @@
 namespace App\Http\Requests;
 
 use App\Enums\CategoryColor;
+use App\Enums\Currency;
 use App\Enums\Locale;
+use App\Models\AppSetting;
 use App\Models\Category;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -27,6 +29,9 @@ class ExpenseRequest extends FormRequest
             'item.en' => ['required', 'string', 'max:255'],
             'item.km' => ['nullable', 'string', 'max:255'],
             'price' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
+            // What the *entered* price is denominated in. Absent means USD, so
+            // any existing client that never sends it keeps working unchanged.
+            'currency' => ['nullable', Rule::enum(Currency::class)],
             'spent_on' => ['required', 'date', 'before_or_equal:today'],
 
             /*
@@ -93,6 +98,13 @@ class ExpenseRequest extends FormRequest
 
         $data['category_id'] = $this->resolveCategoryId();
         unset($data['category_uuid'], $data['new_category']);
+
+        // Every stored price is USD — see App\Enums\Currency. The currency is a
+        // property of what was typed, not of the expense, so it is consumed here
+        // rather than persisted.
+        $currency = Currency::tryFrom((string) $this->input('currency')) ?? Currency::Usd;
+        $data['price'] = $currency->toUsd((float) $data['price'], AppSetting::current()->khrPerUsd());
+        unset($data['currency']);
 
         // Drop empty locales so spatie stores only real translations and the
         // fallback can kick in, rather than persisting "".

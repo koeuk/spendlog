@@ -43,6 +43,15 @@ class AppSetting extends Model
     public const DEFAULT_BODY_COLOR = '#ffffff';
 
     /**
+     * Riel per one US dollar, used when a price is entered in KHR.
+     *
+     * Must match the column default in the migration. The riel has been pegged
+     * near 4000 for decades, so this is a sane starting point an admin rarely
+     * needs to touch.
+     */
+    public const DEFAULT_KHR_PER_USD = 4100.0;
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array
@@ -57,6 +66,7 @@ class AppSetting extends Model
         'spending_guidance_enabled',
         'spending_warning',
         'spending_advice',
+        'khr_per_usd',
     ];
 
     /**
@@ -66,7 +76,23 @@ class AppSetting extends Model
     {
         return [
             'spending_guidance_enabled' => 'boolean',
+            'khr_per_usd' => 'decimal:2',
         ];
+    }
+
+    /**
+     * The KHR→USD rate to convert with, never zero.
+     *
+     * A rate of 0 would divide by zero on the very next line of Currency::toUsd,
+     * so a missing or nonsensical stored value falls back to the default rather
+     * than reaching the conversion. The form already refuses to save one, but a
+     * row edited by hand should not be able to break expense entry.
+     */
+    public function khrPerUsd(): float
+    {
+        $rate = (float) $this->khr_per_usd;
+
+        return $rate > 0 ? $rate : self::DEFAULT_KHR_PER_USD;
     }
 
     /**

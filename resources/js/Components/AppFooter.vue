@@ -15,7 +15,11 @@ const links = computed(() => [
     { label: trans('Help / FAQ'), href: route('help') },
 ]);
 
-const appName = computed(() => page.props.branding?.name || 'MoneyLog');
+// The copyright holder, which may differ from the product name (a person or
+// company). Falls back to the app name, then a literal, so it never renders blank.
+const copyrightHolder = computed(
+    () => page.props.branding?.copyright || page.props.branding?.name || 'MoneyLog',
+);
 
 // The copyright year is fine to read on the client — it is not persisted.
 const year = new Date().getFullYear();
@@ -38,7 +42,7 @@ const year = new Date().getFullYear();
             </nav>
 
             <p :class="MUTED">
-                {{ __('© :year :name. All rights reserved.', { year, name: appName }) }}
+                {{ __('© :year :name. All rights reserved.', { year, name: copyrightHolder }) }}
             </p>
         </div>
     </footer>

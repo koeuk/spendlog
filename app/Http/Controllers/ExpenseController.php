@@ -65,15 +65,21 @@ class ExpenseController extends Controller
             $query->where('user_id', $request->user()->id);
         }
 
-        // A junk ?period= falls back to "all" rather than 500ing — it is a query
-        // string, not a form. Computed server-side off "now", so "this month"
-        // stays correct across a day boundary without the client re-deriving it.
-        $period = TrendGranularity::tryFrom((string) $request->query('period'))
-            ?? TrendGranularity::All;
+        /*
+         * Month and year are two independent controls, so each stands on its own:
+         * a year alone shows that whole year, a month alone shows that month in
+         * every year, and together they pin one month. Junk is ignored rather
+         * than 500ing — these are query strings, not a form.
+         */
+        $monthFilter = $this->validMonth($request->query('month'));
+        $yearFilter = $this->validYear($request->query('year'));
 
-        if ($period !== TrendGranularity::All) {
-            [$start, $end] = $this->periodRange($period);
-            $query->whereBetween('spent_on', [$start->toDateString(), $end->toDateString()]);
+        if ($monthFilter !== '') {
+            $query->whereMonth('spent_on', (int) $monthFilter);
+        }
+
+        if ($yearFilter !== '') {
+            $query->whereYear('spent_on', (int) $yearFilter);
         }
 
         $expenses = $query->paginate($this->perPage($request))->withQueryString();
@@ -85,8 +91,13 @@ class ExpenseController extends Controller
             // only() is a JSON array, and filters.filter then resolves to
             // Array.prototype.filter instead of undefined.
             'filters' => (object) $request->only('filter', 'sort'),
-            // Seeds the date dropdown so it reflects the active period on reload.
-            'period' => $period->value,
+            // Seed the two date selects so they reflect what is active on reload.
+            'month' => $monthFilter,
+            'year' => $yearFilter,
+            // Month names come from the server so they follow the app locale —
+            // toLocaleDateString in the browser would follow the OS instead.
+            'months' => CalendarOptions::months(),
+            'years' => $this->yearOptions($request, $viewingAll),
             'scope' => $viewingAll ? 'all' : 'mine',
             'can' => [
                 'view_all' => $isAdmin,
@@ -180,25 +191,43 @@ class ExpenseController extends Controller
         }
     }
 
-    /**
-     * The inclusive [start, end] of the current week, month or year.
-     *
-     * "This" period, anchored on today — the same reading the dashboard's month
-     * total uses. All is handled by the caller (no range), so it never reaches
-     * here.
-     *
-     * @return array{0: CarbonImmutable, 1: CarbonImmutable}
-     */
-    private function periodRange(TrendGranularity $period): array
+    /** '01'–'12', or '' for "every month". */
+    private function validMonth(mixed $value): string
     {
-        $now = CarbonImmutable::now();
+        $value = (string) $value;
 
-        return match ($period) {
-            TrendGranularity::Week => [$now->startOfWeek(), $now->endOfWeek()],
-            TrendGranularity::Month => [$now->startOfMonth(), $now->endOfMonth()],
-            TrendGranularity::Year => [$now->startOfYear(), $now->endOfYear()],
-            TrendGranularity::All => [$now->startOfCentury(), $now->endOfCentury()],
-        };
+        return preg_match('/^(0[1-9]|1[0-2])$/', $value) === 1 ? $value : '';
+    }
+
+    /** A four-digit year, or '' for "every year". */
+    private function validYear(mixed $value): string
+    {
+        $value = (string) $value;
+
+        return preg_match('/^\d{4}$/', $value) === 1 ? $value : '';
+    }
+
+    /**
+     * The years worth offering, drawn from the rows the viewer can actually see —
+     * the same reasoning the Budgets page uses: listing 1990 when the first
+     * expense is from 2024 is just a longer list to scroll.
+     *
+     * Newest first, because the current year is the one usually wanted.
+     *
+     * @return array<int, int>
+     */
+    private function yearOptions(Request $request, bool $viewingAll): array
+    {
+        $earliest = Expense::query()
+            ->when(! $viewingAll, fn ($query) => $query->where('user_id', $request->user()->id))
+            ->min('spent_on');
+
+        $current = CarbonImmutable::now()->year;
+        $first = $earliest ? (int) CarbonImmutable::parse($earliest)->year : $current;
+
+        // An expense cannot be dated in the future, so $first never exceeds the
+        // current year — min() keeps the range descending even if that changes.
+        return range($current, min($first, $current));
     }
 
     /**

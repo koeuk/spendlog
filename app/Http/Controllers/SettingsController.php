@@ -44,6 +44,9 @@ class SettingsController extends Controller
         return Inertia::render('Settings/Branding', [
             'branding' => [
                 'app_name' => $settings->app_name,
+                // The stored value, not the fallback — the form shows blank when
+                // unset so the placeholder can hint the default.
+                'copyright_holder' => $settings->copyright_holder,
                 'logo' => $settings->logoUrl(),
                 'favicon' => $settings->faviconUrl(),
             ],
@@ -81,6 +84,7 @@ class SettingsController extends Controller
                 // category.name. The form seeds both locales off them.
                 'warning' => $settings->getTranslations('spending_warning'),
                 'advice' => $settings->getTranslations('spending_advice'),
+                'khr_per_usd' => $settings->khrPerUsd(),
             ],
         ]);
     }

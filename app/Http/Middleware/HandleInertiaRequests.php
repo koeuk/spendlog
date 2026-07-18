@@ -60,6 +60,10 @@ class HandleInertiaRequests extends Middleware
             // Every page renders the wordmark, so this is shared rather than
             // repeated in each controller. AppSetting::current() is cached.
             'branding' => fn () => $this->branding(),
+            // The expense dialog previews what a riel amount will be stored as,
+            // so the rate has to reach a plain user — not just the admin settings
+            // page. AppSetting::current() is cached, so this is free.
+            'khr_per_usd' => fn () => AppSetting::current()->khrPerUsd(),
             'locale' => fn () => app()->getLocale(),
             'locales' => fn () => collect(Locale::cases())
                 ->map(fn (Locale $locale) => [

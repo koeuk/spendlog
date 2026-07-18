@@ -22,7 +22,6 @@ defineProps({
         <UpdateProfileInformationForm
             :must-verify-email="mustVerifyEmail"
             :status="status"
-            class="max-w-xl"
         />
 
         <!--
@@ -31,7 +30,7 @@ defineProps({
         -->
         <template #after>
             <div :class="[CARD, 'anim p-6 sm:p-8']" style="--d: 120ms">
-                <DeleteUserForm class="max-w-xl" />
+                <DeleteUserForm />
             </div>
         </template>
     </SettingsLayout>

@@ -147,6 +147,9 @@ const form = useForm({
     // One key per locale — item is a translatable JSON column, like category.name.
     item: { en: '', km: '' },
     price: '',
+    // What the price field is denominated in. Only ever 'USD' or 'KHR', and the
+    // server converts to USD before storing — see App\Enums\Currency.
+    currency: 'USD',
     category_uuid: '',
     // Set instead of category_uuid when naming a category inline.
     new_category: '',
@@ -170,6 +173,9 @@ function openEdit(expense) {
         km: expense.item_translations?.km ?? '',
     };
     form.price = String(expense.price);
+    // The stored price is USD whatever it was typed in, so editing always starts
+    // from USD rather than from the currency it happened to be entered in.
+    form.currency = 'USD';
     form.category_uuid = expense.category_uuid;
     form.new_category = '';
     form.spent_on = expense.spent_on;

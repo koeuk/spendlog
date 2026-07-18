@@ -4,6 +4,7 @@ import SettingsLayout from '@/Layouts/SettingsLayout.vue';
 import LocaleTabs from '@/Components/LocaleTabs.vue';
 import { Button } from '@/Components/ui/button';
 import { Checkbox } from '@/Components/ui/checkbox';
+import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
 import { Textarea } from '@/Components/ui/textarea';
 import { MUTED } from '@/lib/appStyles';
@@ -27,6 +28,7 @@ const form = useForm({
         en: props.spending.advice?.en ?? '',
         km: props.spending.advice?.km ?? '',
     },
+    khr_per_usd: props.spending.khr_per_usd,
 });
 
 function submit() {
@@ -103,6 +105,33 @@ function submit() {
                     />
                 </template>
             </LocaleTabs>
+
+            <!-- Not spending *guidance*, but it belongs to the same "how money
+                 works here" settings page rather than a page of its own. -->
+            <div>
+                <Label for="khr_per_usd" class="text-sm font-semibold">
+                    {{ __('Exchange rate') }}
+                </Label>
+                <p class="text-xs" :class="MUTED">
+                    {{ __('Riel per one US dollar. A price entered in KHR is converted at this rate and stored in USD.') }}
+                </p>
+                <div class="mt-2 flex items-center gap-2">
+                    <Input
+                        id="khr_per_usd"
+                        v-model="form.khr_per_usd"
+                        type="number"
+                        step="1"
+                        min="1"
+                        inputmode="decimal"
+                        class="max-w-40"
+                        :aria-invalid="!!form.errors.khr_per_usd"
+                    />
+                    <span class="text-sm" :class="MUTED">{{ __('KHR = $1.00') }}</span>
+                </div>
+                <p v-if="form.errors.khr_per_usd" class="mt-1 text-sm text-red-600 dark:text-red-400">
+                    {{ form.errors.khr_per_usd }}
+                </p>
+            </div>
 
             <div>
                 <Button type="submit" :disabled="form.processing">

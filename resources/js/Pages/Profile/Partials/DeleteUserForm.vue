@@ -1,12 +1,11 @@
 <script setup>
-import DangerButton from '@/Components/DangerButton.vue';
+import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
-import Modal from '@/Components/Modal.vue';
-import SecondaryButton from '@/Components/SecondaryButton.vue';
+import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { useForm } from '@inertiajs/vue3';
-import { nextTick, ref } from 'vue';
+import { ref } from 'vue';
 
 const confirmingUserDeletion = ref(false);
 const passwordInput = ref(null);
@@ -15,17 +14,12 @@ const form = useForm({
     password: '',
 });
 
-const confirmUserDeletion = () => {
-    confirmingUserDeletion.value = true;
-
-    nextTick(() => passwordInput.value.focus());
-};
-
 const deleteUser = () => {
     form.delete(route('profile.destroy'), {
         preserveScroll: true,
         onSuccess: () => closeModal(),
-        onError: () => passwordInput.value.focus(),
+        // Put the cursor back on the field that was rejected.
+        onError: () => passwordInput.value?.focus(),
         onFinish: () => form.reset(),
     });
 };
@@ -54,61 +48,48 @@ const closeModal = () => {
             </p>
         </header>
 
-        <DangerButton @click="confirmUserDeletion">
+        <Button
+            variant="destructive"
+            size="sm"
+            @click="confirmingUserDeletion = true"
+        >
             {{ __('Delete Account') }}
-        </DangerButton>
+        </Button>
 
-        <Modal :show="confirmingUserDeletion" @close="closeModal">
-            <div class="p-6">
-                <h2
-                    class="text-lg font-medium text-gray-900 dark:text-neutral-100"
-                >
-                    {{ __('Are you sure you want to delete your account?') }}
-                </h2>
+        <ConfirmDialog
+            v-model:open="confirmingUserDeletion"
+            :title="__('Are you sure you want to delete your account?')"
+            :description="
+                __(
+                    'Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.',
+                )
+            "
+            :confirm-label="__('Delete Account')"
+            :cancel-label="__('Cancel')"
+            :processing="form.processing"
+            :processing-label="__('Deleting...')"
+            @update:open="(open) => !open && closeModal()"
+            @confirm="deleteUser"
+        >
+            <div>
+                <InputLabel
+                    for="password"
+                    :value="__('Password')"
+                    class="sr-only"
+                />
 
-                <p class="mt-1 text-sm text-gray-600 dark:text-neutral-400">
-                    {{
-                        __(
-                            'Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.',
-                        )
-                    }}
-                </p>
+                <Input
+                    id="password"
+                    ref="passwordInput"
+                    v-model="form.password"
+                    type="password"
+                    :placeholder="__('Password')"
+                    :aria-invalid="Boolean(form.errors.password)"
+                    @keyup.enter="deleteUser"
+                />
 
-                <div class="mt-6">
-                    <InputLabel
-                        for="password"
-                        :value="__('Password')"
-                        class="sr-only"
-                    />
-
-                    <Input
-                        id="password"
-                        ref="passwordInput"
-                        v-model="form.password"
-                        type="password"
-                        class="mt-1 block w-3/4"
-                        :placeholder="__('Password')"
-                        @keyup.enter="deleteUser"
-                    />
-
-                    <InputError :message="form.errors.password" class="mt-2" />
-                </div>
-
-                <div class="mt-6 flex justify-end">
-                    <SecondaryButton @click="closeModal">
-                        {{ __('Cancel') }}
-                    </SecondaryButton>
-
-                    <DangerButton
-                        class="ms-3"
-                        :class="{ 'opacity-25': form.processing }"
-                        :disabled="form.processing"
-                        @click="deleteUser"
-                    >
-                        {{ __('Delete Account') }}
-                    </DangerButton>
-                </div>
+                <InputError :message="form.errors.password" class="mt-2" />
             </div>
-        </Modal>
+        </ConfirmDialog>
     </section>
 </template>

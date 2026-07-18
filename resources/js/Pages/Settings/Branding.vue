@@ -14,6 +14,7 @@ const props = defineProps({
 
 const form = useForm({
     app_name: props.branding.app_name,
+    copyright_holder: props.branding.copyright_holder ?? '',
     logo: null,
     favicon: null,
     remove_logo: false,
@@ -95,6 +96,24 @@ function submit() {
                 </p>
                 <p v-if="form.errors.app_name" class="mt-1 text-sm text-red-600 dark:text-red-400">
                     {{ form.errors.app_name }}
+                </p>
+            </div>
+
+            <div>
+                <Label for="copyright_holder">{{ __('Copyright holder') }}</Label>
+                <Input
+                    id="copyright_holder"
+                    v-model="form.copyright_holder"
+                    class="mt-1"
+                    autocomplete="off"
+                    :placeholder="form.app_name"
+                    :aria-invalid="!!form.errors.copyright_holder"
+                />
+                <p class="mt-1 text-xs text-gray-500 dark:text-neutral-400">
+                    {{ __('Shown in the footer. Leave blank to use the app name.') }}
+                </p>
+                <p v-if="form.errors.copyright_holder" class="mt-1 text-sm text-red-600 dark:text-red-400">
+                    {{ form.errors.copyright_holder }}
                 </p>
             </div>
 

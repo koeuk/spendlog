@@ -200,5 +200,7 @@
     "Title": "Title",
     "Body": "Body",
     "When off, the page is hidden and its footer link disappears.": "When off, the page is hidden and its footer link disappears.",
-    "© :year :name. All rights reserved.": "© :year :name. All rights reserved."
+    "© :year :name. All rights reserved.": "© :year :name. All rights reserved.",
+    "Copyright holder": "Copyright holder",
+    "Shown in the footer. Leave blank to use the app name.": "Shown in the footer. Leave blank to use the app name."
 }

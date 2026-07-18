@@ -94,6 +94,10 @@ function focusCancel(event) {
                     </AlertDialogDescription>
                 </div>
 
+                <!-- For confirmations that need input before the action can run
+                     (e.g. re-entering a password). Empty for the common case. -->
+                <slot />
+
                 <div class="flex justify-end gap-2">
                     <AlertDialogCancel ref="cancelRef" as-child>
                         <Button variant="outline" size="sm" :disabled="processing">

@@ -6,6 +6,7 @@ import BudgetProgress from '@/Components/BudgetProgress.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import { CARD, CARD_ALERT, EYEBROW } from '@/lib/appStyles';
 import CategoryBadge from '@/Components/CategoryBadge.vue';
+import CategoryPicker from '@/Components/CategoryPicker.vue';
 import { useNavigating } from '@/composables/useNavigating';
 import { trans } from '@/lib/i18n';
 import { Skeleton } from '@/Components/ui/skeleton';
@@ -91,16 +92,47 @@ const form = useForm({
     category_uuid: null,
     month: props.month,
     amount: '',
+    // CategoryPicker writes this key; budgets.store ignores it (creation is
+    // disabled there), but it has to exist for the picker to bind to.
+    new_category: '',
 });
 
 function openEdit(row, categoryUuid = null) {
     target.value = row;
+    choosingCategory.value = false;
     form.category_uuid = categoryUuid;
     form.month = props.month;
     form.amount = row.budget !== null ? String(row.budget) : '';
     form.clearErrors();
     showDialog.value = true;
 }
+
+/*
+ * Setting a budget from the header rather than a row.
+ *
+ * The list only shows categories with spend or an existing budget, so a
+ * category the user has not touched yet has no row to click — this is the only
+ * way to budget for one ahead of spending anything.
+ */
+const choosingCategory = ref(false);
+
+// Only categories without a budget yet. One that already has one has its own
+// row with an Edit button, so listing it here would be a second way to do the
+// same thing — and the row is the one that shows what the budget currently is.
+const budgetableCategories = computed(() =>
+    props.summary.categories.filter((category) => category.budget === null),
+);
+
+function openAdd() {
+    target.value = null;
+    choosingCategory.value = true;
+    form.category_uuid = null;
+    form.month = props.month;
+    form.amount = '';
+    form.clearErrors();
+    showDialog.value = true;
+}
+
 
 function submit() {
     form.post(route('budgets.store'), {
@@ -322,8 +354,11 @@ function clearBudget() {
 
                 <!-- Per category -->
                 <div :class="[CARD, 'overflow-hidden']">
-                    <div class="border-b border-gray-100 dark:border-neutral-800 px-5 py-3">
+                    <div
+                        class="flex items-center justify-between gap-4 border-b border-gray-100 dark:border-neutral-800 px-5 py-3"
+                    >
                         <h3 class="text-sm font-semibold text-gray-900 dark:text-neutral-100">{{ __('By category') }}</h3>
+                        <Button size="sm" @click="openAdd">{{ __('Set budget') }}</Button>
                     </div>
 
                     <ul v-if="navigating" class="divide-y divide-gray-100 dark:divide-neutral-800" aria-busy="true">
@@ -440,7 +475,7 @@ function clearBudget() {
                 <form @submit.prevent="submit">
                     <DialogHeader>
                         <DialogTitle>
-                            {{ form.category_uuid ? __('Category budget') : __('Overall budget') }}
+                            {{ choosingCategory || form.category_uuid ? __('Category budget') : __('Overall budget') }}
                         </DialogTitle>
                         <DialogDescription>
                             {{ formatMonth(month) }}
@@ -448,6 +483,20 @@ function clearBudget() {
                     </DialogHeader>
 
                     <div class="py-4">
+                        <!-- Only when opened from the header: a row already
+                             names its own category. -->
+                        <div v-if="choosingCategory" class="mb-4">
+                            <Label for="category">{{ __('Category') }}</Label>
+                            <!-- can-create is off: budgets.store only accepts an
+                                 existing category_uuid, so offering to name a new
+                                 one would promise something the server rejects. -->
+                            <CategoryPicker
+                                :form="form"
+                                :categories="budgetableCategories"
+                                :can-create="false"
+                            />
+                        </div>
+
                         <Label for="amount">{{ __('Amount') }}</Label>
                         <Input
                             id="amount"
@@ -471,7 +520,14 @@ function clearBudget() {
                         <Button type="button" variant="outline" @click="showDialog = false">
                             {{ __('Cancel') }}
                         </Button>
-                        <Button type="submit" :disabled="form.processing">{{ __('Save') }}</Button>
+                        <!-- Without a category the request would set the overall
+                             budget, which is not what this dialog offered. -->
+                        <Button
+                            type="submit"
+                            :disabled="form.processing || (choosingCategory && !form.category_uuid)"
+                        >
+                            {{ __('Save') }}
+                        </Button>
                     </DialogFooter>
                 </form>
             </DialogContent>
