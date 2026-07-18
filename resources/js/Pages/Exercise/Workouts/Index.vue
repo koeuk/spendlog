@@ -8,6 +8,7 @@ import WorkoutForm from '@/Components/Exercise/WorkoutForm.vue';
 import Pagination from '@/Components/Pagination.vue';
 import { CARD, EYEBROW, MUTED, PILL_ACTION } from '@/lib/appStyles';
 import { formatDistance, formatDuration, formatWeight } from '@/lib/exerciseStyles';
+import { trans } from '@/lib/i18n';
 
 const props = defineProps({
     workouts: { type: Array, default: () => [] },
@@ -30,7 +31,7 @@ function close() {
 const deleteForm = useForm({});
 
 function destroy(workout) {
-    if (!window.confirm(__('Delete this workout? Its sets go with it.'))) {
+    if (!window.confirm(trans('Delete this workout? Its sets go with it.'))) {
         return;
     }
 

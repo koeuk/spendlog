@@ -6,6 +6,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import ExerciseBadge from '@/Components/Exercise/ExerciseBadge.vue';
 import { CARD, EYEBROW, MUTED, PILL_ACTION } from '@/lib/appStyles';
 import { EXERCISE_ICON_NAMES, EXERCISE_COLOR_NAMES, exerciseColor, exerciseIcon } from '@/lib/exerciseStyles';
+import { trans } from '@/lib/i18n';
 
 const props = defineProps({
     types: { type: Array, default: () => [] },
@@ -52,7 +53,7 @@ function submit() {
 const deleteForm = useForm({});
 
 function destroy(type) {
-    if (!window.confirm(__('Delete this exercise?'))) {
+    if (!window.confirm(trans('Delete this exercise?'))) {
         return;
     }
 
