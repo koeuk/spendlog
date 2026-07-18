@@ -107,7 +107,12 @@ class UserController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
 
-            return back()->withError($e->getMessage())->withInput();
+// getMessage() on a QueryException is the SQLSTATE, the whole
+            // parameterised query and its bound values. That is a log entry,
+            // not something to flash at whoever clicked the button.
+            report($e);
+
+            return back()->withError(__('Something went wrong. Please try again.'))->withInput();
         }
     }
 
@@ -164,7 +169,12 @@ class UserController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
 
-            return back()->withError($e->getMessage())->withInput();
+// getMessage() on a QueryException is the SQLSTATE, the whole
+            // parameterised query and its bound values. That is a log entry,
+            // not something to flash at whoever clicked the button.
+            report($e);
+
+            return back()->withError(__('Something went wrong. Please try again.'))->withInput();
         }
     }
 
@@ -209,7 +219,12 @@ class UserController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
 
-            return back()->withError($e->getMessage());
+// getMessage() on a QueryException is the SQLSTATE, the whole
+            // parameterised query and its bound values. That is a log entry,
+            // not something to flash at whoever clicked the button.
+            report($e);
+
+            return back()->withError(__('Something went wrong. Please try again.'));
         }
     }
 
@@ -238,7 +253,12 @@ class UserController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
 
-            return back()->withError($e->getMessage());
+// getMessage() on a QueryException is the SQLSTATE, the whole
+            // parameterised query and its bound values. That is a log entry,
+            // not something to flash at whoever clicked the button.
+            report($e);
+
+            return back()->withError(__('Something went wrong. Please try again.'));
         }
     }
 
@@ -259,7 +279,12 @@ class UserController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
 
-            return back()->withError($e->getMessage());
+// getMessage() on a QueryException is the SQLSTATE, the whole
+            // parameterised query and its bound values. That is a log entry,
+            // not something to flash at whoever clicked the button.
+            report($e);
+
+            return back()->withError(__('Something went wrong. Please try again.'));
         }
     }
 }
