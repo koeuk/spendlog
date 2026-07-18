@@ -24,10 +24,17 @@ leaves the server. Passing an `id` where a UUID belongs 404s before the query
 runs. If a value came from a request it is a `uuid`; if it is going into a
 foreign key it is an `id`.
 
-**Money is a string.** `"12.50"`, never `12.5`. The columns are `decimal(10,2)`
-and a JSON float would drop the trailing zero and drift on sums. Parse it with a
-decimal type on the client, not a float. Percentages are *not* money and stay
-numeric (`percent: 106`).
+**Money is a string.** `"12.50"`, never `12.5`. A JSON float would drop the
+trailing zero and drift on sums, so parse it with a decimal type on the client,
+not a float. Percentages are *not* money and stay numeric (`percent: 106`).
+
+Always **two decimal places**, even though the underlying columns are
+`decimal(12,4)`. The extra scale exists so an amount entered in riel survives
+conversion — one US cent is ~4100/100 ≈ 41៛, so at two places ៛100 would store
+as `$0.02` and read back as ៛82 (see `App\Enums\Currency::SCALE`). That is a
+storage concern; this API emits a USD figure and formats to cents deliberately.
+Do not "fix" the resources to pass the raw column through — `"12.5000"` would
+break every client that expects `"12.50"`.
 
 **Dates.** `spent_on` is a calendar day (`"2026-07-16"`), budgets are months
 (`"2026-07"`), timestamps are ISO 8601 UTC (`"2026-07-16T10:00:00+00:00"`).
