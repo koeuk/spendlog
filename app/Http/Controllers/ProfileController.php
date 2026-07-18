@@ -20,7 +20,10 @@ class ProfileController extends Controller
     {
         Gate::authorize('updateProfile');
 
-        $request->user()->fill($request->validated());
+        // profileAttributes(), not validated(): a blank username has to reach the
+        // column as null rather than '', or the unique index treats the empty
+        // string as a handle and only one account may have "no username".
+        $request->user()->fill($request->profileAttributes());
 
         if ($request->user()->isDirty('email')) {
             $request->user()->email_verified_at = null;

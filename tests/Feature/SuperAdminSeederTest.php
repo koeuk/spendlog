@@ -6,7 +6,9 @@ use App\Enums\Permission;
 use App\Models\User;
 use Database\Seeders\UserSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 /**
@@ -20,6 +22,21 @@ class SuperAdminSeederTest extends TestCase
     private function superAdmin(): ?User
     {
         return User::where('email', config('spendlog.super_admin.email'))->first();
+    }
+
+    /**
+     * Undo the global RoleSeeder so a test can prove UserSeeder stands alone.
+     * Spatie caches the catalogue, so the cache has to go with the rows.
+     */
+    private function forgetSeededRoles(): void
+    {
+        DB::table('role_has_permissions')->delete();
+        DB::table('model_has_roles')->delete();
+        DB::table('model_has_permissions')->delete();
+        DB::table('roles')->delete();
+        DB::table('permissions')->delete();
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 
     public function test_seeding_creates_the_owner_account_with_every_permission(): void
@@ -43,10 +60,16 @@ class SuperAdminSeederTest extends TestCase
      *
      * The global TestCase seeder hides this, so it is undone here first. That is
      * the only way this test means anything.
+     *
+     * The catalogue is emptied row by row rather than with migrate:fresh: that
+     * drops every table mid-transaction, so RefreshDatabase's rollback leaves no
+     * schema behind and every test that happens to run next dies on a missing
+     * table. Deleting rows undoes the seeder just as completely and stays inside
+     * the transaction.
      */
     public function test_seeding_users_alone_still_produces_a_working_owner(): void
     {
-        $this->artisan('migrate:fresh');
+        $this->forgetSeededRoles();
 
         $this->seed(UserSeeder::class);
 

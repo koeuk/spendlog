@@ -3,6 +3,9 @@
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Exercise\DashboardController as ExerciseDashboardController;
+use App\Http\Controllers\Exercise\ExerciseTypeController;
+use App\Http\Controllers\Exercise\WorkoutController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\HelpController;
@@ -40,6 +43,35 @@ Route::middleware('auth')->group(function () {
     // store() upserts the (category, month) slot, so no separate update route.
     Route::resource('budgets', BudgetController::class)
         ->only(['index', 'store', 'destroy']);
+
+    /*
+     * The exercise module.
+     *
+     * Namespaced under an `exercise.` prefix, unlike the flat finance route
+     * names — the workspace switcher in AuthenticatedLayout decides which
+     * module you are in by matching `exercise.*`, so the prefix is load-bearing
+     * rather than cosmetic.
+     *
+     * Every route authorizes through WorkoutPolicy / ExerciseTypePolicy in its
+     * controller, both of which require exercise.view. The module ships locked
+     * (see Permission::forUser), so this is invisible until an admin grants it.
+     */
+    Route::prefix('exercise')->name('exercise.')->group(function () {
+        Route::get('/', [ExerciseDashboardController::class, 'index'])->name('dashboard');
+
+        Route::resource('workouts', WorkoutController::class)
+            ->only(['index', 'store', 'update', 'destroy']);
+
+        /*
+         * "Movements" in the UI, exercise_types in the code. The parameter is
+         * named explicitly because Laravel would otherwise bind {exercise_type}
+         * from the resource name and ExerciseTypeRequest reads the route
+         * parameter by that name when checking uniqueness on update.
+         */
+        Route::resource('types', ExerciseTypeController::class)
+            ->parameters(['types' => 'exercise_type'])
+            ->only(['index', 'store', 'update', 'destroy']);
+    });
 
     /*
      * Settings. The route names stay as they were (profile.edit, password.update)

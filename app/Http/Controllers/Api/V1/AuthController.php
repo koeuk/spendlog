@@ -55,6 +55,19 @@ class AuthController extends Controller
             ]);
         }
 
+        /*
+         * Same rule as the web LoginRequest, and after the password for the same
+         * reason: refusing earlier would answer "is this address suspended?" to
+         * anyone who asked. Without this a suspended account could re-authenticate
+         * and collect a fresh token — status is not carried on the token, so
+         * revoking the old ones on suspension would not have stopped it.
+         */
+        if (! $user->status->canSignIn()) {
+            throw ValidationException::withMessages([
+                'email' => [$user->status->signInError()],
+            ]);
+        }
+
         return response()->json([
             'token' => $this->issueToken($user, $request->device_name, $request->input('abilities')),
             'user' => new UserResource($user),

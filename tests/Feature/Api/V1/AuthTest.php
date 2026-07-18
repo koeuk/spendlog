@@ -5,11 +5,14 @@ namespace Tests\Feature\Api\V1;
 use App\Enums\Permission;
 use App\Enums\RoleName;
 use App\Enums\TokenAbility;
+use App\Enums\UserStatus;
 use App\Models\Category;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\RateLimiter;
+use Laravel\Sanctum\PersonalAccessToken;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class AuthTest extends TestCase
@@ -25,6 +28,57 @@ class AuthTest extends TestCase
         // same process, so an earlier test's failed logins would throttle a
         // later one.
         RateLimiter::clear('api-login');
+    }
+
+    /**
+     * Suspension has to hold on the API, not just the web login. Revoking a
+     * suspended user's tokens is pointless if they can immediately trade the
+     * same password for a new one — the token carries abilities, not status,
+     * so nothing downstream would catch it.
+     */
+    #[DataProvider('blockedStatuses')]
+    public function test_a_blocked_account_cannot_get_a_token(UserStatus $status): void
+    {
+        User::factory()->create([
+            'email' => 'sam@example.com',
+            'status' => $status,
+        ]);
+
+        $response = $this->postJson('/api/v1/login', [
+            'email' => 'sam@example.com',
+            'password' => 'password',
+            'device_name' => 'iPhone 15',
+        ]);
+
+        $response->assertStatus(422)->assertJsonValidationErrors('email');
+        $this->assertSame(0, PersonalAccessToken::count());
+    }
+
+    public static function blockedStatuses(): array
+    {
+        return [
+            'suspended' => [UserStatus::Suspended],
+            'invited' => [UserStatus::Invited],
+            'archived' => [UserStatus::Archived],
+        ];
+    }
+
+    /** The wording is the status's own — "suspended" is wrong for an archived account. */
+    public function test_the_refusal_uses_the_wording_for_that_status(): void
+    {
+        User::factory()->create([
+            'email' => 'sam@example.com',
+            'status' => UserStatus::Archived,
+        ]);
+
+        $this->postJson('/api/v1/login', [
+            'email' => 'sam@example.com',
+            'password' => 'password',
+            'device_name' => 'iPhone 15',
+        ])->assertJsonPath(
+            'errors.email.0',
+            UserStatus::Archived->signInError(),
+        );
     }
 
     public function test_login_returns_a_token_and_the_user(): void

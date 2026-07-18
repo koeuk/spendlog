@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Enums\RoleName;
 use App\Enums\UserStatus;
 use App\Models\User;
+use App\Rules\UsernameRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
@@ -25,6 +26,8 @@ class UserRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:255'],
+            // A display handle, not a login — see App\Rules\UsernameRules.
+            'username' => UsernameRules::for($user?->getKey()),
             'email' => [
                 'required',
                 'string',
@@ -52,6 +55,7 @@ class UserRequest extends FormRequest
     public function messages(): array
     {
         return [
+            ...UsernameRules::messages(),
             'email.unique' => __('Someone already uses that email address.'),
             'role.required' => __('Please pick a role.'),
         ];
@@ -71,6 +75,10 @@ class UserRequest extends FormRequest
     public function userAttributes(): array
     {
         $data = $this->safe()->only(['name', 'email', 'status']);
+
+        // '' would occupy the unique index as a real value, so exactly one
+        // account could hold the empty username and the next would be rejected.
+        $data['username'] = UsernameRules::normalize($this->input('username'));
 
         if (filled($this->input('password'))) {
             // The model's 'hashed' cast does the hashing.
