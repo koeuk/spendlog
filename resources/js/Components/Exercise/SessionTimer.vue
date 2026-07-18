@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
-import { Check, Pause, Play, RotateCcw, Square, Timer } from 'lucide-vue-next';
+import { router } from '@inertiajs/vue3';
+import { Check, Dumbbell, Pause, Play, RotateCcw, Square, Timer } from 'lucide-vue-next';
 import { CARD, CARD_ALERT, EYEBROW, MUTED, SEGMENT, SEGMENT_ON, SEGMENT_OFF } from '@/lib/appStyles';
 import { formatClock } from '@/lib/exerciseStyles';
 import { useRestTimer, useSessionTimer } from '@/composables/useSessionTimer';
@@ -176,6 +177,32 @@ const display = computed(() => {
 
 // Open has no length to set, so the lengths have nothing to offer it.
 const editable = computed(() => !open.value && !timer.running.value && !done.value);
+
+/*
+ * Time actually on the clock, whichever way it was read — what gets handed to
+ * the workout form. Distinct from `display`, which for a countdown is the time
+ * left rather than the time spent.
+ */
+const elapsed = computed(() => {
+    if (open.value) {
+        return stopwatch.elapsedSeconds.value;
+    }
+
+    return done.value
+        ? timer.duration.value
+        : timer.duration.value - timer.remaining.value;
+});
+
+/**
+ * Hands the reading to the workout form rather than saving anything here.
+ *
+ * A timer knows how long, never what of — the movements and sets still have to
+ * be chosen, and that form already knows how to validate and store them. So
+ * this carries the seconds over and lets the real form do the rest.
+ */
+function logWorkout() {
+    router.get(route('exercise.workouts.index'), { duration: elapsed.value });
+}
 </script>
 
 <template>
@@ -260,6 +287,18 @@ const editable = computed(() => !open.value && !timer.running.value && !done.val
                     {{ __('Custom') }}
                 </button>
             </template>
+
+            <!-- Appears once there is something to log. Sends you to the form
+                 with the seconds already in it, where the movements get added. -->
+            <button
+                v-if="elapsed > 0"
+                type="button"
+                class="inline-flex h-8 items-center gap-1.5 rounded-full border border-border px-3 text-xs font-semibold transition hover:bg-muted"
+                @click="logWorkout()"
+            >
+                <Dumbbell class="size-3.5" />
+                {{ __('Log workout') }}
+            </button>
 
             <!-- Switchable mid-run: it changes how the same clock is read, not
                  what it is doing. -->

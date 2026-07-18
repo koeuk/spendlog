@@ -25,6 +25,9 @@ const props = defineProps({
     // Null when adding; the presented workout when editing.
     workout: { type: Object, default: null },
     exerciseTypes: { type: Array, required: true },
+    // Seconds to start the duration field on, handed over by the dashboard
+    // timer. Ignored when editing, where the saved duration is the truth.
+    initialDurationSeconds: { type: Number, default: null },
 });
 
 const emit = defineEmits(['saved', 'cancel']);
@@ -47,7 +50,7 @@ const seededOn = localToday();
 
 const form = useForm({
     performed_on: props.workout?.performed_on ?? seededOn,
-    duration_seconds: props.workout?.duration_seconds ?? null,
+    duration_seconds: props.workout?.duration_seconds ?? props.initialDurationSeconds,
     notes: props.workout?.notes ?? '',
     weight_unit: unit.value,
     sets: [],
@@ -111,6 +114,8 @@ function seed() {
         weight: set.weight_kg === null ? null : toUnit(set.weight_kg),
         distance_m: set.distance_m,
         duration_seconds: set.duration_seconds,
+        // No longer editable, but still carried: an update rewrites every set
+        // row, so dropping it here would null out the values already recorded.
         rpe: set.rpe,
     }));
 }
@@ -340,7 +345,7 @@ function submit() {
                     <!-- Which fields show follows the movement's own is_cardio
                          flag, so a run asks for distance and time while a press
                          asks for reps and load. -->
-                    <div class="mt-2 grid grid-cols-2 gap-2 ps-8 sm:grid-cols-3">
+                    <div class="mt-2 grid grid-cols-2 gap-2 ps-8">
                         <template v-if="isCardio(index)">
                             <label class="block">
                                 <span class="text-[11px]" :class="MUTED">{{ __('Distance (m)') }}</span>
@@ -385,17 +390,6 @@ function submit() {
                                 />
                             </label>
                         </template>
-
-                        <label class="block">
-                            <span class="text-[11px]" :class="MUTED">{{ __('RPE') }}</span>
-                            <input
-                                v-model.number="set.rpe"
-                                type="number"
-                                min="1"
-                                max="10"
-                                class="mt-0.5 h-9 w-full rounded-xl border border-border bg-card/70 px-2 text-sm"
-                            />
-                        </label>
                     </div>
                 </li>
             </ul>

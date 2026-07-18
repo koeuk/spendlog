@@ -30,8 +30,26 @@ const unit = computed(() => page.props.default_weight_unit ?? 'kg');
 // null = closed, 'new' = adding, an object = editing that workout.
 const editing = ref(null);
 
+/*
+ * Arriving from the dashboard timer with ?duration=173 opens the form on the
+ * spot with that many seconds already in it. Read from the URL rather than a
+ * prop so the timer can hand over without the controller having to know the
+ * dashboard exists.
+ */
+const handedOverSeconds = ref(null);
+
+const seconds = Number(new URLSearchParams(window.location.search).get('duration'));
+
+if (Number.isFinite(seconds) && seconds > 0) {
+    handedOverSeconds.value = Math.floor(seconds);
+    editing.value = 'new';
+}
+
 function close() {
     editing.value = null;
+    // One handover per arrival: reopening the form afterwards should be blank,
+    // not stamped with a timer reading from earlier in the session.
+    handedOverSeconds.value = null;
 }
 
 // The dialog wants a boolean, but `editing` has to stay the source of truth —
@@ -139,6 +157,7 @@ function formatDate(value) {
                 <WorkoutForm
                     :workout="editing === 'new' ? null : editing"
                     :exercise-types="exercise_types"
+                    :initial-duration-seconds="handedOverSeconds"
                     @saved="close"
                     @cancel="close"
                 />
