@@ -9,6 +9,7 @@ use App\Models\AppSetting;
 use App\Models\Category;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class ExpenseRequest extends FormRequest
 {
@@ -120,15 +121,39 @@ class ExpenseRequest extends FormRequest
     /**
      * An inline name creates the category; otherwise the picked uuid is resolved.
      *
-     * firstOrCreate, not create: two people naming the same category at once
-     * would otherwise race past the validator and insert a duplicate.
+     * The lookup is case-insensitive, matching CategoryRequest's uniqueness rule,
+     * so "coffee" finds "Coffee" instead of creating a second row beside it.
+     *
+     * Two people naming the same category at the same instant can still both
+     * insert: there is no unique index on the name to make this atomic, and a
+     * firstOrCreate would not add one. That is a narrow race with a visible,
+     * mergeable outcome — unlike the silent mismatch this method used to have
+     * with the Categories page, which produced the same duplicate from ordinary
+     * sequential use.
      */
     private function resolveCategoryId(): int
     {
         $name = trim((string) $this->input('new_category'));
 
         if (blank($name)) {
-            return (int) Category::where('uuid', $this->validated('category_uuid'))->value('id');
+            $id = Category::where('uuid', $this->validated('category_uuid'))->value('id');
+
+            /*
+             * The uuid passed `exists` a moment ago, but that was a separate
+             * query and the row can be gone by now. (int) null is 0, which is no
+             * category at all: the API surfaced that as a 500 from the foreign
+             * key where its own docblock promises a 422, and the web form turned
+             * it into a flash message built from the SQL error. BudgetRequest
+             * already guards its half of this; this is the sibling it was
+             * fixed without.
+             */
+            if ($id === null) {
+                throw ValidationException::withMessages([
+                    'category_uuid' => __('That category no longer exists.'),
+                ]);
+            }
+
+            return (int) $id;
         }
 
         $existing = Category::query()
