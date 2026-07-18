@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { Check, Play, RotateCcw, Square, Timer } from 'lucide-vue-next';
-import { CARD, CARD_ALERT, EYEBROW, MUTED } from '@/lib/appStyles';
+import { CARD, CARD_ALERT, EYEBROW, MUTED, SEGMENT, SEGMENT_ON, SEGMENT_OFF } from '@/lib/appStyles';
 import { formatClock } from '@/lib/exerciseStyles';
 import { useRestTimer } from '@/composables/useSessionTimer';
 import { Button } from '@/Components/ui/button';
@@ -15,17 +15,25 @@ import {
 } from '@/Components/ui/dialog';
 
 /**
- * A countdown you set yourself — the rest between sets.
+ * A timer you set yourself — the rest between sets.
+ *
+ * Runs in either direction over the same length: down from it, or up from zero
+ * towards it. Both readings come off one useRestTimer, since "1:30 left" and
+ * "0:30 done of 2:00" are the same clock described from opposite ends — running
+ * a second engine for the count-up would be two things to keep in step.
  *
  * Client-side and per-page, so navigating away loses it, the same trade
  * useSessionTimer already documents. Nothing here is persisted: the workout form
  * is what records a session, and this is the thing you watch between them.
  */
 
-// The rests people actually take. Anything else goes in the fields below.
+// The rests people actually take. Anything else goes in the dialog.
 const PRESETS = [60, 90, 120, 180];
 
 const timer = useRestTimer(90);
+
+// 'down' counts to zero; 'up' counts from zero to the length that was set.
+const mode = ref('down');
 
 /*
  * The custom-length dialog. Its fields are a draft rather than the timer
@@ -86,9 +94,22 @@ function reset() {
     timer.stop();
 }
 
-// Zero once it has run out, rather than springing back to the full duration the
-// moment the countdown is stopped.
-const display = computed(() => (done.value ? 0 : timer.remaining.value));
+/*
+ * What the big number reads.
+ *
+ * Pinned to the end of its run once finished, rather than springing back to the
+ * full duration the moment the timer is stopped — which for 'down' is zero, and
+ * for 'up' is the length that was set.
+ */
+const display = computed(() => {
+    if (done.value) {
+        return mode.value === 'down' ? 0 : timer.duration.value;
+    }
+
+    return mode.value === 'down'
+        ? timer.remaining.value
+        : timer.duration.value - timer.remaining.value;
+});
 
 const editable = computed(() => !timer.running.value && !done.value);
 </script>
@@ -111,6 +132,15 @@ const editable = computed(() => !timer.running.value && !done.value);
             <p :class="EYEBROW">{{ done ? __('Rest over') : __('Rest') }}</p>
             <p class="mt-0.5 text-3xl font-extrabold tabular-nums tracking-tight">
                 {{ formatClock(display) }}
+                <!-- Counting up needs the target beside it, or the number has
+                     nothing to be a fraction of. -->
+                <span
+                    v-if="mode === 'up'"
+                    class="text-base font-bold tabular-nums"
+                    :class="MUTED"
+                >
+                    {{ __('of :length', { length: formatClock(timer.duration.value) }) }}
+                </span>
             </p>
         </div>
 
