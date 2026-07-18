@@ -46,6 +46,19 @@ enum Permission: string
     case BudgetsDelete = 'budgets.delete';
     case BudgetsManageAll = 'budgets.manage_all';
 
+    /*
+     * --- Exercise ---------------------------------------------------------
+     *
+     * The whole module hangs off exercise.view: it gates the routes, and the
+     * workspace switcher in the header only renders for accounts that hold it.
+     * Deliberately absent from forUser() below — see the note there.
+     */
+    case ExerciseView = 'exercise.view';
+    case ExerciseCreate = 'exercise.create';
+    case ExerciseUpdate = 'exercise.update';
+    case ExerciseDelete = 'exercise.delete';
+    case ExerciseTypesManage = 'exercise.types_manage';
+
     // --- Account ----------------------------------------------------------
     case ProfileUpdate = 'profile.update';
     case PasswordUpdate = 'password.update';
@@ -80,6 +93,12 @@ enum Permission: string
             self::BudgetsUpdate => __('Change budgets'),
             self::BudgetsDelete => __('Remove budgets'),
             self::BudgetsManageAll => __('Manage anyone’s budgets'),
+
+            self::ExerciseView => __('Open the exercise tracker'),
+            self::ExerciseCreate => __('Log workouts'),
+            self::ExerciseUpdate => __('Edit own workouts'),
+            self::ExerciseDelete => __('Delete own workouts'),
+            self::ExerciseTypesManage => __('Manage the shared exercise catalogue'),
 
             self::ProfileUpdate => __('Change own name and email'),
             self::PasswordUpdate => __('Change own password'),
@@ -116,6 +135,12 @@ enum Permission: string
             self::BudgetsDelete => __('Clear a budget.'),
             self::BudgetsManageAll => __('Not just their own.'),
 
+            self::ExerciseView => __('Off by default. Granting it adds the workspace switcher to the header.'),
+            self::ExerciseCreate => __('The workout form and the session timer.'),
+            self::ExerciseUpdate => __('Their own only.'),
+            self::ExerciseDelete => __('Their own only.'),
+            self::ExerciseTypesManage => __('The movements everyone sees. Users can always add their own.'),
+
             self::ProfileUpdate => __('Revoke this where names and emails come from elsewhere.'),
             self::PasswordUpdate => __('Revoke this where passwords are managed centrally.'),
 
@@ -142,6 +167,9 @@ enum Permission: string
             self::BudgetsView, self::BudgetsCreate, self::BudgetsUpdate,
             self::BudgetsDelete, self::BudgetsManageAll => __('Budgets'),
 
+            self::ExerciseView, self::ExerciseCreate, self::ExerciseUpdate,
+            self::ExerciseDelete, self::ExerciseTypesManage => __('Exercise'),
+
             self::ProfileUpdate, self::PasswordUpdate => __('Account'),
 
             self::UsersView, self::UsersManage, self::SettingsBranding, self::SettingsFaq, self::SettingsPages => __('Administration'),
@@ -165,6 +193,14 @@ enum Permission: string
      * required by the policies, so a user without them cannot add an expense or
      * open the dashboard. Adding a case above without adding it here (when it
      * belongs to self-service) silently breaks every new non-admin.
+     *
+     * The exercise.* permissions are the one deliberate exception, and they are
+     * absent on purpose — do not "fix" them in. Exercise is an opt-in module,
+     * not part of the baseline app: it ships locked, and an admin grants it per
+     * person from the permissions drawer. Listing them here would hand the
+     * tracker to every account the moment it was created, which is exactly what
+     * the module is not for. Admins still get them, because forAdmin() is every
+     * case there is.
      *
      * @return array<int, string>
      */
