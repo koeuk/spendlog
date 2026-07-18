@@ -298,7 +298,15 @@ watch(() => page.url, () => nextTick(measurePill));
                                     class="size-3.5 shrink-0"
                                     aria-hidden="true"
                                 />
-                                <span class="hidden sm:inline">{{ __(activeModule.label) }}</span>
+                                <!-- Named at every width. Hidden below sm this
+                                     was a bare icon and a chevron, which is the
+                                     one control on the bar that cannot afford to
+                                     be a guess: it says which workspace you are
+                                     in, and the wordmark beside it is already
+                                     down to its lettermark on a phone. The
+                                     labels are one short word, so they fit at
+                                     320px. -->
+                                <span>{{ __(activeModule.label) }}</span>
                                 <ChevronDown class="size-3.5 text-neutral-400" />
                             </button>
                         </template>

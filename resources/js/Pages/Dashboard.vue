@@ -279,8 +279,14 @@ const statusText = {
             <!-- Breakdown + budgets -->
             <div class="grid gap-3 lg:grid-cols-2">
                 <div :class="[CARD, 'anim p-6 sm:p-7']" style="--d: 180ms">
-                    <div class="flex items-center justify-between gap-3">
-                        <h2 class="text-base font-bold tracking-tight">
+                    <!-- Wraps, because the two pickers below cannot. Their
+                         triggers are whitespace-nowrap and sized by their content
+                         ("November", "2026"), so on one line the row's min-content
+                         exceeded the card's 248px inner width at a 320px viewport
+                         and pushed the whole page into a horizontal scroll. Given
+                         a second line it simply stacks: heading, then pickers. -->
+                    <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                        <h2 class="min-w-0 text-base font-bold tracking-tight">
                             {{ __('Where it went') }}
                         </h2>
 
@@ -354,8 +360,10 @@ const statusText = {
                 </div>
 
                 <div :class="[CARD, 'anim p-6 sm:p-7']" style="--d: 240ms">
-                    <div class="flex items-center justify-between gap-3">
-                        <h2 class="text-base font-bold tracking-tight">{{ __('Budgets') }}</h2>
+                    <!-- Wraps for the same reason as the card above; the pickers
+                         here are the same pair. -->
+                    <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                        <h2 class="min-w-0 text-base font-bold tracking-tight">{{ __('Budgets') }}</h2>
 
                         <div class="flex items-center gap-1">
                             <!-- Month and year, not a week/month/year span: a

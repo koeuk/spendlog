@@ -258,8 +258,17 @@ function clearBudget() {
                     the common case; the selects exist for the far ones, where
                     stepping would be a dozen round trips.
                 -->
+                <!--
+                    min-w-0 so the pill is allowed to shrink at all: as a flex
+                    child it defaults to its min-content width, and the two
+                    triggers inside were fixed-width, which put the whole pill at
+                    294px against the 296px a 320px viewport leaves. It fitted by
+                    2px in English and would not have in a locale with a longer
+                    month name. Below sm the triggers share the space instead of
+                    each demanding its own; from sm they are fixed again.
+                -->
                 <div
-                    class="flex items-center gap-1 rounded-full border border-neutral-200/80 bg-white/60 p-1 backdrop-blur-xl backdrop-saturate-150 dark:border-white/10 dark:bg-neutral-900/50"
+                    class="flex min-w-0 max-w-full items-center gap-1 rounded-full border border-neutral-200/80 bg-white/60 p-1 backdrop-blur-xl backdrop-saturate-150 dark:border-white/10 dark:bg-neutral-900/50"
                 >
                     <Link
                         :href="route('budgets.index', { month: prev_month })"
@@ -272,7 +281,7 @@ function clearBudget() {
 
                     <Select :model-value="monthPart" @update:model-value="goToMonth">
                         <SelectTrigger
-                            class="h-8 w-[7.5rem] rounded-full border-0 bg-transparent px-3 text-sm font-semibold shadow-none focus-visible:ring-0 dark:bg-transparent"
+                            class="h-8 min-w-0 flex-1 rounded-full border-0 bg-transparent px-3 text-sm font-semibold shadow-none focus-visible:ring-0 sm:w-[7.5rem] sm:flex-none dark:bg-transparent"
                             :aria-label="__('Month')"
                         >
                             <SelectValue />
@@ -286,7 +295,7 @@ function clearBudget() {
 
                     <Select :model-value="yearPart" @update:model-value="goToYear">
                         <SelectTrigger
-                            class="h-8 w-[5.5rem] rounded-full border-0 bg-transparent px-3 text-sm font-semibold tabular-nums shadow-none focus-visible:ring-0 dark:bg-transparent"
+                            class="h-8 min-w-0 shrink rounded-full border-0 bg-transparent px-3 text-sm font-semibold tabular-nums shadow-none focus-visible:ring-0 sm:w-[5.5rem] sm:shrink-0 dark:bg-transparent"
                             :aria-label="__('Year')"
                         >
                             <SelectValue />

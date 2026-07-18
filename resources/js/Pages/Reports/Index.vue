@@ -6,7 +6,7 @@ import SpendingTrendChart from '@/Components/SpendingTrendChart.vue';
 import PeriodPicker from '@/Components/PeriodPicker.vue';
 import Pagination from '@/Components/Pagination.vue';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
-import { ACTIVE, CARD, CARD_TINT, EXPORT_LINK, EYEBROW, FIGURE, MUTED } from '@/lib/appStyles';
+import { ACTIVE, CARD, CARD_TINT, EXPORT_LINK, EYEBROW, FIGURE, MUTED, SEGMENT_OFF } from '@/lib/appStyles';
 import {
     ArrowDownRight,
     ArrowUpRight,
@@ -108,7 +108,7 @@ const change = computed(() => {
 
     <AuthenticatedLayout>
         <template #header>
-            <div class="flex flex-wrap items-end justify-between gap-3">
+            <div class="flex flex-wrap items-end justify-between gap-x-3 gap-y-4">
                 <div>
                     <p :class="EYEBROW">{{ series.label }}</p>
                     <h1 class="mt-1 text-3xl font-extrabold tracking-[-0.03em] sm:text-4xl">
@@ -116,38 +116,26 @@ const change = computed(() => {
                     </h1>
                 </div>
 
-                <div class="flex flex-wrap items-center gap-2">
-                    <!-- Downloads honour the period on screen, and vanish when
-                         there is nothing in it to download. -->
-                    <template v-if="!isEmpty">
-                        <a
-                            :href="exportUrl('pdf')"
-                            :class="[EXPORT_LINK, 'h-9 px-3']"
-                        >
-                            <FileText class="size-3.5" />
-                            {{ __('PDF') }}
-                        </a>
-                        <a
-                            :href="exportUrl('xlsx')"
-                            :class="[EXPORT_LINK, 'h-9 px-3']"
-                        >
-                            <FileSpreadsheet class="size-3.5" />
-                            {{ __('Excel') }}
-                        </a>
-                    </template>
+                <!--
+                    On a phone the controls are the whole width and stack in
+                    order of consequence: the granularity first, since it is
+                    what the rest of the page is a report *of*, then the
+                    narrower picker and the downloads beneath it. Wrapped as a
+                    loose cluster instead, the four of them broke into two
+                    ragged left-aligned rows with dead space beside each.
 
-<!-- All time is one span, so a one-option picker would be furniture. -->
-                    <PeriodPicker
-                        v-if="options.length > 1"
-                        :options="options"
-                        :model-value="anchor"
-                        :disabled="loading"
-                        :label="__('Period')"
-                        @update:model-value="load(granularity, $event)"
-                    />
-
+                    From sm: up they collapse back into the single trailing row
+                    the desktop header has room for.
+                -->
+                <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
+                    <!--
+                        Four equal columns on a phone rather than four
+                        text-width pills: the segments are a set of one choice,
+                        and even columns say so where "Week Month Year All"
+                        stopping two-thirds across reads as an unfinished row.
+                    -->
                     <div
-                        class="inline-flex rounded-full border border-neutral-200 bg-white/70 p-0.5 dark:border-neutral-700 dark:bg-neutral-800/70"
+                        class="grid grid-cols-4 rounded-full border border-border bg-muted p-0.5 sm:order-last sm:flex sm:w-auto"
                         role="group"
                         :aria-label="__('Period')"
                     >
@@ -155,17 +143,49 @@ const change = computed(() => {
                             v-for="option in PERIODS"
                             :key="option.key"
                             type="button"
-                            class="rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-200"
-                            :class="
-                                granularity === option.key
-                                    ? ACTIVE
-                                    : 'text-neutral-500 hover:text-neutral-900 dark:text-white dark:hover:text-white'
-                            "
+                            class="rounded-full px-3 py-2 text-xs font-semibold transition-colors duration-200 sm:py-1.5"
+                            :class="granularity === option.key ? ACTIVE : SEGMENT_OFF"
                             :aria-pressed="granularity === option.key"
                             @click="load(option.key)"
                         >
                             {{ __(option.label) }}
                         </button>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <!-- Downloads honour the period on screen, and vanish when
+                             there is nothing in it to download. -->
+                        <template v-if="!isEmpty">
+                            <a
+                                :href="exportUrl('pdf')"
+                                :class="[EXPORT_LINK, 'h-9 px-3']"
+                            >
+                                <FileText class="size-3.5" />
+                                {{ __('PDF') }}
+                            </a>
+                            <a
+                                :href="exportUrl('xlsx')"
+                                :class="[EXPORT_LINK, 'h-9 px-3']"
+                            >
+                                <FileSpreadsheet class="size-3.5" />
+                                {{ __('Excel') }}
+                            </a>
+                        </template>
+
+                        <!-- All time is one span, so a one-option picker would be
+                             furniture. Pushed to the trailing edge on a phone so
+                             the row has two anchors instead of one huddle — on a
+                             wrapper, because SearchableSelect's root is a Popover
+                             that renders no element and would drop the class. -->
+                        <div v-if="options.length > 1" class="ms-auto sm:ms-0">
+                            <PeriodPicker
+                                :options="options"
+                                :model-value="anchor"
+                                :disabled="loading"
+                                :label="__('Period')"
+                                @update:model-value="load(granularity, $event)"
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -176,11 +196,20 @@ const change = computed(() => {
             :class="loading ? 'opacity-60' : 'opacity-100'"
         >
             <!-- Headline figures -->
-            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <div :class="[CARD_TINT, 'anim p-6']" style="--d: 60ms">
+            <!--
+                Two across from the smallest width: these are four short
+                figures, and one per row turned the top of a phone into four
+                screens of scrolling before the chart. The padding and the
+                figures step down with the column so the numbers still have
+                room to breathe at ~180px wide.
+            -->
+            <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                <div :class="[CARD_TINT, 'anim p-4 sm:p-6']" style="--d: 60ms">
                     <p :class="EYEBROW">{{ __('Total spent') }}</p>
-                    <p :class="[FIGURE, 'mt-2 text-3xl']">{{ money.format(stats.total) }}</p>
-                    <p v-if="change" class="mt-2 flex items-center gap-1 text-xs font-semibold" :class="change.tone">
+                    <p :class="[FIGURE, 'mt-2 text-2xl sm:text-3xl']">{{ money.format(stats.total) }}</p>
+                    <!-- Wraps: the delta and its "vs last year" caption do not
+                         share a line in a half-width card. -->
+                    <p v-if="change" class="mt-2 flex flex-wrap items-center gap-x-1 gap-y-0.5 text-xs font-semibold" :class="change.tone">
                         <component :is="change.icon" class="size-3.5" />
                         {{ change.text }}
                         <!--
@@ -202,9 +231,9 @@ const change = computed(() => {
                     </p>
                 </div>
 
-                <div :class="[CARD, 'anim p-6']" style="--d: 100ms">
+                <div :class="[CARD, 'anim p-4 sm:p-6']" style="--d: 100ms">
                     <p :class="EYEBROW">{{ __('Daily average') }}</p>
-                    <p :class="[FIGURE, 'mt-2 text-3xl']">
+                    <p :class="[FIGURE, 'mt-2 text-2xl sm:text-3xl']">
                         {{ money.format(stats.daily_average) }}
                     </p>
                     <p :class="[MUTED, 'mt-2 text-xs font-medium']">
@@ -212,12 +241,12 @@ const change = computed(() => {
                     </p>
                 </div>
 
-                <div :class="[CARD, 'anim p-6']" style="--d: 140ms">
+                <div :class="[CARD, 'anim p-4 sm:p-6']" style="--d: 140ms">
                     <p :class="EYEBROW">{{ __('Transactions') }}</p>
-                    <p :class="[FIGURE, 'mt-2 text-3xl']">{{ stats.count }}</p>
+                    <p :class="[FIGURE, 'mt-2 text-2xl sm:text-3xl']">{{ stats.count }}</p>
                 </div>
 
-                <div :class="[CARD, 'anim p-6']" style="--d: 180ms">
+                <div :class="[CARD, 'anim p-4 sm:p-6']" style="--d: 180ms">
                     <p :class="EYEBROW">{{ __('Top category') }}</p>
                     <p v-if="breakdown.length" class="mt-2 flex items-center gap-2">
                         <span
