@@ -172,11 +172,16 @@ const statusText = {
  * costs one date calculation instead of another field on every dashboard
  * response.
  *
- * Null unless the hero is showing the real current month and a budget exists —
- * pace through a month that has already ended is not a pace, it is a result.
+ * Null without a budget: pace is measured against something, and there is
+ * nothing to measure against until one is set.
+ *
+ * No month check is needed. The hero is built from
+ * `BudgetSummary::forMonth($user, $currentMonth)` and the two month pickers
+ * further down deliberately feed `budgets`/`breakdown` instead, precisely so
+ * they cannot move it — so this is always the running month.
  */
 const pace = computed(() => {
-    if (overall.value.budget === null || overall.value.month !== props.current_month) {
+    if (overall.value.budget === null) {
         return null;
     }
 

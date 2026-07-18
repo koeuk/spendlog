@@ -205,5 +205,9 @@
     "© :year :name. All rights reserved.": "© :year :name. All rights reserved.",
     "Copyright holder": "Copyright holder",
     "Shown in the footer. Leave blank to use the app name.": "Shown in the footer. Leave blank to use the app name.",
-    "Something went wrong. Please try again.": "Something went wrong. Please try again."
+    "Something went wrong. Please try again.": "Something went wrong. Please try again.",
+    "Day :day of :days": "Day :day of :days",
+    ":amount under an even pace": ":amount under an even pace",
+    ":amount ahead of an even pace": ":amount ahead of an even pace",
+    "of a :amount daily pace": "of a :amount daily pace"
 }

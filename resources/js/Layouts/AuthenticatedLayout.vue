@@ -359,7 +359,11 @@ watch(() => page.url, () => nextTick(measurePill));
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <div class="hidden items-center gap-2 sm:flex">
+                    <!-- On the bar at every width, not folded into the burger
+                         below sm. Both are one-tap switches you flip and see the
+                         result of immediately; behind a menu each costs three
+                         taps to reach and one more to dismiss. -->
+                    <div class="flex items-center gap-2">
                         <LocaleSwitcher />
                         <ThemeToggle />
                     </div>
@@ -483,10 +487,6 @@ watch(() => page.url, () => nextTick(measurePill));
                         </ResponsiveNavLink>
                     </div>
 
-                    <div class="flex items-center gap-2 px-4 pb-1 pt-3 sm:hidden">
-                        <LocaleSwitcher />
-                        <ThemeToggle />
-                    </div>
                 </div>
             </div>
 

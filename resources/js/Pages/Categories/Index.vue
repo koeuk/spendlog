@@ -199,7 +199,7 @@ function destroy() {
                     <SearchInput
                         v-model="search"
                         :placeholder="__('Search categories…')"
-                        class="min-w-0 flex-1 sm:max-w-sm"
+                        class="min-w-0 flex-1 rounded-md bg-card sm:max-w-sm"
                     />
 
                     <!-- ms-auto, not justify-between on the row: the search box is
