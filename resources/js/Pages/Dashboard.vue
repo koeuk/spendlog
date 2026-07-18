@@ -183,15 +183,21 @@ const statusText = {
                 :class="[CARD_BRAND, 'anim space-y-3 p-6 sm:p-7']"
                 style="--d: 40ms"
             >
+                <!-- Everything here inherits --primary-foreground from
+                     CARD_BRAND. Spelling a colour out would pin it to today's
+                     fill, and the admin can change that fill to anything. The
+                     two lines separate on weight and opacity instead: the
+                     warning at full strength, the advice stepped back to 80%,
+                     which is the same "this one recedes" MUTED does on a card. -->
                 <div v-if="guidance.warning" class="flex items-start gap-3">
-                    <TriangleAlert class="mt-0.5 size-5 shrink-0 text-amber-500 dark:text-amber-400" />
-                    <p class="text-sm leading-relaxed text-amber-900 dark:text-amber-200">
+                    <TriangleAlert class="mt-0.5 size-5 shrink-0" />
+                    <p class="text-sm font-medium leading-relaxed">
                         {{ guidance.warning }}
                     </p>
                 </div>
-                <div v-if="guidance.advice" class="flex items-start gap-3">
-                    <Lightbulb class="mt-0.5 size-5 shrink-0 text-emerald-500 dark:text-emerald-400" />
-                    <p class="text-sm leading-relaxed" :class="MUTED">
+                <div v-if="guidance.advice" class="flex items-start gap-3 opacity-80">
+                    <Lightbulb class="mt-0.5 size-5 shrink-0" />
+                    <p class="text-sm leading-relaxed">
                         {{ guidance.advice }}
                     </p>
                 </div>

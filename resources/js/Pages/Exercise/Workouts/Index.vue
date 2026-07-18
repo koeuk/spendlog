@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { Head, useForm, usePage } from '@inertiajs/vue3';
 import { Dumbbell, Pencil, Plus, Timer, Trash2 } from 'lucide-vue-next';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import ExerciseBadge from '@/Components/Exercise/ExerciseBadge.vue';
 import WorkoutForm from '@/Components/Exercise/WorkoutForm.vue';
 import Pagination from '@/Components/Pagination.vue';

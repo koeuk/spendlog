@@ -96,16 +96,22 @@ export const CARD_ALERT =
  * so it has to move when an admin picks a colour instead of pinning a hue the
  * rest of the app no longer uses.
  *
- * 10% fill and a 20% edge, because --primary is a *button* fill: at full
- * strength it is a solid slab behind body copy. A tenth of it reads as a tint
- * on both themes while leaving the derived card text its contrast.
+ * The fill at full strength, the same depth the primary button wears — this
+ * block is the app talking, and a 10% wash of it read as a smudge rather than a
+ * deliberate colour. Which means every child has to take
+ * --primary-foreground: the token is *computed* for contrast against whatever
+ * fill an admin picks, so it is the only text colour guaranteed to survive a
+ * near-black default and a deep green alike. Anything spelled out here (the
+ * amber this block used to carry) is unreadable the moment the fill is dark.
+ *
+ * No backdrop blur, unlike CARD: the fill is opaque, so there is nothing behind
+ * it to bend and the filter would cost a compositor layer for no visible effect.
  *
  * No dark: variant, and no CARD_LIFT — matching ACTIVE and CARD_ALERT
  * respectively. --primary is already theme-aware, and nothing here is clickable.
  */
 export const CARD_BRAND =
-    'rounded-[28px] border border-primary/20 bg-primary/10 ' +
-    'backdrop-blur-xl backdrop-saturate-150';
+    'rounded-[28px] bg-primary text-primary-foreground';
 
 /**
  * A lighter pane for nested surfaces (modals, popovers) that sit above a card
