@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { Pencil, Plus, Trash2 } from 'lucide-vue-next';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import ExerciseBadge from '@/Components/Exercise/ExerciseBadge.vue';
 import LocaleTabs from '@/Components/LocaleTabs.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
@@ -14,7 +15,6 @@ import {
 } from '@/Components/ui/dialog';
 import { CARD, EYEBROW, MUTED, PILL_ACTION } from '@/lib/appStyles';
 import { EXERCISE_ICON_NAMES, EXERCISE_COLOR_NAMES, exerciseColor, exerciseIcon } from '@/lib/exerciseStyles';
-import { trans } from '@/lib/i18n';
 
 const props = defineProps({
     types: { type: Array, default: () => [] },
@@ -71,12 +71,35 @@ function submit() {
 
 const deleteForm = useForm({});
 
-function destroy(type) {
-    if (!window.confirm(trans('Delete this exercise?'))) {
+// The movement awaiting confirmation. Holding the row itself, not just a flag,
+// lets the prompt name what is about to go.
+const confirming = ref(null);
+const deleting = ref(null);
+
+function confirmDestroy(type) {
+    confirming.value = type;
+}
+
+function destroy() {
+    const type = confirming.value;
+
+    if (!type) {
         return;
     }
 
-    deleteForm.delete(route('exercise.types.destroy', type.uuid), { preserveScroll: true });
+    deleting.value = type.uuid;
+
+    deleteForm.delete(route('exercise.types.destroy', type.uuid), {
+        preserveScroll: true,
+        // Closed on success, not on click: a failed delete should leave the
+        // prompt up rather than vanish with the row still there.
+        onSuccess: () => {
+            confirming.value = null;
+        },
+        onFinish: () => {
+            deleting.value = null;
+        },
+    });
 }
 
 /** Grouped by muscle, so the list reads as a catalogue rather than a wall. */
@@ -291,7 +314,7 @@ const sections = computed(() => {
                                 type="button"
                                 class="grid size-8 place-items-center rounded-full text-neutral-400 transition hover:bg-red-500/10 hover:text-red-600"
                                 :aria-label="__('Delete')"
-                                @click="destroy(type)"
+                                @click="confirmDestroy(type)"
                             >
                                 <Trash2 class="size-3.5" />
                             </button>
@@ -300,5 +323,23 @@ const sections = computed(() => {
                 </ul>
             </section>
         </div>
+
+        <ConfirmDialog
+            :open="confirming !== null"
+            :title="__('Delete this movement?')"
+            :description="
+                confirming
+                    ? __('&quot;:name&quot; will be removed. Sets already logged against it are not affected.', {
+                          name: confirming.name,
+                      })
+                    : ''
+            "
+            :confirm-label="__('Delete')"
+            :cancel-label="__('Cancel')"
+            :processing="deleting !== null"
+            :processing-label="__('Deleting…')"
+            @update:open="confirming = $event ? confirming : null"
+            @confirm="destroy"
+        />
     </AuthenticatedLayout>
 </template>

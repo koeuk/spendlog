@@ -2,23 +2,10 @@
 import { computed, ref, watch } from 'vue';
 import { useForm, usePage } from '@inertiajs/vue3';
 import { Pause, Play, Plus, RotateCcw, Trash2 } from 'lucide-vue-next';
-import {
-    CalendarDate,
-    DateFormatter,
-    getLocalTimeZone,
-    today as currentDate,
-} from '@internationalized/date';
+import { getLocalTimeZone, today as currentDate } from '@internationalized/date';
 import { MUTED, PILL_ACTION } from '@/lib/appStyles';
 import { formatClock } from '@/lib/exerciseStyles';
-import { trans } from '@/lib/i18n';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
-import { Button } from '@/Components/ui/button';
-import { Calendar } from '@/Components/ui/calendar';
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from '@/Components/ui/popover';
 import { useSessionTimer } from '@/composables/useSessionTimer';
 
 const props = defineProps({
@@ -55,37 +42,6 @@ const form = useForm({
     weight_unit: unit.value,
     sets: [],
 });
-
-// Same bridge as the expense form: the form holds a plain 'YYYY-MM-DD' string,
-// the Calendar speaks CalendarDate.
-const performedOn = computed({
-    get() {
-        if (!form.performed_on) {
-            return undefined;
-        }
-
-        const [year, month, day] = form.performed_on.split('-').map(Number);
-
-        return new CalendarDate(year, month, day);
-    },
-    set(value) {
-        form.performed_on = value ? value.toString() : '';
-    },
-});
-
-const dateFormatter = new DateFormatter(
-    page.props.locale === 'km' ? 'km-KH' : 'en-GB',
-    { dateStyle: 'medium' },
-);
-
-const performedOnLabel = computed(() =>
-    performedOn.value
-        ? dateFormatter.format(performedOn.value.toDate(getLocalTimeZone()))
-        : trans('Pick a date'),
-);
-
-// A workout in the future is rejected server-side; block it in the picker too.
-const maxDate = currentDate(getLocalTimeZone());
 
 const typeByUuid = computed(
     () => new Map(props.exerciseTypes.map((type) => [type.uuid, type])),
@@ -177,18 +133,11 @@ function toggleTimer() {
     timer.toggle();
 }
 
-// Writes the clock into the duration field rather than submitting on its own —
+// Records the clock against the workout rather than submitting on its own —
 // the person may still want to add sets before saving.
 function applyTimer() {
     form.duration_seconds = timer.elapsedSeconds.value;
 }
-
-const minutes = computed({
-    get: () => (form.duration_seconds === null ? '' : Math.round(form.duration_seconds / 60)),
-    set: (value) => {
-        form.duration_seconds = value === '' || value === null ? null : Math.round(value * 60);
-    },
-});
 
 /* --- submit ----------------------------------------------------------- */
 
@@ -216,45 +165,9 @@ function submit() {
 
 <template>
     <form class="space-y-5" @submit.prevent="submit">
-        <!-- Date, duration -->
-        <div class="grid gap-4 sm:grid-cols-2">
-            <!-- Not a <label>: the trigger is a button, which a label cannot
-                 forward a click to. The span labels it instead. -->
-            <div class="block">
-                <span class="text-xs font-semibold">{{ __('Date') }}</span>
-                <Popover>
-                    <PopoverTrigger as-child>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            class="mt-1 h-10 w-full justify-start rounded-xl px-3 text-sm font-normal"
-                        >
-                            {{ performedOnLabel }}
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent class="w-auto p-0">
-                        <Calendar
-                            v-model="performedOn"
-                            :max-value="maxDate"
-                            initial-focus
-                        />
-                    </PopoverContent>
-                </Popover>
-                <p v-if="form.errors.performed_on" class="mt-1 text-xs text-red-600">
-                    {{ form.errors.performed_on }}
-                </p>
-            </div>
-
-            <label class="block">
-                <span class="text-xs font-semibold">{{ __('Duration (minutes)') }}</span>
-                <input
-                    v-model.number="minutes"
-                    type="number"
-                    min="0"
-                    class="mt-1 h-10 w-full rounded-xl border border-border bg-card/70 px-3 text-sm"
-                />
-            </label>
-        </div>
+        <!-- Date and duration have no fields of their own: the stopwatch below
+             sets both. The date is stamped when the clock starts, the duration
+             when you take the reading. -->
 
         <!-- The stopwatch. Client-side: it fills the duration field, and the
              workout is what gets saved. -->
