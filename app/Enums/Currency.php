@@ -25,18 +25,25 @@ enum Currency: string
         };
     }
 
+    /** Decimal places the price/amount columns hold. */
+    public const SCALE = 4;
+
     /**
      * Convert an entered amount into the USD value that gets stored.
      *
-     * Rounded to cents because that is what the column holds — leaving the extra
-     * precision to the decimal cast would truncate rather than round, so ៛10,000
-     * at 4100 would store 2.43 instead of 2.44.
+     * Rounded here rather than left to the decimal cast, which truncates: at two
+     * places ៛10,000 at 4100 would store 2.43 instead of 2.44.
+     *
+     * Four places, not two, because one cent is worth ~41៛ — rounding a riel
+     * amount to cents snaps it to a multiple of 41៛, so ៛100 became $0.02 and
+     * read back as ៛82. At four places the floor is ~0.4៛, finer than the
+     * smallest note in circulation.
      */
     public function toUsd(float $amount, float $khrPerUsd): float
     {
         return match ($this) {
-            self::Usd => round($amount, 2),
-            self::Khr => round($amount / $khrPerUsd, 2),
+            self::Usd => round($amount, self::SCALE),
+            self::Khr => round($amount / $khrPerUsd, self::SCALE),
         };
     }
 }

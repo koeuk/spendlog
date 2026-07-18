@@ -40,7 +40,7 @@ class Budget extends Model
     {
         return [
             'month' => 'date',
-            'amount' => 'decimal:2',
+            'amount' => 'decimal:4',
         ];
     }
 

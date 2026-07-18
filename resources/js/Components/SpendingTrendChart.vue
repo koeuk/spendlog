@@ -15,6 +15,15 @@ const props = defineProps({
     reloadKeys: { type: Array, default: () => ['trend'] },
     // The report puts the period controls in its own header instead.
     showControls: { type: Boolean, default: true },
+    /*
+     * Query params to carry through on every reload.
+     *
+     * router.get replaces the whole query string, so a page with a second
+     * control on it — the dashboard's breakdown picker — would have its param
+     * dropped here. The prop is refetched by `only`, so the card would keep its
+     * contents and then silently reset on the next full load.
+     */
+    baseQuery: { type: Object, default: () => ({}) },
 });
 
 const PERIODS = [
@@ -46,7 +55,9 @@ function load(granularity, anchor = null) {
         route(props.routeName),
         // Dropping `at` when the granularity changes: an anchor is written in
         // that granularity's own format, so a week value is meaningless to year.
-        anchor ? { trend: granularity, at: anchor } : { trend: granularity },
+        anchor
+            ? { ...props.baseQuery, trend: granularity, at: anchor }
+            : { ...props.baseQuery, trend: granularity },
         {
             only: props.reloadKeys,
             preserveState: true,

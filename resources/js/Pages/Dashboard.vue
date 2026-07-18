@@ -1,17 +1,20 @@
 <script setup>
-import { computed } from 'vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import BudgetProgress from '@/Components/BudgetProgress.vue';
 import SpendingTrendChart from '@/Components/SpendingTrendChart.vue';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
-import { CARD, CARD_TINT, EYEBROW, FIGURE, MUTED } from '@/lib/appStyles';
+import { ACTIVE, CARD, CARD_TINT, EYEBROW, FIGURE, MUTED } from '@/lib/appStyles';
+import { trans } from '@/lib/i18n';
 import { ArrowRight, Lightbulb, TriangleAlert } from 'lucide-vue-next';
 
 const props = defineProps({
     today: { type: Object, required: true },
     summary: { type: Object, required: true },
     breakdown: { type: Array, required: true },
+    // 'week' | 'month' | 'year' — which span the breakdown card is showing.
+    breakdown_period: { type: String, default: 'month' },
     trend: { type: Object, required: true },
     recent: { type: Array, required: true },
     // { warning, advice } resolved to the active locale, or null when the admin
@@ -23,6 +26,51 @@ const money = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
 });
+
+const BREAKDOWN_PERIODS = [
+    { key: 'week', label: 'Week' },
+    { key: 'month', label: 'Month' },
+    { key: 'year', label: 'Year' },
+];
+
+const breakdownLoading = ref(false);
+
+/*
+ * Reloads only the breakdown, leaving the budget and trend queries alone.
+ *
+ * The trend params ride along because router.get replaces the whole query
+ * string — without them, changing the breakdown period would drop ?trend= and
+ * the chart would spring back to its default on the next full load.
+ */
+function loadBreakdown(period) {
+    router.get(
+        route('dashboard'),
+        {
+            breakdown: period,
+            trend: props.trend.granularity,
+            ...(props.trend.anchor ? { at: props.trend.anchor } : {}),
+        },
+        {
+            only: ['breakdown', 'breakdown_period'],
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            onStart: () => (breakdownLoading.value = true),
+            onFinish: () => (breakdownLoading.value = false),
+        },
+    );
+}
+
+// The empty state names the span that came up empty, so "nothing here" does not
+// read as "you have never logged anything".
+const breakdownEmptyText = computed(
+    () =>
+        ({
+            week: trans('Nothing logged this week yet.'),
+            month: trans('Nothing logged this month yet.'),
+            year: trans('Nothing logged this year yet.'),
+        })[props.breakdown_period] ?? trans('Nothing logged yet.'),
+);
 
 function formatMonth(month) {
     const [year, m] = month.split('-').map(Number);
@@ -158,21 +206,57 @@ const statusText = {
 
             <!-- Trend: how this period is tracking, at three zoom levels -->
             <div :class="[CARD, 'anim p-6 sm:p-7']" style="--d: 150ms">
-                <SpendingTrendChart :trend="trend" />
+                <!-- Carries the breakdown period through, so changing the chart
+                     period does not reset the card beside it. -->
+                <SpendingTrendChart
+                    :trend="trend"
+                    :base-query="{ breakdown: breakdown_period }"
+                />
             </div>
 
             <!-- Breakdown + budgets -->
             <div class="grid gap-3 lg:grid-cols-2">
                 <div :class="[CARD, 'anim p-6 sm:p-7']" style="--d: 180ms">
-                    <h2 class="text-base font-bold tracking-tight">
-                        {{ __('Where it went') }}
-                    </h2>
+                    <div class="flex items-center justify-between gap-3">
+                        <h2 class="text-base font-bold tracking-tight">
+                            {{ __('Where it went') }}
+                        </h2>
+
+                        <!-- Same segmented pill the trend chart and Reports use.
+                             No "All": this card is about where money is going
+                             now, and an all-time split flattens that. -->
+                        <div
+                            class="inline-flex rounded-full border border-neutral-200 bg-white/70 p-0.5 dark:border-neutral-700 dark:bg-neutral-800/70"
+                            role="group"
+                            :aria-label="__('Period')"
+                        >
+                            <button
+                                v-for="option in BREAKDOWN_PERIODS"
+                                :key="option.key"
+                                type="button"
+                                class="rounded-full px-2.5 py-1 text-xs font-semibold transition-colors duration-200"
+                                :class="
+                                    breakdown_period === option.key
+                                        ? ACTIVE
+                                        : 'text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white'
+                                "
+                                :aria-pressed="breakdown_period === option.key"
+                                @click="loadBreakdown(option.key)"
+                            >
+                                {{ __(option.label) }}
+                            </button>
+                        </div>
+                    </div>
 
                     <p v-if="!breakdown.length" :class="[MUTED, 'py-10 text-center text-sm']">
-                        {{ __('Nothing logged this month yet.') }}
+                        {{ breakdownEmptyText }}
                     </p>
 
-                    <ul v-else class="mt-5 space-y-4">
+                    <ul
+                        v-else
+                        class="mt-5 space-y-4 transition-opacity duration-200"
+                        :class="breakdownLoading && 'opacity-50'"
+                    >
                         <li v-for="row in breakdown" :key="row.uuid">
                             <div class="mb-2 flex items-baseline justify-between gap-3 text-sm">
                                 <span class="flex min-w-0 items-center gap-2">

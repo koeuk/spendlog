@@ -18,7 +18,10 @@ return new class extends Migration
             $table->foreignId('category_id')->nullable()->constrained()->restrictOnDelete();
             // Always stored as the first day of the month it applies to.
             $table->date('month');
-            $table->decimal('amount', 10, 2);
+            // Four decimal places for the same reason as expenses.price: a
+            // budget can be entered in riel, and cent precision is coarser than
+            // the amounts being entered.
+            $table->decimal('amount', 12, 4);
             $table->timestamps();
 
             // MySQL treats NULLs as distinct in a unique index, so a plain

@@ -24,7 +24,7 @@ class BudgetController extends Controller
     {
         Gate::authorize('viewAny', Budget::class);
 
-        $month = $this->resolveMonth($request->query('month'));
+        $month = CalendarOptions::resolveMonth($request->query('month'));
 
         return Inertia::render('Budgets/Index', [
             'summary' => $this->summary->forMonth($request->user(), $month),
@@ -33,44 +33,9 @@ class BudgetController extends Controller
             'next_month' => $month->addMonth()->format('Y-m'),
             // Month names come from the server so they follow the app locale —
             // toLocaleDateString in the browser would follow the OS instead.
-            'months' => $this->monthOptions(),
-            'years' => $this->yearOptions($request->user(), $month),
+            'months' => CalendarOptions::months(),
+            'years' => CalendarOptions::years($request->user(), $month),
         ]);
-    }
-
-    /**
-     * Shared with the Expenses date filter so the two month lists cannot drift.
-     *
-     * @return array<int, array{value: string, label: string}>
-     */
-    private function monthOptions(): array
-    {
-        return CalendarOptions::months();
-    }
-
-    /**
-     * Years the user could plausibly want, drawn from their own data rather than
-     * an arbitrary range: offering 1990 when the first expense is from 2024 is
-     * just a longer list to scroll.
-     *
-     * @return array<int, int>
-     */
-    private function yearOptions(User $user, CarbonImmutable $viewing): array
-    {
-        $earliest = min(array_filter([
-            Expense::where('user_id', $user->id)->min('spent_on'),
-            Budget::where('user_id', $user->id)->min('month'),
-        ]) ?: [CarbonImmutable::now()->toDateString()]);
-
-        $first = (int) CarbonImmutable::parse($earliest)->year;
-        $last = CarbonImmutable::now()->year;
-
-        // The current month may sit outside that span — someone can navigate to
-        // next year via the arrow, and the dropdown has to be able to show it.
-        return range(
-            min($first, $viewing->year),
-            max($last, $viewing->year),
-        );
     }
 
     /**
@@ -125,16 +90,4 @@ class BudgetController extends Controller
      * Accepts 'YYYY-MM' from the query string; anything else falls back to the
      * current month rather than throwing.
      */
-    private function resolveMonth(?string $month): CarbonImmutable
-    {
-        if ($month && preg_match('/^\d{4}-\d{2}$/', $month)) {
-            try {
-                return CarbonImmutable::createFromFormat('Y-m-d', $month.'-01')->startOfMonth();
-            } catch (\Throwable) {
-                // fall through
-            }
-        }
-
-        return CarbonImmutable::now()->startOfMonth();
-    }
 }

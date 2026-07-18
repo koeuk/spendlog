@@ -136,10 +136,11 @@ export const PILL_ACTION =
  * expenses card, so the caller adds its own height and padding.
  *
  * Hover fills with ACTIVE — the same --primary the selected nav tab and the
- * chosen period segment wear. A pill this small cannot rely on an opacity step
- * (70% to solid is a change you have to already be looking for), and reusing the
- * selected-state fill means the page has one colour for "this one", whether it
- * is chosen or merely under the pointer.
+ * chosen period segment wear — and the fill rises from the bottom edge rather
+ * than cross-fading in place, so the pill reads as filling up. A pill this small
+ * cannot rely on an opacity step (70% to solid is a change you have to already
+ * be looking for), and reusing the selected-state fill means the page has one
+ * colour for "this one", whether it is chosen or merely under the pointer.
  *
  * Spelled out rather than interpolating ACTIVE: Tailwind scans source text, so
  * `hover:${ACTIVE}` would compile to classes that were never generated. The
@@ -157,8 +158,13 @@ export const PILL_ACTION =
 export const EXPORT_LINK =
     'inline-flex items-center gap-1.5 rounded-full border border-border bg-card/70 ' +
     'text-xs font-semibold text-foreground ' +
-    'transition-colors duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ' +
-    'hover:border-primary hover:bg-primary hover:text-primary-foreground hover:duration-200';
+    // The fill is a background *image* — a flat primary-to-primary gradient — so
+    // bg-card/70 stays underneath as the background *colour* and the two do not
+    // fight. Pinned to the bottom edge at zero height, it grows upward on hover.
+    'bg-[linear-gradient(to_top,var(--color-primary),var(--color-primary))] ' +
+    'bg-[length:100%_0%] bg-bottom bg-no-repeat ' +
+    'transition-[background-size,color,border-color] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ' +
+    'hover:border-primary hover:bg-[length:100%_100%] hover:text-primary-foreground hover:duration-200';
 
 /** A segmented control (Mine/Everyone, EN/KM). */
 export const SEGMENT =

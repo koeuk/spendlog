@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AppSetting;
+use App\Models\Category;
 use App\Models\Expense;
 use App\Models\User;
 use App\Services\BudgetSummary;
@@ -41,7 +42,11 @@ class DashboardController extends Controller
                 'total' => $this->todayTotal($user, $today),
             ],
             'summary' => $summary,
-            'breakdown' => $this->breakdown($summary),
+            // Its own period, independent of the budget figures above: a budget
+            // is a monthly amount, but "where it went" is just spend, so it can
+            // be asked over any span.
+            'breakdown' => $this->breakdown($request),
+            'breakdown_period' => $this->breakdownPeriod($request)->value,
             'trend' => $this->trendPayload($request),
             'recent' => $this->recent($user),
             // Admin-authored, already resolved to the active locale. Null when the
@@ -84,31 +89,66 @@ class DashboardController extends Controller
     }
 
     /**
-     * Categories that actually saw spend this month, largest first, each with
-     * its share of the month's total — that share is what the bars encode.
+     * The period the breakdown card is showing.
      *
-     * @param  array{overall: array, categories: array}  $summary
+     * A junk ?breakdown= falls back to the month rather than 500ing — it is a
+     * query string, not a form, and the month is what the card showed before it
+     * had a picker at all.
+     */
+    private function breakdownPeriod(Request $request): TrendGranularity
+    {
+        return TrendGranularity::tryFrom((string) $request->query('breakdown'))
+            ?? TrendGranularity::Month;
+    }
+
+    /**
+     * Categories that actually saw spend in the chosen period, largest first,
+     * each with its share of that period's total — the share is what the bars
+     * encode.
+     *
+     * Queried directly rather than read off the budget summary: that summary is
+     * anchored to a month by design (budgets are monthly), so deriving a weekly
+     * or yearly breakdown from it would silently keep reporting the month.
+     *
      * @return array<int, array<string, mixed>>
      */
-    private function breakdown(array $summary): array
+    private function breakdown(Request $request): array
     {
-        $total = (float) $summary['overall']['spent'];
+        [$start, $end] = $this->breakdownPeriod($request)->range(CarbonImmutable::now());
+
+        $spend = Expense::query()
+            ->where('user_id', $request->user()->id)
+            ->whereBetween('spent_on', [$start->toDateString(), $end->toDateString()])
+            ->groupBy('category_id')
+            ->selectRaw('category_id, SUM(price) as total')
+            ->pluck('total', 'category_id');
+
+        $total = (float) $spend->sum();
 
         if ($total <= 0) {
             return [];
         }
 
-        return collect($summary['categories'])
-            ->filter(fn (array $category) => $category['spent'] > 0)
+        // Only the categories that appear — an empty row would draw a zero-width
+        // bar and take a line for nothing.
+        return Category::query()
+            ->whereIn('id', $spend->keys())
+            ->get(['id', 'uuid', 'name', 'color', 'icon'])
+            ->map(function (Category $category) use ($spend, $total) {
+                $spent = (float) $spend[$category->id];
+
+                return [
+                    'uuid' => $category->uuid,
+                    // Read through the accessor, so the active locale resolves —
+                    // toArray() would hand the raw {"en":…,"km":…} to the card.
+                    'name' => $category->name,
+                    'color' => $category->color?->value,
+                    'icon' => $category->icon?->value,
+                    'spent' => round($spent, 2),
+                    'share' => round(($spent / $total) * 100, 1),
+                ];
+            })
             ->sortByDesc('spent')
-            ->map(fn (array $category) => [
-                'uuid' => $category['uuid'],
-                'name' => $category['name'],
-                'color' => $category['color'],
-                'icon' => $category['icon'],
-                'spent' => $category['spent'],
-                'share' => round(($category['spent'] / $total) * 100, 1),
-            ])
             ->values()
             ->all();
     }
