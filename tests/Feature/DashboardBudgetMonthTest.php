@@ -64,9 +64,13 @@ class DashboardBudgetMonthTest extends TestCase
         return $response->viewData('page')['props'];
     }
 
+    /**
+     * Read from `budgets`, the card's own prop — not `summary`, which belongs to
+     * the hero and is anchored to the real current month.
+     */
     private function budgetFor(TestResponse $response): float
     {
-        return (float) collect($this->props($response)['summary']['categories'])
+        return (float) collect($this->props($response)['budgets'])
             ->firstWhere('name', 'Coffee')['budget'];
     }
 
@@ -84,7 +88,20 @@ class DashboardBudgetMonthTest extends TestCase
 
         $this->assertSame('2026-06', $this->props($response)['budget_month']);
         $this->assertSame(250.0, $this->budgetFor($response));
-        $this->assertSame('2026-06', $this->props($response)['summary']['month']);
+    }
+
+    /**
+     * The hero card is labelled "this month", so it must stay on the real one.
+     *
+     * It used to read from the same `summary` this card did, so choosing June
+     * here silently rewrote the hero to June — the heading still said July while
+     * the figure beneath it reported another month.
+     */
+    public function test_choosing_a_month_does_not_move_the_hero(): void
+    {
+        $props = $this->props($this->visit('2026-06'));
+
+        $this->assertSame('2026-07', $props['summary']['month']);
     }
 
     public function test_a_junk_month_falls_back_to_the_current_one(): void

@@ -8,10 +8,13 @@ use App\Http\Resources\ExpenseResource;
 use App\Models\Expense;
 use App\Models\User;
 use App\Services\BudgetSummary;
+use App\Services\CategoryBreakdown;
+use App\Support\CalendarOptions;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 /**
  * @group Dashboard
@@ -23,7 +26,10 @@ class DashboardController extends Controller
     /** How many expenses the "recent" list returns. */
     private const RECENT_LIMIT = 8;
 
-    public function __construct(private readonly BudgetSummary $summary) {}
+    public function __construct(
+        private readonly BudgetSummary $summary,
+        private readonly CategoryBreakdown $breakdown,
+    ) {}
 
     /**
      * Home screen
@@ -41,12 +47,22 @@ class DashboardController extends Controller
      */
     public function __invoke(Request $request): JsonResponse
     {
+        // The ability is a property of the token; the policy is a property of the
+        // user. A permission revoked after a token was issued has to still bite.
+        Gate::authorize('viewDashboard');
+
         $user = $request->user();
         $today = CarbonImmutable::now();
 
+        // Each card carries its own month, matching the web Dashboard: budgets
+        // are monthly rows, and the breakdown is asked separately so pointing one
+        // at March does not drag the other with it. Both default to this month.
+        $budgetMonth = CalendarOptions::resolveMonth($request->query('budget_month'));
+        $breakdownMonth = CalendarOptions::resolveMonth($request->query('breakdown_month'));
+
         // The month totals and every budget figure come from the same service
         // the web Dashboard uses, so the two clients can never disagree.
-        $summary = $this->summary->forMonth($user, $today->startOfMonth());
+        $summary = $this->summary->forMonth($user, $budgetMonth);
 
         return response()->json([
             'data' => [
@@ -54,8 +70,13 @@ class DashboardController extends Controller
                     'date' => $today->toDateString(),
                     'total' => $this->todayTotal($user, $today),
                 ],
+                // The real current month, so a client can tell "now" apart from
+                // whichever month it happens to be browsing.
+                'current_month' => $today->format('Y-m'),
                 'summary' => new BudgetSummaryResource($summary),
-                'breakdown' => $this->breakdown($summary),
+                'budget_month' => $budgetMonth->format('Y-m'),
+                'breakdown' => $this->breakdown($user, $breakdownMonth),
+                'breakdown_month' => $breakdownMonth->format('Y-m'),
                 'recent' => ExpenseResource::collection($this->recent($user)),
             ],
         ]);
@@ -74,32 +95,23 @@ class DashboardController extends Controller
     }
 
     /**
-     * Categories that actually saw spend this month, largest first, each with
-     * its share of the month's total.
+     * Categories that saw spend in the chosen month, largest first, each with its
+     * share of that month's total.
      *
-     * @param  array{overall: array, categories: array}  $summary
+     * The figures come from the shared CategoryBreakdown service, so this and the
+     * web Dashboard cannot answer the same question differently. Only the money
+     * type is changed here: amounts are strings across this API, and the service
+     * deals in floats.
+     *
      * @return array<int, array<string, mixed>>
      */
-    private function breakdown(array $summary): array
+    private function breakdown(User $user, CarbonImmutable $month): array
     {
-        $total = (float) $summary['overall']['spent'];
-
-        if ($total <= 0) {
-            return [];
-        }
-
-        return collect($summary['categories'])
-            ->filter(fn (array $category) => $category['spent'] > 0)
-            ->sortByDesc('spent')
-            ->map(fn (array $category) => [
-                'uuid' => $category['uuid'],
-                'name' => $category['name'],
-                'color' => $category['color'],
-                'icon' => $category['icon'],
-                'spent' => number_format((float) $category['spent'], 2, '.', ''),
-                'share' => round(($category['spent'] / $total) * 100, 1),
+        return collect($this->breakdown->forMonth($user, $month))
+            ->map(fn (array $row) => [
+                ...$row,
+                'spent' => number_format((float) $row['spent'], 2, '.', ''),
             ])
-            ->values()
             ->all();
     }
 
