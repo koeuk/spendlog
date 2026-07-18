@@ -1,10 +1,11 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import ExpenseForm from '@/Components/ExpenseForm.vue';
-import { CARD } from '@/lib/appStyles';
+import { CARD, MUTED } from '@/lib/appStyles';
+import { formatRiel } from '@/lib/currency';
 import ExpenseListSkeleton from '@/Components/ExpenseListSkeleton.vue';
 import Pagination from '@/Components/Pagination.vue';
 import SearchInput from '@/Components/SearchInput.vue';
@@ -258,6 +259,11 @@ const money = new Intl.NumberFormat('en-US', {
     currency: 'USD',
 });
 
+const khrPerUsd = computed(() => Number(usePage().props.khr_per_usd) || 4100);
+
+// Prices are stored in USD; this is the same figure shown in riel beside them.
+const riel = (usd) => formatRiel(usd, khrPerUsd.value);
+
 const dayFormatter = new Intl.DateTimeFormat('en-US', {
     weekday: 'short',
     month: 'short',
@@ -429,6 +435,12 @@ const filtered = computed(() =>
                         </h3>
                         <span class="text-sm font-semibold text-gray-800 dark:text-neutral-100">
                             {{ money.format(day.total) }}
+                            <!-- Stored totals are USD; riel trails them at
+                                 today's rate rather than reading as a second
+                                 total of its own. -->
+                            <span class="text-xs font-normal" :class="MUTED">
+                                {{ riel(day.total) }}
+                            </span>
                         </span>
                     </div>
 
@@ -467,8 +479,16 @@ const filtered = computed(() =>
                                 </p>
                             </div>
 
-                            <span class="text-sm tabular-nums text-gray-900 dark:text-neutral-100">
-                                {{ money.format(expense.price) }}
+                            <!-- Stacked rather than inline: this column is narrow
+                                 and sits between the item and the row actions, so
+                                 a second figure beside it would crowd both. -->
+                            <span class="shrink-0 text-right tabular-nums">
+                                <span class="block text-sm text-gray-900 dark:text-neutral-100">
+                                    {{ money.format(expense.price) }}
+                                </span>
+                                <span class="block text-xs" :class="MUTED">
+                                    {{ riel(expense.price) }}
+                                </span>
                             </span>
 
                             <div
