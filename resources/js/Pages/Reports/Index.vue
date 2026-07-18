@@ -6,7 +6,7 @@ import SpendingTrendChart from '@/Components/SpendingTrendChart.vue';
 import PeriodPicker from '@/Components/PeriodPicker.vue';
 import Pagination from '@/Components/Pagination.vue';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
-import { ACTIVE, CARD, CARD_TINT, EYEBROW, FIGURE, MUTED } from '@/lib/appStyles';
+import { ACTIVE, CARD, CARD_TINT, EXPORT_LINK, EYEBROW, FIGURE, MUTED } from '@/lib/appStyles';
 import {
     ArrowDownRight,
     ArrowUpRight,
@@ -122,14 +122,14 @@ const change = computed(() => {
                     <template v-if="!isEmpty">
                         <a
                             :href="exportUrl('pdf')"
-                            class="inline-flex h-9 items-center gap-1.5 rounded-full border border-neutral-200 bg-white/70 px-3 text-xs font-semibold text-neutral-700 transition hover:bg-white dark:border-neutral-700 dark:bg-neutral-800/70 dark:text-neutral-200 dark:hover:bg-neutral-800"
+                            :class="[EXPORT_LINK, 'h-9 px-3']"
                         >
                             <FileText class="size-3.5" />
                             {{ __('PDF') }}
                         </a>
                         <a
                             :href="exportUrl('xlsx')"
-                            class="inline-flex h-9 items-center gap-1.5 rounded-full border border-neutral-200 bg-white/70 px-3 text-xs font-semibold text-neutral-700 transition hover:bg-white dark:border-neutral-700 dark:bg-neutral-800/70 dark:text-neutral-200 dark:hover:bg-neutral-800"
+                            :class="[EXPORT_LINK, 'h-9 px-3']"
                         >
                             <FileSpreadsheet class="size-3.5" />
                             {{ __('Excel') }}
@@ -362,14 +362,14 @@ const change = computed(() => {
                     <div v-if="expenses.data.length" class="flex items-center gap-1">
                         <a
                             :href="exportUrl('pdf', 'expenses')"
-                            class="inline-flex h-8 items-center gap-1.5 rounded-full border border-neutral-200 bg-white/70 px-2.5 text-xs font-semibold text-neutral-700 transition hover:bg-white dark:border-neutral-700 dark:bg-neutral-800/70 dark:text-neutral-200 dark:hover:bg-neutral-800"
+                            :class="[EXPORT_LINK, 'h-8 px-2.5']"
                         >
                             <FileText class="size-3.5" />
                             {{ __('PDF') }}
                         </a>
                         <a
                             :href="exportUrl('xlsx', 'expenses')"
-                            class="inline-flex h-8 items-center gap-1.5 rounded-full border border-neutral-200 bg-white/70 px-2.5 text-xs font-semibold text-neutral-700 transition hover:bg-white dark:border-neutral-700 dark:bg-neutral-800/70 dark:text-neutral-200 dark:hover:bg-neutral-800"
+                            :class="[EXPORT_LINK, 'h-8 px-2.5']"
                         >
                             <FileSpreadsheet class="size-3.5" />
                             {{ __('Excel') }}

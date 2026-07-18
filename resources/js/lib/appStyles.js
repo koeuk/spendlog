@@ -128,6 +128,28 @@ export const FIGURE =
 export const PILL_ACTION =
     'h-10 rounded-full px-4 text-sm font-semibold active:translate-y-0 active:scale-[0.99]';
 
+/**
+ * A quiet outline pill for a secondary action beside a heading — the PDF and
+ * Excel downloads on Reports.
+ *
+ * Sizeless: the page header uses a taller pill than the one tucked into the
+ * expenses card, so the caller adds its own height and padding.
+ *
+ * The hover is eased on the same curve as CARD_LIFT, and asymmetric for the same
+ * reason: it arrives in 200ms and leaves over 300, so the fill settles in rather
+ * than snapping between two greys on a 150ms linear ramp. Tailwind's bare
+ * `transition` is that ramp, and on a change this subtle — bg-card/70 to a solid
+ * fill — the eye reads the snap before it reads the colour.
+ *
+ * transition-colors, not transition-all: only the fill moves, and animating
+ * everything would drag the backdrop blur behind it on every pointer pass.
+ */
+export const EXPORT_LINK =
+    'inline-flex items-center gap-1.5 rounded-full border border-border bg-card/70 ' +
+    'text-xs font-semibold text-foreground ' +
+    'transition-colors duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ' +
+    'hover:bg-card hover:duration-200';
+
 /** A segmented control (Mine/Everyone, EN/KM). */
 export const SEGMENT =
     'inline-flex rounded-full border border-border bg-muted p-0.5';
