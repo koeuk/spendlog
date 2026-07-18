@@ -8,6 +8,7 @@ import ExerciseBadge from '@/Components/Exercise/ExerciseBadge.vue';
 import VolumeTrendChart from '@/Components/Exercise/VolumeTrendChart.vue';
 import { CARD, CARD_TINT, EYEBROW, FIGURE, MUTED, PILL_ACTION } from '@/lib/appStyles';
 import { exerciseColor, formatDuration, formatWeight } from '@/lib/exerciseStyles';
+import { trans } from '@/lib/i18n';
 
 const props = defineProps({
     summary: { type: Object, required: true },
@@ -67,25 +68,25 @@ function parts(value) {
 const cards = computed(() => [
     {
         key: 'sessions',
-        label: __('Sessions'),
+        label: trans('Sessions'),
         value: props.summary.sessions,
         icon: Dumbbell,
     },
     {
         key: 'volume',
-        label: __('Volume'),
+        label: trans('Volume'),
         value: formatWeight(props.summary.volume_kg, unit.value),
         icon: Layers,
     },
     {
         key: 'time',
-        label: __('Time'),
+        label: trans('Time'),
         value: formatDuration(props.summary.duration_seconds),
         icon: Timer,
     },
     {
         key: 'sets',
-        label: __('Sets'),
+        label: trans('Sets'),
         value: props.summary.sets,
         icon: Trophy,
     },
