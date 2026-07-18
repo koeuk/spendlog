@@ -145,7 +145,7 @@ class ExpenseController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
 
-// getMessage() on a QueryException is the SQLSTATE, the whole
+            // getMessage() on a QueryException is the SQLSTATE, the whole
             // parameterised query and its bound values. That is a log entry,
             // not something to flash at whoever clicked the button.
             report($e);
@@ -173,7 +173,7 @@ class ExpenseController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
 
-// getMessage() on a QueryException is the SQLSTATE, the whole
+            // getMessage() on a QueryException is the SQLSTATE, the whole
             // parameterised query and its bound values. That is a log entry,
             // not something to flash at whoever clicked the button.
             report($e);
@@ -197,7 +197,7 @@ class ExpenseController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
 
-// getMessage() on a QueryException is the SQLSTATE, the whole
+            // getMessage() on a QueryException is the SQLSTATE, the whole
             // parameterised query and its bound values. That is a log entry,
             // not something to flash at whoever clicked the button.
             report($e);
