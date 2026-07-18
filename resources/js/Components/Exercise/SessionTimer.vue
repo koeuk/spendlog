@@ -146,47 +146,89 @@ const editable = computed(() => !timer.running.value && !done.value);
             </button>
         </div>
 
-        <!-- Set the length. Hidden mid-countdown, where the fields would be
-             showing something other than what is on the clock. -->
-        <div v-if="editable" class="flex w-full flex-wrap items-center gap-3">
-            <div class="flex items-center gap-1.5">
-                <label class="sr-only" for="rest_minutes">{{ __('Minutes') }}</label>
-                <input
-                    id="rest_minutes"
-                    v-model="mins"
-                    type="number"
-                    min="0"
-                    max="59"
-                    inputmode="numeric"
-                    class="h-9 w-14 rounded-xl border border-border bg-card/70 px-2 text-center text-sm tabular-nums"
-                />
-                <span class="text-xs font-semibold" :class="MUTED">{{ __('min') }}</span>
+        <!-- Set the length. Hidden mid-countdown, where these would be offering
+             a length other than the one on the clock. -->
+        <div v-if="editable" class="flex w-full flex-wrap items-center gap-1.5">
+            <button
+                v-for="preset in PRESETS"
+                :key="preset"
+                type="button"
+                class="h-8 rounded-full border border-border px-3 text-xs font-semibold tabular-nums transition hover:bg-muted"
+                :class="timer.duration.value === preset ? 'bg-primary text-primary-foreground' : ''"
+                @click="setDuration(preset)"
+            >
+                {{ formatClock(preset) }}
+            </button>
 
-                <label class="sr-only" for="rest_seconds">{{ __('Seconds') }}</label>
-                <input
-                    id="rest_seconds"
-                    v-model="secs"
-                    type="number"
-                    min="0"
-                    max="59"
-                    inputmode="numeric"
-                    class="h-9 w-14 rounded-xl border border-border bg-card/70 px-2 text-center text-sm tabular-nums"
-                />
-                <span class="text-xs font-semibold" :class="MUTED">{{ __('sec') }}</span>
-            </div>
-
-            <div class="flex flex-wrap items-center gap-1.5">
-                <button
-                    v-for="preset in PRESETS"
-                    :key="preset"
-                    type="button"
-                    class="h-8 rounded-full border border-border px-3 text-xs font-semibold tabular-nums transition hover:bg-muted"
-                    :class="timer.duration.value === preset ? 'bg-primary text-primary-foreground' : ''"
-                    @click="showDuration(preset)"
-                >
-                    {{ formatClock(preset) }}
-                </button>
-            </div>
+            <!-- Anything off the presets. A dialog rather than two more fields
+                 on the card: this is the rare case, and the card is read at a
+                 glance mid-session. -->
+            <button
+                type="button"
+                class="h-8 rounded-full border border-border px-3 text-xs font-semibold transition hover:bg-muted"
+                :class="PRESETS.includes(timer.duration.value) ? '' : 'bg-primary text-primary-foreground'"
+                @click="openCustom()"
+            >
+                {{ __('Custom') }}
+            </button>
         </div>
+
+        <Dialog v-model:open="customOpen">
+            <DialogContent class="sm:max-w-xs">
+                <DialogHeader>
+                    <DialogTitle>{{ __('Rest length') }}</DialogTitle>
+                    <DialogDescription>
+                        {{ __('How long between sets.') }}
+                    </DialogDescription>
+                </DialogHeader>
+
+                <form class="flex items-end justify-center gap-2 py-2" @submit.prevent="applyCustom">
+                    <div>
+                        <label class="text-xs font-semibold" for="rest_minutes">
+                            {{ __('Minutes') }}
+                        </label>
+                        <input
+                            id="rest_minutes"
+                            v-model="mins"
+                            type="number"
+                            min="0"
+                            max="59"
+                            inputmode="numeric"
+                            class="mt-1 h-11 w-20 rounded-xl border border-border bg-card/70 px-2 text-center text-lg font-bold tabular-nums"
+                        />
+                    </div>
+
+                    <span class="pb-3 text-lg font-bold" :class="MUTED">:</span>
+
+                    <div>
+                        <label class="text-xs font-semibold" for="rest_seconds">
+                            {{ __('Seconds') }}
+                        </label>
+                        <input
+                            id="rest_seconds"
+                            v-model="secs"
+                            type="number"
+                            min="0"
+                            max="59"
+                            inputmode="numeric"
+                            class="mt-1 h-11 w-20 rounded-xl border border-border bg-card/70 px-2 text-center text-lg font-bold tabular-nums"
+                        />
+                    </div>
+                </form>
+
+                <!-- Shows what will actually be set, after the 5s–59:59 clamp,
+                     rather than letting a typo surprise you on start. -->
+                <p class="text-center text-xs font-semibold" :class="MUTED">
+                    {{ __('Rest of :length', { length: formatClock(draftSeconds) }) }}
+                </p>
+
+                <DialogFooter>
+                    <Button type="button" variant="outline" @click="customOpen = false">
+                        {{ __('Cancel') }}
+                    </Button>
+                    <Button type="button" @click="applyCustom()">{{ __('Set') }}</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </div>
 </template>
