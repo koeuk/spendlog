@@ -43,6 +43,16 @@ const props = defineProps({
 const monthPart = computed(() => props.month.split('-')[1]);
 const yearPart = computed(() => props.month.split('-')[0]);
 
+// Only categories the user actually spent in this month — the long tail of
+// untouched categories is noise on this page. A category with a budget set but
+// no spend still shows, so that budget stays visible and clearable rather than
+// vanishing off the page.
+const visibleCategories = computed(() =>
+    props.summary.categories.filter(
+        (category) => category.spent > 0 || category.budget !== null,
+    ),
+);
+
 function visit(month) {
     router.get(route('budgets.index', { month }), {}, {
         preserveScroll: true,
@@ -329,9 +339,16 @@ function clearBudget() {
                         </li>
                     </ul>
 
+                    <p
+                        v-else-if="visibleCategories.length === 0"
+                        class="px-5 py-8 text-center text-sm text-gray-400 dark:text-neutral-500"
+                    >
+                        {{ __('Nothing spent this month yet.') }}
+                    </p>
+
                     <ul v-else class="divide-y divide-gray-100 dark:divide-neutral-800">
                         <li
-                            v-for="category in summary.categories"
+                            v-for="category in visibleCategories"
                             :key="category.uuid"
                             class="px-5 py-4"
                         >

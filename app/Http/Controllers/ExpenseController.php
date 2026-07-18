@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Permission;
+use App\Enums\TrendGranularity;
 use App\Http\Requests\ExpenseRequest;
 use App\Models\Category;
-use App\Enums\Permission;
 use App\Models\Expense;
-use App\Support\TranslatableQuery;
 use App\Models\User;
 use App\Support\Concerns\PaginatesLists;
+use App\Support\TranslatableQuery;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -63,6 +65,17 @@ class ExpenseController extends Controller
             $query->where('user_id', $request->user()->id);
         }
 
+        // A junk ?period= falls back to "all" rather than 500ing — it is a query
+        // string, not a form. Computed server-side off "now", so "this month"
+        // stays correct across a day boundary without the client re-deriving it.
+        $period = TrendGranularity::tryFrom((string) $request->query('period'))
+            ?? TrendGranularity::All;
+
+        if ($period !== TrendGranularity::All) {
+            [$start, $end] = $this->periodRange($period);
+            $query->whereBetween('spent_on', [$start->toDateString(), $end->toDateString()]);
+        }
+
         $expenses = $query->paginate($this->perPage($request))->withQueryString();
 
         return Inertia::render('Expenses/Index', [
@@ -72,6 +85,8 @@ class ExpenseController extends Controller
             // only() is a JSON array, and filters.filter then resolves to
             // Array.prototype.filter instead of undefined.
             'filters' => (object) $request->only('filter', 'sort'),
+            // Seeds the date dropdown so it reflects the active period on reload.
+            'period' => $period->value,
             'scope' => $viewingAll ? 'all' : 'mine',
             'can' => [
                 'view_all' => $isAdmin,

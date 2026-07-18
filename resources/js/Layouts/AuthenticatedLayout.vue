@@ -75,10 +75,10 @@ const can = (permission) => granted.value.includes(permission);
 const links = computed(() =>
     [
         { label: 'Dashboard', route: 'dashboard', active: 'dashboard', permission: 'dashboard.view' },
+        { label: 'Categories', route: 'categories.index', active: 'categories.*', permission: 'categories.view' },
         { label: 'Expenses', route: 'expenses.index', active: 'expenses.*', permission: 'expenses.view' },
         { label: 'Budgets', route: 'budgets.index', active: 'budgets.*', permission: 'budgets.view' },
         { label: 'Reports', route: 'reports.index', active: 'reports.*', permission: 'reports.view' },
-        { label: 'Categories', route: 'categories.index', active: 'categories.*', permission: 'categories.view' },
     ].filter((link) => can(link.permission)),
 );
 
