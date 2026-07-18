@@ -34,6 +34,14 @@ return Application::configure(basePath: dirname(__DIR__))
         // Laravel 11+, so without this the API would be unthrottled.
         $middleware->throttleApi();
 
+        // The same status guard as the web group. A token carries abilities but
+        // not status, so without a checkpoint here a suspended account's phone
+        // keeps working indefinitely — the login check alone only covers clients
+        // that come back for a new token.
+        $middleware->api(append: [
+            EnsureUserIsActive::class,
+        ]);
+
         // Sanctum ships these but registers no aliases in Laravel 11+, so
         // 'abilities:...' on a route resolves to nothing without this.
         $middleware->alias([

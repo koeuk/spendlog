@@ -142,6 +142,14 @@ class UserController extends Controller
 
             $user->save();
 
+            // The edit form can change status just as changeStatus() can, so it
+            // owes the same cleanup. Without this, suspending someone from this
+            // form left their tokens alive: the web session dies at the next
+            // request, but a phone would keep working.
+            if ($user->status->revokesAccess()) {
+                $user->tokens()->delete();
+            }
+
             if ($roleChanged) {
                 // Resets to the new role's defaults. Keeping the old set would
                 // leave an ex-admin holding admin permissions with a user badge.

@@ -21,21 +21,43 @@ class EnsureUserIsActive
     {
         $user = $request->user();
 
-        if ($user && ! $user->status->canSignIn()) {
-            $message = $user->status->signInError();
-
-            Auth::guard('web')->logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-
-            // Tokens are revoked too, or a suspended user's phone keeps working.
-            $user->tokens()->delete();
-
-            return redirect()
-                ->route('login')
-                ->withErrors(['email' => $message]);
+        if (! $user || $user->status->canSignIn()) {
+            return $next($request);
         }
 
-        return $next($request);
+        $message = $user->status->signInError();
+
+        // Tokens are revoked on either surface, or a suspended user's phone
+        // keeps working. This is the only checkpoint a token-only client ever
+        // reaches: status is not carried on the token, so nothing further down
+        // the stack would notice.
+        $user->tokens()->delete();
+
+        /*
+         * A token client has no session to invalidate and nowhere to be
+         * redirected to — a 302 to /login would be parsed as a successful
+         * response body. It gets the same refusal the login endpoint gives.
+         */
+        if ($this->isTokenRequest($request)) {
+            return response()->json(['message' => $message], 403);
+        }
+
+        Auth::guard('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()
+            ->route('login')
+            ->withErrors(['email' => $message]);
+    }
+
+    /**
+     * Session requests carry a session; token requests do not. Checking the
+     * session rather than expectsJson() keeps an Inertia XHR — which does want
+     * JSON — on the redirect path where it belongs.
+     */
+    private function isTokenRequest(Request $request): bool
+    {
+        return ! $request->hasSession() || $request->user()?->currentAccessToken() !== null;
     }
 }
