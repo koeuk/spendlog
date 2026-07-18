@@ -51,7 +51,16 @@ class CategoryRequest extends FormRequest
 
     /**
      * Rule::unique cannot target a key inside a JSON column, so uniqueness per
-     * locale is checked with whereJsonContains instead.
+     * locale is checked by hand.
+     *
+     * Compared case-insensitively, and not with whereJsonContains: that compiles
+     * to JSON_CONTAINS, which MySQL evaluates under a binary collation, so
+     * "food" did not match "Food" here — while the inline category picker on the
+     * expense form, which uses the LOWER() comparison below, considered them the
+     * same name. Categories are shared by everyone, so the disagreement was
+     * enough to split one real category into two rows, each able to hold its own
+     * budget for the same month, with no merge tool and no way to delete either
+     * once it had expenses.
      */
     private function uniqueIn(string $locale): \Closure
     {
@@ -60,8 +69,17 @@ class CategoryRequest extends FormRequest
                 return;
             }
 
+            // The JSON path has to be a literal — MySQL will not take it as a
+            // bound parameter. $locale is not user input: it comes from the
+            // Locale enum via the caller, and is asserted here so it can never
+            // become one.
+            $path = Locale::from($locale)->value;
+
             $exists = Category::query()
-                ->whereJsonContains("name->{$locale}", $value)
+                ->whereRaw(
+                    'LOWER(JSON_UNQUOTE(JSON_EXTRACT(name, "$.'.$path.'"))) = ?',
+                    [mb_strtolower($value)],
+                )
                 ->when(
                     $this->route('category'),
                     fn ($query, Category $category) => $query->whereKeyNot($category->getKey()),
