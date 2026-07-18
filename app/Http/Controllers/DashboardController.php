@@ -33,14 +33,20 @@ class DashboardController extends Controller
         $user = $request->user();
         $today = CarbonImmutable::now();
 
-        // Which month's budgets the card is showing. A budget is a monthly
-        // amount, so the filter picks a month rather than a span the way the
-        // breakdown's does.
+        /*
+         * Each card below picks its own month, and none of them may move the
+         * hero: that card is labelled "this month", so it is anchored to the
+         * real one. Reading it off whichever month a card happened to be
+         * filtered to would retitle nothing and silently show another month's
+         * numbers under the same heading.
+         */
+        $currentMonth = $today->startOfMonth();
         $budgetMonth = CalendarOptions::resolveMonth($request->query('budget_month'));
+        $breakdownMonth = CalendarOptions::resolveMonth($request->query('breakdown_month'));
 
         // The month totals and every budget figure come from the same service the
         // Budgets page uses, so the two screens can never disagree.
-        $summary = $this->summary->forMonth($user, $budgetMonth);
+        $summary = $this->summary->forMonth($user, $currentMonth);
 
         return Inertia::render('Dashboard', [
             'today' => [
@@ -52,16 +58,19 @@ class DashboardController extends Controller
             // month whose spend it is not showing would be a lie.
             'current_month' => $today->format('Y-m'),
             'summary' => $summary,
+            // The Budgets card's own rows, for its own month — kept apart from
+            // `summary` so choosing a month here cannot move the hero.
+            'budgets' => $this->summary->forMonth($user, $budgetMonth)['categories'],
             'budget_month' => $budgetMonth->format('Y-m'),
             // Names come from the server so they follow the app locale, and from
             // the same source as the Budgets page so the lists cannot drift.
             'budget_months' => CalendarOptions::months(),
             'budget_years' => CalendarOptions::years($user, $budgetMonth),
-            // Its own period, independent of the budget figures above: a budget
-            // is a monthly amount, but "where it went" is just spend, so it can
-            // be asked over any span.
-            'breakdown' => $this->breakdown($request),
-            'breakdown_period' => $this->breakdownPeriod($request)->value,
+            // Its own month, independent of both the hero and the budget card.
+            'breakdown' => $this->breakdown($user, $breakdownMonth),
+            'breakdown_month' => $breakdownMonth->format('Y-m'),
+            'breakdown_months' => CalendarOptions::months(),
+            'breakdown_years' => CalendarOptions::years($user, $breakdownMonth),
             'trend' => $this->trendPayload($request),
             'recent' => $this->recent($user),
             // Admin-authored, already resolved to the active locale. Null when the
@@ -104,36 +113,23 @@ class DashboardController extends Controller
     }
 
     /**
-     * The period the breakdown card is showing.
-     *
-     * A junk ?breakdown= falls back to the month rather than 500ing — it is a
-     * query string, not a form, and the month is what the card showed before it
-     * had a picker at all.
-     */
-    private function breakdownPeriod(Request $request): TrendGranularity
-    {
-        return TrendGranularity::tryFrom((string) $request->query('breakdown'))
-            ?? TrendGranularity::Month;
-    }
-
-    /**
-     * Categories that actually saw spend in the chosen period, largest first,
-     * each with its share of that period's total — the share is what the bars
+     * Categories that actually saw spend in the chosen month, largest first,
+     * each with its share of that month's total — the share is what the bars
      * encode.
      *
-     * Queried directly rather than read off the budget summary: that summary is
-     * anchored to a month by design (budgets are monthly), so deriving a weekly
-     * or yearly breakdown from it would silently keep reporting the month.
+     * Queried directly rather than read off the budget summary, so this card can
+     * be pointed at any month without dragging the hero's figures along with it.
      *
      * @return array<int, array<string, mixed>>
      */
-    private function breakdown(Request $request): array
+    private function breakdown(User $user, CarbonImmutable $month): array
     {
-        [$start, $end] = $this->breakdownPeriod($request)->range(CarbonImmutable::now());
-
         $spend = Expense::query()
-            ->where('user_id', $request->user()->id)
-            ->whereBetween('spent_on', [$start->toDateString(), $end->toDateString()])
+            ->where('user_id', $user->id)
+            ->whereBetween('spent_on', [
+                $month->startOfMonth()->toDateString(),
+                $month->endOfMonth()->toDateString(),
+            ])
             ->groupBy('category_id')
             ->selectRaw('category_id, SUM(price) as total')
             ->pluck('total', 'category_id');

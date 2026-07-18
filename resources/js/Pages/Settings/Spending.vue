@@ -7,6 +7,13 @@ import { Checkbox } from '@/Components/ui/checkbox';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
 import { Textarea } from '@/Components/ui/textarea';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/Components/ui/select';
 import { MUTED } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
 
@@ -14,6 +21,9 @@ const props = defineProps({
     // { enabled, warning: {en?, km?}, advice: {en?, km?} } — the translatable
     // fields arrive as raw JSON maps, exactly like category.name.
     spending: { type: Object, required: true },
+    // [{ value: 'USD', label: '$ USD' }, …] — built server-side so the page
+    // does not have to know the symbol for each currency.
+    currencies: { type: Array, default: () => [] },
 });
 
 // Both locales are always present on the form, so a language never goes missing
@@ -29,6 +39,7 @@ const form = useForm({
         km: props.spending.advice?.km ?? '',
     },
     khr_per_usd: props.spending.khr_per_usd,
+    default_currency: props.spending.default_currency,
 });
 
 function submit() {
@@ -130,6 +141,37 @@ function submit() {
                 </div>
                 <p v-if="form.errors.khr_per_usd" class="mt-1 text-sm text-red-600 dark:text-red-400">
                     {{ form.errors.khr_per_usd }}
+                </p>
+            </div>
+
+            <div>
+                <Label for="default_currency" class="text-sm font-semibold">
+                    {{ __('Default currency') }}
+                </Label>
+                <p class="text-xs" :class="MUTED">
+                    {{ __('Which currency the amount fields start on. Amounts are always stored in US dollars — this only saves retoggling when most spending is in one currency.') }}
+                </p>
+                <div class="mt-2">
+                    <Select
+                        :model-value="form.default_currency"
+                        @update:model-value="form.default_currency = $event"
+                    >
+                        <SelectTrigger id="default_currency" class="max-w-40">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem
+                                v-for="currency in currencies"
+                                :key="currency.value"
+                                :value="currency.value"
+                            >
+                                {{ currency.label }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <p v-if="form.errors.default_currency" class="mt-1 text-sm text-red-600 dark:text-red-400">
+                    {{ form.errors.default_currency }}
                 </p>
             </div>
 
