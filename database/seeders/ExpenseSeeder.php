@@ -36,8 +36,8 @@ use Illuminate\Support\Str;
  */
 class ExpenseSeeder extends Seeder
 {
-    /** Expenses to create per user, per year. */
-    private const PER_YEAR = 238;
+    /** Expenses to create per user, across the whole range. */
+    private const TOTAL = 245;
 
     /** Inclusive range of years to fill. */
     private const FIRST_YEAR = 2024;
@@ -102,10 +102,11 @@ class ExpenseSeeder extends Seeder
 
         $rows = [];
         $written = 0;
+        $allocation = $this->allocation();
 
         foreach ($users as $user) {
-            foreach (range(self::FIRST_YEAR, self::LAST_YEAR) as $year) {
-                foreach ($this->yearRows($user, $year, $categoryIds) as $row) {
+            foreach ($allocation as $year => $count) {
+                foreach ($this->yearRows($user, $year, $categoryIds, $count) as $row) {
                     $rows[] = $row;
 
                     if (count($rows) >= self::CHUNK) {
@@ -123,12 +124,77 @@ class ExpenseSeeder extends Seeder
         }
 
         $this->command?->info(sprintf(
-            'ExpenseSeeder: %d expenses across %d users, %d–%d.',
+            'ExpenseSeeder: %d expenses across %d users, %d–%d (%d each).',
             $written,
             $users->count(),
             self::FIRST_YEAR,
             self::LAST_YEAR,
+            self::TOTAL,
         ));
+    }
+
+    /**
+     * TOTAL split across the years, in proportion to how much of each has
+     * actually elapsed.
+     *
+     * An even split would hand the current year a full year's rows to fit into a
+     * part-finished one, making the months to date read denser than the two
+     * complete years behind them — the opposite of what the data should look
+     * like. Weighting by elapsed days keeps the rate flat across the whole range.
+     *
+     * Apportioned by largest remainder, so the parts sum to exactly TOTAL rather
+     * than to TOTAL minus whatever the rounding dropped.
+     *
+     * @return array<int, int> year => row count
+     */
+    private function allocation(): array
+    {
+        $now = CarbonImmutable::now()->startOfDay();
+        $days = [];
+
+        foreach (range(self::FIRST_YEAR, self::LAST_YEAR) as $year) {
+            $start = CarbonImmutable::create($year, 1, 1);
+
+            // A year entirely in the future gets nothing: ExpenseRequest rejects
+            // future dates, so there is no day in it a row could legally land on.
+            if ($start->isAfter($now)) {
+                $days[$year] = 0;
+
+                continue;
+            }
+
+            $end = $start->endOfYear()->startOfDay();
+            $days[$year] = (int) $start->diffInDays($end->isAfter($now) ? $now : $end) + 1;
+        }
+
+        $totalDays = array_sum($days);
+
+        if ($totalDays === 0) {
+            return [];
+        }
+
+        $counts = [];
+        $remainders = [];
+
+        foreach ($days as $year => $dayCount) {
+            $exact = self::TOTAL * $dayCount / $totalDays;
+            $counts[$year] = (int) floor($exact);
+            $remainders[$year] = $exact - $counts[$year];
+        }
+
+        // Hand the rows lost to flooring to the years with the largest fractional
+        // parts, one each, until the total is whole again.
+        arsort($remainders);
+
+        $short = self::TOTAL - array_sum($counts);
+
+        foreach (array_slice(array_keys($remainders), 0, $short) as $year) {
+            $counts[$year]++;
+        }
+
+        ksort($counts);
+
+        return $counts;
     }
 
     /**
@@ -137,7 +203,7 @@ class ExpenseSeeder extends Seeder
      * @param  \Illuminate\Support\Collection<string, int>  $categoryIds
      * @return array<int, array<string, mixed>>
      */
-    private function yearRows(User $user, int $year, $categoryIds): array
+    private function yearRows(User $user, int $year, $categoryIds, int $count): array
     {
         /*
          * Seeded per (user, year) so the data is reproducible. Without this, every
@@ -164,10 +230,12 @@ class ExpenseSeeder extends Seeder
         $rows = [];
 
         // The current year reserves two of its allocation for today's rows below,
-        // so every year lands on exactly PER_YEAR rather than the current one
-        // quietly running two over.
+        // so the range lands on exactly TOTAL rather than quietly running two
+        // over. Guarded, because a small TOTAL can allocate the current year
+        // fewer than the two rows being reserved.
         $isCurrentYear = $year === (int) $now->year;
-        $random = self::PER_YEAR - ($isCurrentYear ? 2 : 0);
+        $reserved = $isCurrentYear ? min(2, $count) : 0;
+        $random = $count - $reserved;
 
         for ($i = 0; $i < $random; $i++) {
             [$name, , $min, $max, $items] = $weighted[mt_rand(0, count($weighted) - 1)];
@@ -186,9 +254,13 @@ class ExpenseSeeder extends Seeder
 
         // Guarantee something today for the current year, so the dashboard's
         // "spent today" is populated the moment the seed finishes.
-        if ($isCurrentYear) {
-            $rows[] = $this->row($user->id, $categoryIds['Coffee'] ?? $categoryIds->first(), 'Morning coffee', 2.50, $now);
-            $rows[] = $this->row($user->id, $categoryIds['Food'] ?? $categoryIds->first(), 'Lunch', 6.75, $now);
+        $today = [
+            ['Coffee', 'Morning coffee', 2.50],
+            ['Food', 'Lunch', 6.75],
+        ];
+
+        foreach (array_slice($today, 0, $reserved) as [$name, $item, $price]) {
+            $rows[] = $this->row($user->id, $categoryIds[$name] ?? $categoryIds->first(), $item, $price, $now);
         }
 
         return $rows;
