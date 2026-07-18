@@ -6,15 +6,19 @@ use App\Enums\BodyColor;
 use App\Enums\ButtonColor;
 use App\Enums\Currency;
 use App\Enums\Permission;
+use App\Enums\WeightUnit;
 use App\Http\Requests\BrandingRequest;
 use App\Http\Requests\ColorRequest;
 use App\Http\Requests\SpendingRequest;
 use App\Models\AppSetting;
+use App\Models\Workout;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -97,6 +101,40 @@ class SettingsController extends Controller
                 ])
                 ->all(),
         ]);
+    }
+
+    /**
+     * The exercise module's own preferences.
+     *
+     * Gated on exercise.view rather than the admin check the other settings
+     * pages use: the module is granted per person, and someone who has it needs
+     * to be able to set their unit without being an admin. The value itself is
+     * app-wide (it lives on app_settings beside default_currency), so the page
+     * is only offered to people who hold the module at all.
+     */
+    public function exercise(Request $request): Response
+    {
+        Gate::authorize('viewAny', Workout::class);
+
+        return Inertia::render('Settings/Exercise', [
+            'exercise' => [
+                'default_weight_unit' => AppSetting::current()->defaultWeightUnit()->value,
+            ],
+            'units' => WeightUnit::options(),
+        ]);
+    }
+
+    public function updateExercise(Request $request): RedirectResponse
+    {
+        Gate::authorize('viewAny', Workout::class);
+
+        $validated = $request->validate([
+            'default_weight_unit' => ['required', Rule::enum(WeightUnit::class)],
+        ]);
+
+        AppSetting::current()->update($validated);
+
+        return back()->with('success', __('Exercise preferences updated.'));
     }
 
     public function updateSpending(SpendingRequest $request): RedirectResponse

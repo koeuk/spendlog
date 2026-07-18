@@ -105,6 +105,14 @@ Route::middleware('auth')->group(function () {
         Route::get('/spending', [SettingsController::class, 'spending'])->name('spending.edit');
         Route::post('/spending', [SettingsController::class, 'updateSpending'])->name('spending.update');
 
+        /*
+         * Exercise preferences. Gated on exercise.view in the controller, not
+         * the admin check the pages around it use — the module is granted per
+         * person, so a non-admin who holds it still needs to set their unit.
+         */
+        Route::get('/exercise', [SettingsController::class, 'exercise'])->name('exercise-settings.edit');
+        Route::post('/exercise', [SettingsController::class, 'updateExercise'])->name('exercise-settings.update');
+
         // Gated on the settings.faq permission in the controller, not just the UI.
         Route::get('/faqs', [FaqController::class, 'index'])->name('faqs.index');
         Route::post('/faqs', [FaqController::class, 'store'])->name('faqs.store');

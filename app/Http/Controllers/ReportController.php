@@ -255,13 +255,33 @@ class ReportController extends Controller
         };
 
         $previous = 0.0;
+        $partial = false;
 
         if ($previousAnchor !== null) {
             [$prevStart, $prevEnd] = $this->trend->range($granularity, $previousAnchor, $user);
 
+            /*
+             * Truncated to the days that have actually elapsed this period, for
+             * the same reason daily_average is: on the 18th, $total holds 18
+             * days and the previous month holds 30. Comparing them reported a
+             * 40% fall for someone whose spending had not changed at all — and
+             * it read correctly only on the last day of a period.
+             *
+             * $days already counts the elapsed span, so the window is the first
+             * $days of the previous period. Clamped to $prevEnd because a longer
+             * month compared against a shorter one would otherwise reach past it.
+             */
+            $prevCutoff = $prevStart->startOfDay()->addDays($days - 1);
+
+            if ($prevCutoff->gt($prevEnd)) {
+                $prevCutoff = $prevEnd;
+            }
+
+            $partial = $prevCutoff->lt($prevEnd->startOfDay());
+
             $previous = round((float) Expense::query()
                 ->where('user_id', $user->id)
-                ->whereBetween('spent_on', [$prevStart->toDateString(), $prevEnd->toDateString()])
+                ->whereBetween('spent_on', [$prevStart->toDateString(), $prevCutoff->toDateString()])
                 ->sum('price'), 2);
         }
 
@@ -278,6 +298,10 @@ class ReportController extends Controller
             'previous_label' => $previousAnchor !== null
                 ? $this->periodLabelFor($granularity, $previousAnchor)
                 : null,
+            // True while the current period is still running, so the UI can say
+            // the comparison is against the same stretch of the previous one
+            // rather than the whole of it.
+            'previous_is_partial' => $partial,
         ];
     }
 

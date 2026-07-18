@@ -70,10 +70,15 @@ class CalendarOptions
      * The shape check is not enough on its own: '2026-13' matches it, and Carbon
      * does not throw on the overflow — it rolls forward to 2027-01 and hands back
      * a date nobody asked for. So the result has to format back to what came in.
+     *
+     * Typed mixed, not ?string: callers hand this $request->query('month')
+     * straight through, and '?month[]=1' makes that an array. A ?string
+     * signature turned the junk value this method exists to absorb into a
+     * TypeError before any of the logic below could run.
      */
-    public static function resolveMonth(?string $month): CarbonImmutable
+    public static function resolveMonth(mixed $month): CarbonImmutable
     {
-        if ($month && preg_match('/^\d{4}-\d{2}$/', $month)) {
+        if (is_string($month) && preg_match('/^\d{4}-\d{2}$/', $month)) {
             try {
                 $parsed = CarbonImmutable::createFromFormat('Y-m-d', $month.'-01')->startOfMonth();
 

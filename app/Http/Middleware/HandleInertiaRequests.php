@@ -67,6 +67,10 @@ class HandleInertiaRequests extends Middleware
             // Which currency the amount fields start on — needed wherever an
             // amount is entered, so it is shared alongside the rate.
             'default_currency' => fn () => AppSetting::current()->defaultCurrency()->value,
+            // Which unit the exercise module's weight fields start on. Shared
+            // alongside the currency for the same reason: it is needed wherever
+            // a weight is entered or displayed, and current() is cached.
+            'default_weight_unit' => fn () => AppSetting::current()->defaultWeightUnit()->value,
             'locale' => fn () => app()->getLocale(),
             'locales' => fn () => collect(Locale::cases())
                 ->map(fn (Locale $locale) => [
