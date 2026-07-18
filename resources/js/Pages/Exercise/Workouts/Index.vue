@@ -15,7 +15,6 @@ import {
 } from '@/Components/ui/dialog';
 import { CARD, EYEBROW, MUTED, PILL_ACTION } from '@/lib/appStyles';
 import { formatDistance, formatDuration, formatWeight } from '@/lib/exerciseStyles';
-import { trans } from '@/lib/i18n';
 
 const props = defineProps({
     workouts: { type: Array, default: () => [] },
