@@ -5,6 +5,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import BudgetProgress from '@/Components/BudgetProgress.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import { CARD, CARD_ALERT, EYEBROW, MUTED } from '@/lib/appStyles';
+import { formatRiel } from '@/lib/currency';
 import CategoryBadge from '@/Components/CategoryBadge.vue';
 import CategoryPicker from '@/Components/CategoryPicker.vue';
 import CurrencyToggle from '@/Components/CurrencyToggle.vue';
@@ -101,6 +102,9 @@ const form = useForm({
 });
 
 const khrPerUsd = computed(() => Number(usePage().props.khr_per_usd) || 4100);
+
+// Stored amounts are USD; this is the same figure shown in riel beside them.
+const riel = (usd) => formatRiel(usd, khrPerUsd.value);
 
 /**
  * What a riel budget will actually be stored as.
@@ -346,6 +350,15 @@ function clearBudget() {
                                 >
                                     {{ __('of :amount', { amount: money.format(summary.overall.budget) }) }}
                                 </span>
+                                <!-- The stored figures are USD; riel is the same
+                                     amount at today's rate, so it trails them
+                                     rather than standing as a second total. -->
+                                <span class="ms-1 text-xs font-normal" :class="MUTED">
+                                    {{ riel(summary.overall.spent) }}<template
+                                        v-if="summary.overall.budget !== null"
+                                    >
+                                        {{ __('of :amount', { amount: riel(summary.overall.budget) }) }}</template>
+                                </span>
                             </span>
                             <span
                                 v-if="summary.overall.percent !== null"
@@ -454,6 +467,12 @@ function clearBudget() {
                                             class="text-gray-500 dark:text-neutral-400"
                                         >
                                             {{ __('of :amount', { amount: money.format(category.budget) }) }}
+                                        </span>
+                                        <span class="ms-1 text-xs" :class="MUTED">
+                                            {{ riel(category.spent) }}<template
+                                                v-if="category.budget !== null"
+                                            >
+                                                {{ __('of :amount', { amount: riel(category.budget) }) }}</template>
                                         </span>
                                     </span>
                                     <span
