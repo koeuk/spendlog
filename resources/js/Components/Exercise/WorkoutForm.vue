@@ -4,6 +4,7 @@ import { useForm, usePage } from '@inertiajs/vue3';
 import { Pause, Play, Plus, RotateCcw, Trash2 } from 'lucide-vue-next';
 import { MUTED, PILL_ACTION, SEGMENT, SEGMENT_ON, SEGMENT_OFF } from '@/lib/appStyles';
 import { formatClock } from '@/lib/exerciseStyles';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 import { useSessionTimer } from '@/composables/useSessionTimer';
 
 const props = defineProps({
@@ -34,6 +35,15 @@ const form = useForm({
 
 const typeByUuid = computed(
     () => new Map(props.exerciseTypes.map((type) => [type.uuid, type])),
+);
+
+// SearchableSelect wants {value, label}. The star marks a movement the viewer
+// added themselves, exactly as the old <option> did.
+const typeOptions = computed(() =>
+    props.exerciseTypes.map((type) => ({
+        value: type.uuid,
+        label: type.is_mine ? `${type.name} ★` : type.name,
+    })),
 );
 
 /**
@@ -253,18 +263,16 @@ function submit() {
                             {{ index + 1 }}
                         </span>
 
-                        <select
+                        <SearchableSelect
                             v-model="set.exercise_type_uuid"
-                            class="h-9 min-w-0 flex-1 rounded-xl border border-border bg-card/70 px-2 text-sm"
-                        >
-                            <option
-                                v-for="type in exerciseTypes"
-                                :key="type.uuid"
-                                :value="type.uuid"
-                            >
-                                {{ type.name }}{{ type.is_mine ? ' ★' : '' }}
-                            </option>
-                        </select>
+                            :options="typeOptions"
+                            :label="__('Movement')"
+                            :search-placeholder="__('Search movements…')"
+                            :empty-text="__('No movement found.')"
+                            align="start"
+                            trigger-class="h-9 min-w-0 flex-1 rounded-xl border border-border bg-card/70 px-2 text-sm"
+                            content-class="w-[--reka-popover-trigger-width]"
+                        />
 
                         <button
                             type="button"

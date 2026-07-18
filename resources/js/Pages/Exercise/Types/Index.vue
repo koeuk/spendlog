@@ -4,6 +4,7 @@ import { Head, useForm } from '@inertiajs/vue3';
 import { Pencil, Plus, Trash2 } from 'lucide-vue-next';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import ExerciseBadge from '@/Components/Exercise/ExerciseBadge.vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 import { CARD, EYEBROW, MUTED, PILL_ACTION } from '@/lib/appStyles';
 import { EXERCISE_ICON_NAMES, EXERCISE_COLOR_NAMES, exerciseColor, exerciseIcon } from '@/lib/exerciseStyles';
 import { trans } from '@/lib/i18n';
@@ -129,17 +130,21 @@ const sections = computed(() => {
                     </div>
 
                     <div class="grid gap-4 sm:grid-cols-2">
-                        <label class="block">
+                        <!-- Not a <label>: the trigger is a button, which a label
+                             cannot forward a click to. The span labels it instead. -->
+                        <div class="block">
                             <span class="text-xs font-semibold">{{ __('Muscle group') }}</span>
-                            <select
+                            <SearchableSelect
                                 v-model="form.muscle_group"
-                                class="mt-1 h-10 w-full rounded-xl border border-border bg-card/70 px-3 text-sm"
-                            >
-                                <option v-for="g in muscle_groups" :key="g.value" :value="g.value">
-                                    {{ g.label }}
-                                </option>
-                            </select>
-                        </label>
+                                :options="muscle_groups"
+                                :label="__('Muscle group')"
+                                :search-placeholder="__('Search muscle groups…')"
+                                :empty-text="__('No muscle group found.')"
+                                align="start"
+                                trigger-class="mt-1 h-10 w-full rounded-xl border border-border bg-card/70 px-3 text-sm"
+                                content-class="w-[--reka-popover-trigger-width]"
+                            />
+                        </div>
 
                         <label class="mt-6 flex items-center gap-2">
                             <input v-model="form.is_cardio" type="checkbox" class="rounded" />

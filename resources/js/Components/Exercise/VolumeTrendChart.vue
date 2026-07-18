@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { ChartColumn, ChartSpline } from 'lucide-vue-next';
 import { monotonePath } from '@/lib/curve';
+import PeriodPicker from '@/Components/PeriodPicker.vue';
 import { EYEBROW, FIGURE, MUTED, SEGMENT, SEGMENT_ON, SEGMENT_OFF } from '@/lib/appStyles';
 
 /**
@@ -144,15 +145,12 @@ const linePath = computed(() => {
         <!-- The period dropdown: which week/month/year, once a granularity is
              chosen. Hidden for "all", which is a single span. -->
         <div v-if="granularity !== 'all' && options.length > 1" class="mt-4">
-            <select
-                class="h-9 rounded-full border border-border bg-card/70 px-3 text-xs font-semibold text-foreground"
-                :value="anchor"
-                @change="load(granularity, $event.target.value)"
-            >
-                <option v-for="option in options" :key="option.value" :value="option.value">
-                    {{ option.label }}
-                </option>
-            </select>
+            <PeriodPicker
+                :options="options"
+                :model-value="anchor"
+                :label="__('Period')"
+                @update:model-value="load(granularity, $event)"
+            />
         </div>
 
         <div class="mt-6 transition-opacity" :class="loading ? 'opacity-40' : ''">

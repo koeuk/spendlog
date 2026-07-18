@@ -6,6 +6,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import ConsistencyHeatmap from '@/Components/Exercise/ConsistencyHeatmap.vue';
 import ExerciseBadge from '@/Components/Exercise/ExerciseBadge.vue';
 import VolumeTrendChart from '@/Components/Exercise/VolumeTrendChart.vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 import { CARD, CARD_TINT, EYEBROW, FIGURE, MUTED, PILL_ACTION } from '@/lib/appStyles';
 import { exerciseColor, formatDuration, formatWeight } from '@/lib/exerciseStyles';
 import { trans } from '@/lib/i18n';
@@ -64,6 +65,16 @@ function parts(value) {
 
     return { year, month };
 }
+
+// Every picker here wears the same pill, matching the money dashboard's.
+const MONTH_PICKER =
+    'h-9 rounded-full border border-border bg-card/70 px-3 text-xs font-semibold ' +
+    'transition-colors duration-200 hover:bg-muted';
+
+// SearchableSelect wants {value, label} with string values; years arrive as ints.
+const yearOptions = computed(() =>
+    props.years.map((year) => ({ value: String(year), label: String(year) })),
+);
 
 const cards = computed(() => [
     {
@@ -143,23 +154,27 @@ const cards = computed(() => [
                     <p :class="EYEBROW">{{ __('This month') }}</p>
 
                     <div class="flex gap-2">
-                        <select
-                            class="h-9 rounded-full border border-border bg-card/70 px-3 text-xs font-semibold"
-                            :value="parts(month).month"
-                            @change="setMonth('month', `${parts(month).year}-${$event.target.value}`)"
-                        >
-                            <option v-for="m in months" :key="m.value" :value="m.value">
-                                {{ m.label }}
-                            </option>
-                        </select>
+                        <SearchableSelect
+                            :options="months"
+                            :model-value="parts(month).month"
+                            :label="__('Month')"
+                            :search-placeholder="__('Search month')"
+                            :empty-text="__('No month found.')"
+                            :trigger-class="MONTH_PICKER"
+                            content-class="w-44"
+                            @update:model-value="setMonth('month', `${parts(month).year}-${$event}`)"
+                        />
 
-                        <select
-                            class="h-9 rounded-full border border-border bg-card/70 px-3 text-xs font-semibold"
-                            :value="parts(month).year"
-                            @change="setMonth('month', `${$event.target.value}-${parts(month).month}`)"
-                        >
-                            <option v-for="y in years" :key="y" :value="String(y)">{{ y }}</option>
-                        </select>
+                        <SearchableSelect
+                            :options="yearOptions"
+                            :model-value="parts(month).year"
+                            :label="__('Year')"
+                            :search-placeholder="__('Search year')"
+                            :empty-text="__('No year found.')"
+                            :trigger-class="[MONTH_PICKER, 'tabular-nums']"
+                            content-class="w-32"
+                            @update:model-value="setMonth('month', `${$event}-${parts(month).month}`)"
+                        />
                     </div>
                 </header>
 
@@ -193,20 +208,21 @@ const cards = computed(() => [
                     <header class="flex flex-wrap items-center justify-between gap-3">
                         <p :class="EYEBROW">{{ __('Muscle groups') }}</p>
 
-                        <select
-                            class="h-9 rounded-full border border-border bg-card/70 px-3 text-xs font-semibold"
-                            :value="parts(breakdown_month).month"
-                            @change="
+                        <SearchableSelect
+                            :options="months"
+                            :model-value="parts(breakdown_month).month"
+                            :label="__('Month')"
+                            :search-placeholder="__('Search month')"
+                            :empty-text="__('No month found.')"
+                            :trigger-class="MONTH_PICKER"
+                            content-class="w-44"
+                            @update:model-value="
                                 setMonth(
                                     'breakdown_month',
-                                    `${parts(breakdown_month).year}-${$event.target.value}`,
+                                    `${parts(breakdown_month).year}-${$event}`,
                                 )
                             "
-                        >
-                            <option v-for="m in months" :key="m.value" :value="m.value">
-                                {{ m.label }}
-                            </option>
-                        </select>
+                        />
                     </header>
 
                     <p v-if="!breakdown.length" class="py-10 text-center text-sm" :class="MUTED">
