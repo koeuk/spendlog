@@ -2,9 +2,23 @@
 import { computed, ref, watch } from 'vue';
 import { useForm, usePage } from '@inertiajs/vue3';
 import { Pause, Play, Plus, RotateCcw, Trash2 } from 'lucide-vue-next';
+import {
+    CalendarDate,
+    DateFormatter,
+    getLocalTimeZone,
+    today as currentDate,
+} from '@internationalized/date';
 import { MUTED, PILL_ACTION, SEGMENT, SEGMENT_ON, SEGMENT_OFF } from '@/lib/appStyles';
 import { formatClock } from '@/lib/exerciseStyles';
+import { trans } from '@/lib/i18n';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
+import { Button } from '@/Components/ui/button';
+import { Calendar } from '@/Components/ui/calendar';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/Components/ui/popover';
 import { useSessionTimer } from '@/composables/useSessionTimer';
 
 const props = defineProps({
@@ -32,6 +46,37 @@ const form = useForm({
     weight_unit: unit.value,
     sets: [],
 });
+
+// Same bridge as the expense form: the form holds a plain 'YYYY-MM-DD' string,
+// the Calendar speaks CalendarDate.
+const performedOn = computed({
+    get() {
+        if (!form.performed_on) {
+            return undefined;
+        }
+
+        const [year, month, day] = form.performed_on.split('-').map(Number);
+
+        return new CalendarDate(year, month, day);
+    },
+    set(value) {
+        form.performed_on = value ? value.toString() : '';
+    },
+});
+
+const dateFormatter = new DateFormatter(
+    page.props.locale === 'km' ? 'km-KH' : 'en-GB',
+    { dateStyle: 'medium' },
+);
+
+const performedOnLabel = computed(() =>
+    performedOn.value
+        ? dateFormatter.format(performedOn.value.toDate(getLocalTimeZone()))
+        : trans('Pick a date'),
+);
+
+// A workout in the future is rejected server-side; block it in the picker too.
+const maxDate = currentDate(getLocalTimeZone());
 
 const typeByUuid = computed(
     () => new Map(props.exerciseTypes.map((type) => [type.uuid, type])),
@@ -158,18 +203,32 @@ function submit() {
     <form class="space-y-5" @submit.prevent="submit">
         <!-- Date, duration, unit -->
         <div class="grid gap-4 sm:grid-cols-3">
-            <label class="block">
+            <!-- Not a <label>: the trigger is a button, which a label cannot
+                 forward a click to. The span labels it instead. -->
+            <div class="block">
                 <span class="text-xs font-semibold">{{ __('Date') }}</span>
-                <input
-                    v-model="form.performed_on"
-                    type="date"
-                    :max="today"
-                    class="mt-1 h-10 w-full rounded-xl border border-border bg-card/70 px-3 text-sm"
-                />
+                <Popover>
+                    <PopoverTrigger as-child>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            class="mt-1 h-10 w-full justify-start rounded-xl px-3 text-sm font-normal"
+                        >
+                            {{ performedOnLabel }}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent class="w-auto p-0">
+                        <Calendar
+                            v-model="performedOn"
+                            :max-value="maxDate"
+                            initial-focus
+                        />
+                    </PopoverContent>
+                </Popover>
                 <p v-if="form.errors.performed_on" class="mt-1 text-xs text-red-600">
                     {{ form.errors.performed_on }}
                 </p>
-            </label>
+            </div>
 
             <label class="block">
                 <span class="text-xs font-semibold">{{ __('Duration (minutes)') }}</span>
