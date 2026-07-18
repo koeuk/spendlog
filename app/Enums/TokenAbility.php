@@ -23,6 +23,13 @@ enum TokenAbility: string
     case BudgetsRead = 'budgets:read';
     case BudgetsWrite = 'budgets:write';
     case DashboardRead = 'dashboard:read';
+    /*
+     * The exercise module. Nothing extra is needed to keep these locked: the
+     * abilities are derived from permissions by grantableTo below, and an
+     * account without exercise.view simply never has them to give.
+     */
+    case ExerciseRead = 'exercise:read';
+    case ExerciseWrite = 'exercise:write';
 
     /**
      * The permissions that justify this ability.
@@ -56,6 +63,12 @@ enum TokenAbility: string
                 Permission::BudgetsDelete,
             ],
             self::DashboardRead => [Permission::DashboardView],
+            self::ExerciseRead => [Permission::ExerciseView],
+            self::ExerciseWrite => [
+                Permission::ExerciseCreate,
+                Permission::ExerciseUpdate,
+                Permission::ExerciseDelete,
+            ],
         };
     }
 

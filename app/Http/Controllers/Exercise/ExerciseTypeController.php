@@ -27,7 +27,7 @@ class ExerciseTypeController extends Controller
         $user = $request->user();
 
         $types = QueryBuilder::for(ExerciseType::class)
-            ->allowedFilters([
+            ->allowedFilters(
                 TranslatableQuery::filter('name'),
                 AllowedFilter::exact('muscle_group'),
                 // "Mine" vs "All" — the only scope that exists here, since the
@@ -35,7 +35,7 @@ class ExerciseTypeController extends Controller
                 AllowedFilter::callback('mine', fn ($query, $value) => filter_var($value, FILTER_VALIDATE_BOOL)
                     ? $query->whereNotNull('user_id')
                     : $query),
-            ])
+            )
             ->allowedSorts(TranslatableQuery::sort('name'), 'muscle_group')
             ->defaultSort('muscle_group', TranslatableQuery::sort('name'))
             // Applied last so no filter can widen it past what this person sees.
