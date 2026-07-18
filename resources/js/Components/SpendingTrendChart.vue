@@ -408,10 +408,21 @@ const tooltipTop = computed(() => {
                  top of the period buttons. -->
             <div
                 v-if="tooltip"
-                class="pointer-events-none absolute z-10 -translate-x-1/2 whitespace-nowrap rounded-xl border border-neutral-200 bg-white px-2.5 py-1.5 shadow-lg transition-[left,top] duration-200 ease-out dark:border-neutral-700 dark:bg-neutral-900"
+                class="pointer-events-none absolute z-10 max-w-[9rem] -translate-x-1/2 rounded-xl border border-neutral-200 bg-white px-2.5 py-1.5 shadow-lg transition-[left,top] duration-200 ease-out dark:border-neutral-700 dark:bg-neutral-900"
                 :class="tooltipTop === null ? 'top-1' : '-translate-y-[calc(100%+12px)]'"
                 :style="{
-                    left: `${tooltip.left}%`,
+                    /*
+                     * Clamped, because the tooltip is centred on its bucket and the
+                     * card around the plot is overflow-hidden. On a narrow phone the
+                     * first bucket sits only a few px in, so a centred box resolved
+                     * to a negative left edge and the amount was clipped away — worst
+                     * at the two buckets a reader is most likely to check.
+                     *
+                     * 4.5rem is half of the 9rem max-width above, so the box can never
+                     * reach either edge whatever it contains. The pair has to stay in
+                     * step: widen one and the other must follow.
+                     */
+                    left: `clamp(4.5rem, ${tooltip.left}%, calc(100% - 4.5rem))`,
                     ...(tooltipTop === null ? {} : { top: `${tooltipTop}%` }),
                 }"
                 role="status"

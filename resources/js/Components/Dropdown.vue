@@ -65,9 +65,14 @@ const open = ref(false);
             leave-from-class="opacity-100 scale-100"
             leave-to-class="opacity-0 scale-95"
         >
+            <!-- Bounded and scrollable: this is hand-rolled rather than a Reka
+                 popper, so there is no --reka-*-available-height to size against
+                 and a long content slot on a short viewport would simply render
+                 past the bottom edge with nothing able to scroll it. The 8rem
+                 covers the trigger row and the gutter below it. -->
             <div
                 v-show="open"
-                class="absolute z-50 mt-2 rounded-md shadow-lg"
+                class="absolute z-50 mt-2 max-h-[calc(100svh-8rem)] overflow-y-auto overscroll-contain rounded-md shadow-lg"
                 :class="[widthClass, alignmentClasses]"
                 style="display: none"
                 @click="open = false"

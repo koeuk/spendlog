@@ -413,10 +413,29 @@ watch(() => page.url, () => nextTick(measurePill));
                 </div>
             </nav>
 
-            <!-- Mobile menu -->
+            <!--
+                Mobile menu
+
+                It scrolls itself, and it has to: this sits inside the sticky
+                block above, and a sticky element pinned at top-0 does not scroll
+                its own overflow with the page. Expanded — links, workspace, the
+                user block, then locale and theme — it runs about 594px on top of
+                the 80px bar, so below roughly 675px of viewport the tail of the
+                menu was not merely below the fold but unreachable: Log Out and
+                the theme toggle could not be scrolled to at all. Measured
+                overflowing by 8px at 375x667 and by 106px at 320x568.
+
+                svh rather than vh so a mobile browser's collapsing address bar
+                cannot bring the problem back, and the 6rem allows for the bar
+                plus the container's bottom gutter. overscroll-contain keeps a
+                flick at the menu's end from scrolling the page behind it.
+            -->
             <div
                 v-show="showingNavigationDropdown"
-                :class="[CARD, 'anim mb-3 p-2 md:hidden']"
+                :class="[
+                    CARD,
+                    'anim mb-3 max-h-[calc(100svh-6rem)] overflow-y-auto overscroll-contain p-2 md:hidden',
+                ]"
             >
                 <div class="flex flex-col gap-0.5">
                     <ResponsiveNavLink

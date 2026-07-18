@@ -48,7 +48,14 @@ function toggleIcon(name) {
                 Icon
                 <span class="font-normal text-muted-foreground">(optional)</span>
             </Label>
-            <div class="mt-2 grid grid-cols-8 gap-1.5">
+            <!-- Sized by a floor, not a column count. A fixed 8 columns divided
+                 the dialog's inner width — about 240px at 320px viewport — into
+                 ~25px squares set 6px apart, roughly half the 44px a fingertip
+                 needs, for the control that *is* the icon picker. auto-fill with
+                 a 2.75rem minimum drops to 4 columns on the narrowest phone and
+                 still resolves to the original 8 at the dialog's full width, so
+                 the desktop layout is unchanged. -->
+            <div class="mt-2 grid grid-cols-[repeat(auto-fill,minmax(2.75rem,1fr))] gap-1.5">
                 <button
                     v-for="name in CATEGORY_ICON_NAMES"
                     :key="name"

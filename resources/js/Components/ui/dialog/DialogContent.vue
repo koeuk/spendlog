@@ -72,7 +72,13 @@ const onInteractOutside = (e) => {
       @interact-outside="onInteractOutside"
       :class="
         cn(
-          'bg-popover text-popover-foreground data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 ease-[cubic-bezier(0.16,1,0.3,1)] ring-foreground/10 grid max-w-[calc(100%-2rem)] gap-6 rounded-xl p-6 text-sm ring-1 duration-300 sm:max-w-md fixed top-1/2 left-1/2 z-50 w-full -translate-x-1/2 -translate-y-1/2 outline-none',
+          // max-h + overflow-y-auto are load-bearing, not cosmetic: the dialog is
+          // centred with `fixed` + -translate-y-1/2, so content taller than the
+          // viewport grows past *both* edges at once. Being fixed, neither the page
+          // nor the dialog scrolls — the header and the footer buttons become
+          // permanently unreachable rather than merely below the fold. svh, not vh,
+          // so a mobile browser's collapsing address bar cannot reintroduce it.
+          'bg-popover text-popover-foreground data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 ease-[cubic-bezier(0.16,1,0.3,1)] ring-foreground/10 grid max-h-[calc(100svh-2rem)] max-w-[calc(100%-2rem)] gap-6 overflow-y-auto overscroll-contain rounded-xl p-6 text-sm ring-1 duration-300 sm:max-w-md fixed top-1/2 left-1/2 z-50 w-full -translate-x-1/2 -translate-y-1/2 outline-none',
           pulsing && 'dialog-pulse',
           props.class,
         )
