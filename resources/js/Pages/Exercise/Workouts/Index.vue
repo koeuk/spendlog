@@ -6,6 +6,12 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import ExerciseBadge from '@/Components/Exercise/ExerciseBadge.vue';
 import WorkoutForm from '@/Components/Exercise/WorkoutForm.vue';
 import Pagination from '@/Components/Pagination.vue';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from '@/Components/ui/dialog';
 import { CARD, EYEBROW, MUTED, PILL_ACTION } from '@/lib/appStyles';
 import { formatDistance, formatDuration, formatWeight } from '@/lib/exerciseStyles';
 import { trans } from '@/lib/i18n';
@@ -27,6 +33,17 @@ const editing = ref(null);
 function close() {
     editing.value = null;
 }
+
+// The dialog wants a boolean, but `editing` has to stay the source of truth —
+// it is what tells WorkoutForm whether this is a create or an update.
+const dialogOpen = computed({
+    get: () => editing.value !== null,
+    set: (value) => {
+        if (!value) {
+            close();
+        }
+    },
+});
 
 const deleteForm = useForm({});
 
@@ -97,7 +114,7 @@ function formatDate(value) {
                 </div>
 
                 <button
-                    v-if="can.create && !editing"
+                    v-if="can.create"
                     type="button"
                     class="bg-primary text-primary-foreground inline-flex items-center gap-2 transition hover:opacity-90"
                     :class="PILL_ACTION"
@@ -109,14 +126,15 @@ function formatDate(value) {
             </div>
         </template>
 
-        <div class="space-y-3">
-            <!-- The form, inline rather than in a dialog: logging a session is
-                 the page's whole purpose, and a modal would put the list it is
-                 building behind a scrim. -->
-            <div v-if="editing" :class="[CARD, 'anim p-6']" style="--d: 0ms">
-                <h2 class="mb-5 text-lg font-bold tracking-[-0.02em]">
-                    {{ editing === 'new' ? __('Log a workout') : __('Edit workout') }}
-                </h2>
+        <!-- Matches the Movements form: the list stays where it is instead of
+             being pushed down the page while you type. -->
+        <Dialog v-model:open="dialogOpen">
+            <DialogContent class="sm:max-w-2xl max-h-[85svh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle>
+                        {{ editing === 'new' ? __('Log a workout') : __('Edit workout') }}
+                    </DialogTitle>
+                </DialogHeader>
 
                 <WorkoutForm
                     :workout="editing === 'new' ? null : editing"
@@ -124,8 +142,10 @@ function formatDate(value) {
                     @saved="close"
                     @cancel="close"
                 />
-            </div>
+            </DialogContent>
+        </Dialog>
 
+        <div class="space-y-3">
             <p
                 v-if="!workouts.length"
                 :class="[CARD, 'anim px-6 py-16 text-center text-sm']"

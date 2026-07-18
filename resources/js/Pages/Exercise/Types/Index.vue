@@ -4,7 +4,14 @@ import { Head, useForm } from '@inertiajs/vue3';
 import { Pencil, Plus, Trash2 } from 'lucide-vue-next';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import ExerciseBadge from '@/Components/Exercise/ExerciseBadge.vue';
+import LocaleTabs from '@/Components/LocaleTabs.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from '@/Components/ui/dialog';
 import { CARD, EYEBROW, MUTED, PILL_ACTION } from '@/lib/appStyles';
 import { EXERCISE_ICON_NAMES, EXERCISE_COLOR_NAMES, exerciseColor, exerciseIcon } from '@/lib/exerciseStyles';
 import { trans } from '@/lib/i18n';
@@ -40,6 +47,17 @@ function open(type = null) {
 function close() {
     editing.value = null;
 }
+
+// The dialog wants a boolean, but `editing` has to stay the source of truth —
+// it is what tells submit() whether this is a create or an update.
+const dialogOpen = computed({
+    get: () => editing.value !== null,
+    set: (value) => {
+        if (!value) {
+            close();
+        }
+    },
+});
 
 function submit() {
     const options = { preserveScroll: true, onSuccess: close };
@@ -87,7 +105,7 @@ const sections = computed(() => {
                 </div>
 
                 <button
-                    v-if="can.create && !editing"
+                    v-if="can.create"
                     type="button"
                     class="bg-primary text-primary-foreground inline-flex items-center gap-2 transition hover:opacity-90"
                     :class="PILL_ACTION"
@@ -99,35 +117,42 @@ const sections = computed(() => {
             </div>
         </template>
 
-        <div class="space-y-3">
-            <div v-if="editing" :class="[CARD, 'anim p-6']" style="--d: 0ms">
-                <h2 class="mb-5 text-lg font-bold tracking-[-0.02em]">
-                    {{ editing === 'new' ? __('Add movement') : __('Edit movement') }}
-                </h2>
+        <!-- A dialog rather than a card in the flow: the list below is the
+             reference you edit against, and pushing it down the page hid it. -->
+        <Dialog v-model:open="dialogOpen">
+            <DialogContent class="sm:max-w-lg max-h-[85svh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle>
+                        {{ editing === 'new' ? __('Add movement') : __('Edit movement') }}
+                    </DialogTitle>
+                </DialogHeader>
 
                 <form class="space-y-4" @submit.prevent="submit">
-                    <div class="grid gap-4 sm:grid-cols-2">
-                        <label class="block">
-                            <span class="text-xs font-semibold">{{ __('English name') }}</span>
-                            <input
-                                v-model="form.name.en"
-                                type="text"
-                                class="mt-1 h-10 w-full rounded-xl border border-border bg-card/70 px-3 text-sm"
-                            />
-                            <p v-if="form.errors['name.en']" class="mt-1 text-xs text-red-600">
-                                {{ form.errors['name.en'] }}
-                            </p>
-                        </label>
+                    <!-- One field per locale would grow a column per language.
+                         The tabs keep it to one, and every locale stays in
+                         form.name so a single submit still sends the JSON. -->
+                    <LocaleTabs
+                        :form="form"
+                        field="name"
+                        :placeholders="{ en: 'e.g. Bench Press' }"
+                    >
+                        <template #label>
+                            <span class="text-xs font-semibold">{{ __('Name') }}</span>
+                        </template>
 
-                        <label class="block">
-                            <span class="text-xs font-semibold">{{ __('Khmer name') }}</span>
+                        <template #default="{ locale, placeholder, isRequired }">
                             <input
-                                v-model="form.name.km"
+                                :id="`name_${locale}`"
+                                v-model="form.name[locale]"
                                 type="text"
-                                class="mt-1 h-10 w-full rounded-xl border border-border bg-card/70 px-3 text-sm"
+                                autocomplete="off"
+                                class="h-10 w-full rounded-xl border border-border bg-card/70 px-3 text-sm"
+                                :placeholder="placeholder"
+                                :required="isRequired"
+                                :aria-invalid="!!form.errors[`name.${locale}`]"
                             />
-                        </label>
-                    </div>
+                        </template>
+                    </LocaleTabs>
 
                     <div class="grid gap-4 sm:grid-cols-2">
                         <!-- Not a <label>: the trigger is a button, which a label
@@ -215,8 +240,10 @@ const sections = computed(() => {
                         </button>
                     </div>
                 </form>
-            </div>
+            </DialogContent>
+        </Dialog>
 
+        <div class="space-y-3">
             <section
                 v-for="(section, index) in sections"
                 :key="section.value"
