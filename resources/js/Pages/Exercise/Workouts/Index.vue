@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Head, useForm, usePage } from '@inertiajs/vue3';
+import { trans } from '@/lib/i18n';
 import { Dumbbell, Pencil, Plus, Timer, Trash2 } from 'lucide-vue-next';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
@@ -151,15 +152,15 @@ function formatDate(value) {
 </script>
 
 <template>
-    <Head :title="__('Workouts')" />
+    <Head :title="trans('Workouts')" />
 
     <AuthenticatedLayout>
         <template #header>
             <div class="flex flex-wrap items-end justify-between gap-3">
                 <div>
-                    <p :class="EYEBROW">{{ __('Exercise') }}</p>
+                    <p :class="EYEBROW">{{ trans('Exercise') }}</p>
                     <h1 class="mt-1 text-3xl font-extrabold tracking-[-0.03em] sm:text-4xl">
-                        {{ __('Workouts') }}
+                        {{ trans('Workouts') }}
                     </h1>
                 </div>
 
@@ -171,7 +172,7 @@ function formatDate(value) {
                     @click="editing = 'new'"
                 >
                     <Plus class="size-4" />
-                    {{ __('Log a workout') }}
+                    {{ trans('Log a workout') }}
                 </button>
             </div>
         </template>
@@ -182,7 +183,7 @@ function formatDate(value) {
             <DialogContent class="sm:max-w-2xl max-h-[85svh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>
-                        {{ editing === 'new' ? __('Log a workout') : __('Edit workout') }}
+                        {{ editing === 'new' ? trans('Log a workout') : trans('Edit workout') }}
                     </DialogTitle>
                 </DialogHeader>
 
@@ -202,7 +203,7 @@ function formatDate(value) {
                 :class="[CARD, 'anim px-6 py-16 text-center text-sm']"
                 style="--d: 60ms"
             >
-                <span :class="MUTED">{{ __('No workouts logged yet.') }}</span>
+                <span :class="MUTED">{{ trans('No workouts logged yet.') }}</span>
             </p>
 
             <article
@@ -220,7 +221,7 @@ function formatDate(value) {
                                 <Dumbbell class="size-3.5" />
                                 {{ formatWeight(workout.volume_kg, unit) }}
                             </span>
-                            <span>{{ __(':count sets', { count: workout.sets.length }) }}</span>
+                            <span>{{ trans(':count sets', { count: workout.sets.length }) }}</span>
                         </div>
                     </div>
 
@@ -241,7 +242,7 @@ function formatDate(value) {
                         <button
                             type="button"
                             class="grid size-9 place-items-center rounded-full text-neutral-400 transition hover:bg-muted hover:text-foreground"
-                            :aria-label="__('Edit')"
+                            :aria-label="trans('Edit')"
                             @click="editing = workout"
                         >
                             <Pencil class="size-4" />
@@ -249,7 +250,7 @@ function formatDate(value) {
                         <button
                             type="button"
                             class="grid size-9 place-items-center rounded-full text-neutral-400 transition hover:bg-red-500/10 hover:text-red-600"
-                            :aria-label="__('Delete')"
+                            :aria-label="trans('Delete')"
                             @click="confirmDestroy(workout)"
                         >
                             <Trash2 class="size-4" />
@@ -292,19 +293,19 @@ function formatDate(value) {
 
         <ConfirmDialog
             :open="confirming !== null"
-            :title="__('Delete this workout?')"
+            :title="trans('Delete this workout?')"
             :description="
                 confirming
-                    ? __('The session on :date and its :count sets will be removed. This cannot be undone.', {
+                    ? trans('The session on :date and its :count sets will be removed. This cannot be undone.', {
                           date: formatDate(confirming.performed_on),
                           count: confirming.sets.length,
                       })
                     : ''
             "
-            :confirm-label="__('Delete')"
-            :cancel-label="__('Cancel')"
+            :confirm-label="trans('Delete')"
+            :cancel-label="trans('Cancel')"
             :processing="deleting !== null"
-            :processing-label="__('Deleting…')"
+            :processing-label="trans('Deleting…')"
             @update:open="confirming = $event ? confirming : null"
             @confirm="destroy"
         />

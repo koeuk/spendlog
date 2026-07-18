@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
+import { trans } from '@/lib/i18n';
 import { Pencil, Plus, Trash2 } from 'lucide-vue-next';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
@@ -115,15 +116,15 @@ const sections = computed(() => {
 </script>
 
 <template>
-    <Head :title="__('Movements')" />
+    <Head :title="trans('Movements')" />
 
     <AuthenticatedLayout>
         <template #header>
             <div class="flex flex-wrap items-end justify-between gap-3">
                 <div>
-                    <p :class="EYEBROW">{{ __('Exercise') }}</p>
+                    <p :class="EYEBROW">{{ trans('Exercise') }}</p>
                     <h1 class="mt-1 text-3xl font-extrabold tracking-[-0.03em] sm:text-4xl">
-                        {{ __('Movements') }}
+                        {{ trans('Movements') }}
                     </h1>
                 </div>
 
@@ -135,7 +136,7 @@ const sections = computed(() => {
                     @click="open()"
                 >
                     <Plus class="size-4" />
-                    {{ __('Add movement') }}
+                    {{ trans('Add movement') }}
                 </button>
             </div>
         </template>
@@ -146,7 +147,7 @@ const sections = computed(() => {
             <DialogContent class="sm:max-w-lg max-h-[85svh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>
-                        {{ editing === 'new' ? __('Add movement') : __('Edit movement') }}
+                        {{ editing === 'new' ? trans('Add movement') : trans('Edit movement') }}
                     </DialogTitle>
                 </DialogHeader>
 
@@ -160,7 +161,7 @@ const sections = computed(() => {
                         :placeholders="{ en: 'e.g. Bench Press' }"
                     >
                         <template #label>
-                            <span class="text-xs font-semibold">{{ __('Name') }}</span>
+                            <span class="text-xs font-semibold">{{ trans('Name') }}</span>
                         </template>
 
                         <template #default="{ locale, placeholder, isRequired }">
@@ -181,13 +182,13 @@ const sections = computed(() => {
                         <!-- Not a <label>: the trigger is a button, which a label
                              cannot forward a click to. The span labels it instead. -->
                         <div class="block">
-                            <span class="text-xs font-semibold">{{ __('Muscle group') }}</span>
+                            <span class="text-xs font-semibold">{{ trans('Muscle group') }}</span>
                             <SearchableSelect
                                 v-model="form.muscle_group"
                                 :options="muscle_groups"
-                                :label="__('Muscle group')"
-                                :search-placeholder="__('Search muscle groups…')"
-                                :empty-text="__('No muscle group found.')"
+                                :label="trans('Muscle group')"
+                                :search-placeholder="trans('Search muscle groups…')"
+                                :empty-text="trans('No muscle group found.')"
                                 align="start"
                                 trigger-class="mt-1 h-10 w-full rounded-xl border border-border bg-card/70 px-3 text-sm"
                                 content-class="w-[--reka-popover-trigger-width]"
@@ -197,7 +198,7 @@ const sections = computed(() => {
                         <label class="mt-6 flex items-center gap-2">
                             <input v-model="form.is_cardio" type="checkbox" class="rounded" />
                             <span class="text-xs font-semibold">
-                                {{ __('Logged as distance and time') }}
+                                {{ trans('Logged as distance and time') }}
                             </span>
                         </label>
                     </div>
@@ -206,7 +207,7 @@ const sections = computed(() => {
                          the muscle group's colour, which is what keeps the
                          dashboard breakdown readable by group. -->
                     <div>
-                        <span class="text-xs font-semibold">{{ __('Colour') }}</span>
+                        <span class="text-xs font-semibold">{{ trans('Colour') }}</span>
                         <div class="mt-1.5 flex flex-wrap gap-1.5">
                             <button
                                 v-for="name in EXERCISE_COLOR_NAMES"
@@ -224,7 +225,7 @@ const sections = computed(() => {
                     </div>
 
                     <div>
-                        <span class="text-xs font-semibold">{{ __('Icon') }}</span>
+                        <span class="text-xs font-semibold">{{ trans('Icon') }}</span>
                         <div class="mt-1.5 flex flex-wrap gap-1.5">
                             <button
                                 v-for="name in EXERCISE_ICON_NAMES"
@@ -251,7 +252,7 @@ const sections = computed(() => {
                             :class="PILL_ACTION"
                             @click="close"
                         >
-                            {{ __('Cancel') }}
+                            {{ trans('Cancel') }}
                         </button>
                         <button
                             type="submit"
@@ -259,7 +260,7 @@ const sections = computed(() => {
                             :class="PILL_ACTION"
                             :disabled="form.processing"
                         >
-                            {{ __('Save') }}
+                            {{ trans('Save') }}
                         </button>
                     </div>
                 </form>
@@ -296,14 +297,14 @@ const sections = computed(() => {
                                 class="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
                                 :class="MUTED"
                             >
-                                {{ __('Mine') }}
+                                {{ trans('Mine') }}
                             </span>
 
                             <button
                                 v-if="type.can_update"
                                 type="button"
                                 class="grid size-10 place-items-center rounded-full text-neutral-400 transition hover:bg-muted hover:text-foreground"
-                                :aria-label="__('Edit')"
+                                :aria-label="trans('Edit')"
                                 @click="open(type)"
                             >
                                 <Pencil class="size-3.5" />
@@ -313,7 +314,7 @@ const sections = computed(() => {
                                 v-if="type.can_delete"
                                 type="button"
                                 class="grid size-10 place-items-center rounded-full text-neutral-400 transition hover:bg-red-500/10 hover:text-red-600"
-                                :aria-label="__('Delete')"
+                                :aria-label="trans('Delete')"
                                 @click="confirmDestroy(type)"
                             >
                                 <Trash2 class="size-3.5" />
@@ -326,18 +327,18 @@ const sections = computed(() => {
 
         <ConfirmDialog
             :open="confirming !== null"
-            :title="__('Delete this movement?')"
+            :title="trans('Delete this movement?')"
             :description="
                 confirming
-                    ? __('&quot;:name&quot; will be removed. Sets already logged against it are not affected.', {
+                    ? trans('&quot;:name&quot; will be removed. Sets already logged against it are not affected.', {
                           name: confirming.name,
                       })
                     : ''
             "
-            :confirm-label="__('Delete')"
-            :cancel-label="__('Cancel')"
+            :confirm-label="trans('Delete')"
+            :cancel-label="trans('Cancel')"
             :processing="deleting !== null"
-            :processing-label="__('Deleting…')"
+            :processing-label="trans('Deleting…')"
             @update:open="confirming = $event ? confirming : null"
             @confirm="destroy"
         />
