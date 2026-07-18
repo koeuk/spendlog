@@ -166,4 +166,22 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(Budget::class);
     }
+
+    public function workouts(): HasMany
+    {
+        return $this->hasMany(Workout::class);
+    }
+
+    /**
+     * The movements this person invented — *not* what they can log against.
+     *
+     * The global catalogue has a null user_id and so is deliberately absent
+     * here: this relationship is the write path (new types are created through
+     * it, which is what keeps user_id out of the fillable list). For the read
+     * path use ExerciseType::availableTo(), which unions both.
+     */
+    public function exerciseTypes(): HasMany
+    {
+        return $this->hasMany(ExerciseType::class);
+    }
 }
