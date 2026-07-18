@@ -131,7 +131,7 @@ class DashboardBudgetMonthTest extends TestCase
         // The two cards are filtered independently.
         $props = $this->props($this->visit('2026-06'));
 
-        $this->assertSame('month', $props['breakdown_period']);
+        $this->assertSame('2026-07', $props['breakdown_month']);
     }
 
     public function test_the_year_options_include_the_month_being_viewed(): void

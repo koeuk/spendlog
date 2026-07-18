@@ -142,6 +142,25 @@ curl -X POST https://spendlog.test/api/v1/expenses \
 `spent_on` cannot be in the future. `user_id` in the payload is ignored — the
 owner always comes from the token.
 
+**Currency.** `price` may be entered in riel by sending `currency=KHR`; omit it
+(or send `USD`) and the amount is taken as dollars. Anything else is a `422`.
+
+```bash
+  -d 'price=20000' -d 'currency=KHR'   # stored as 4.8780 at a rate of 4100
+```
+
+Every amount is *stored* in USD, converted on the way in at the rate an admin
+sets in Settings → Spending. There is no per-expense currency to read back:
+`price` in every response is dollars. This exists so the totals — budgets, the
+over-budget check, the dashboard, the reports — can sum one currency; a column
+holding two would make every one of those sums meaningless.
+
+**Naming a category inline.** Send `new_category=Coffee` instead of
+`category_uuid` and the category is created if it does not exist. This needs the
+`categories.create` permission as well as the `expenses:write` ability — the
+ability is a property of the token, the permission is a property of the user, and
+both are checked. Without it: `403`.
+
 ### `GET|PATCH|DELETE /api/v1/expenses/{uuid}`
 
 `PATCH` takes the same fields as `POST`. `DELETE` returns `204`. Touching someone
@@ -229,13 +248,29 @@ Everything a home screen needs in one call, rather than four round trips:
 today's total, the month summary (as above), the by-category `breakdown` ranked
 by spend with each `share` of the month, and the 8 most recent expenses.
 
+| Query | Purpose |
+|---|---|
+| `budget_month` | `YYYY-MM` — which month's budgets `summary` reports. Defaults to the current month. |
+| `breakdown_month` | `YYYY-MM` — which month `breakdown` splits. Defaults to the current month. |
+
+The two are independent: pointing the breakdown at March leaves the budgets on
+July. Both echo back what they resolved to, so a client can render its own
+pickers without re-deriving anything. A malformed or out-of-range month (`2026-13`)
+falls back to the current one rather than erroring.
+
+`current_month` is the real current month regardless of either filter — it is
+how a client tells "now" apart from whichever month it is browsing.
+
 ```json
 {
   "data": {
     "today": { "date": "2026-07-16", "total": "12.50" },
+    "current_month": "2026-07",
     "summary": { "month": "2026-07", "overall": { }, "categories": [] },
+    "budget_month": "2026-07",
     "breakdown": [{ "uuid": "0198a...", "name": "Food", "color": "amber",
                     "spent": "75.00", "share": 75 }],
+    "breakdown_month": "2026-07",
     "recent": [{ "uuid": "0198f...", "item": "Coffee", "price": "4.50" }]
   }
 }
