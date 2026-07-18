@@ -44,6 +44,13 @@ class BudgetController extends Controller
      */
     public function store(BudgetRequest $request): RedirectResponse
     {
+        // BudgetRequest::authorize() only settles that there is no cross-user
+        // target here, which is a different question from whether this user may
+        // write budgets at all. Without this the page could 403 while the
+        // endpoint behind it still accepted writes. Same ability as the API's
+        // store, so the two surfaces answer identically.
+        Gate::authorize('create', Budget::class);
+
         $attributes = $request->budgetAttributes();
 
         DB::beginTransaction();
