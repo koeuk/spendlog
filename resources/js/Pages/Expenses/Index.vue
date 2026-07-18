@@ -455,7 +455,20 @@ const filtered = computed(() =>
                         <h3 class="text-sm font-semibold text-gray-800 dark:text-neutral-100">
                             {{ formatDay(day.date) }}
                         </h3>
-                        <span class="text-sm font-semibold text-gray-800 dark:text-neutral-100">
+                        <!--
+                            Only where it is actually a sum.
+
+                            A day holding one expense had its total printed twice
+                            — once here and once on the only row under it, the
+                            same figure in both currencies — which reads as two
+                            numbers to check against each other rather than one
+                            fact. With several rows the header is doing real work,
+                            so it stays.
+                        -->
+                        <span
+                            v-if="day.expenses.length > 1"
+                            class="text-sm font-semibold text-gray-800 dark:text-neutral-100"
+                        >
                             {{ money.format(day.total) }}
                             <!-- Stored totals are USD; riel trails them at
                                  today's rate rather than reading as a second
@@ -505,7 +518,11 @@ const filtered = computed(() =>
                                  and sits between the item and the row actions, so
                                  a second figure beside it would crowd both. -->
                             <span class="shrink-0 text-right tabular-nums">
-                                <span class="block text-sm text-gray-900 dark:text-neutral-100">
+                                <!-- The amount is what this row is read for, and
+                                     it was set at the same size and weight as the
+                                     item name beside it. Now it carries the
+                                     emphasis the day header used to. -->
+                                <span class="block text-base font-bold text-gray-900 dark:text-neutral-100">
                                     {{ money.format(expense.price) }}
                                 </span>
                                 <span class="block text-xs" :class="MUTED">
