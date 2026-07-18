@@ -7,13 +7,7 @@ import SpendingTrendChart from '@/Components/SpendingTrendChart.vue';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
 import { ACTIVE, CARD, CARD_TINT, EYEBROW, FIGURE, MUTED } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/Components/ui/select';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 import { ArrowRight, Lightbulb, TriangleAlert } from 'lucide-vue-next';
 
 const props = defineProps({
@@ -98,6 +92,22 @@ function loadBudgetMonth(month) {
 
 const budgetMonthPart = computed(() => props.budget_month.split('-')[1]);
 const budgetYearPart = computed(() => props.budget_month.split('-')[0]);
+
+// SearchableSelect wants {value, label} with string values; years arrive as ints.
+const budgetMonthOptions = computed(() => props.budget_months);
+const budgetYearOptions = computed(() =>
+    props.budget_years.map((year) => ({ value: String(year), label: String(year) })),
+);
+
+// Both pickers wear the same quiet skin — SearchableSelect renders no element of
+// its own, so the trigger takes its class by prop.
+//
+// The edge is drawn at rest, not conjured on hover: these are controls, and one
+// that only looks clickable once the pointer is already on it has to be found
+// before it can be used.
+const BUDGET_PICKER =
+    'h-7 rounded-full border border-border bg-card/70 px-2.5 text-xs font-semibold ' +
+    'transition-colors duration-200 hover:bg-muted';
 
 // The empty state names the span that came up empty, so "nothing here" does not
 // read as "you have never logged anything".
@@ -334,47 +344,27 @@ const statusText = {
                                  budget IS a monthly amount, so the only question
                                  is which month. Same two selects as the Budgets
                                  page, fed from the same server-built lists. -->
-                            <Select
+                            <SearchableSelect
+                                :options="budgetMonthOptions"
                                 :model-value="budgetMonthPart"
+                                :label="__('Month')"
+                                :search-placeholder="__('Search month')"
+                                :empty-text="__('No month found.')"
+                                :trigger-class="BUDGET_PICKER"
+                                content-class="w-44"
                                 @update:model-value="loadBudgetMonth(`${budgetYearPart}-${$event}`)"
-                            >
-                                <SelectTrigger
-                                    class="h-7 w-[6.5rem] rounded-full border-0 bg-transparent px-2 text-xs font-semibold shadow-none focus-visible:ring-0 dark:bg-transparent"
-                                    :aria-label="__('Month')"
-                                >
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem
-                                        v-for="m in budget_months"
-                                        :key="m.value"
-                                        :value="m.value"
-                                    >
-                                        {{ m.label }}
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
+                            />
 
-                            <Select
+                            <SearchableSelect
+                                :options="budgetYearOptions"
                                 :model-value="budgetYearPart"
+                                :label="__('Year')"
+                                :search-placeholder="__('Search year')"
+                                :empty-text="__('No year found.')"
+                                :trigger-class="[BUDGET_PICKER, 'tabular-nums']"
+                                content-class="w-32"
                                 @update:model-value="loadBudgetMonth(`${$event}-${budgetMonthPart}`)"
-                            >
-                                <SelectTrigger
-                                    class="h-7 w-[4.5rem] rounded-full border-0 bg-transparent px-2 text-xs font-semibold tabular-nums shadow-none focus-visible:ring-0 dark:bg-transparent"
-                                    :aria-label="__('Year')"
-                                >
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem
-                                        v-for="y in budget_years"
-                                        :key="y"
-                                        :value="String(y)"
-                                    >
-                                        {{ y }}
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
+                            />
 
                             <Link
                                 :href="route('budgets.index', { month: budget_month })"
