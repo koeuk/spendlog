@@ -4,6 +4,15 @@ import { Check, Play, RotateCcw, Square, Timer } from 'lucide-vue-next';
 import { CARD, CARD_ALERT, EYEBROW, MUTED } from '@/lib/appStyles';
 import { formatClock } from '@/lib/exerciseStyles';
 import { useRestTimer } from '@/composables/useSessionTimer';
+import { Button } from '@/Components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/Components/ui/dialog';
 
 /**
  * A countdown you set yourself — the rest between sets.
@@ -19,32 +28,38 @@ const PRESETS = [60, 90, 120, 180];
 const timer = useRestTimer(90);
 
 /*
- * The duration fields are their own refs rather than a computed over
- * timer.duration: typing "1" on the way to "10" would otherwise rewrite the
- * timer on the first keystroke, and a blanked field would read as zero.
+ * The custom-length dialog. Its fields are a draft rather than the timer
+ * itself: typing "1" on the way to "10" would otherwise move the timer on the
+ * first keystroke, and cancelling would have nothing to fall back to.
  */
-const mins = ref(Math.floor(timer.duration.value / 60));
-const secs = ref(timer.duration.value % 60);
+const customOpen = ref(false);
+const mins = ref(0);
+const secs = ref(0);
 
 // A rest under five seconds is a mistyped one, and an hour is not a rest.
 function clamp(value, max) {
     return Math.min(max, Math.max(0, Math.floor(Number(value) || 0)));
 }
 
-const editedSeconds = computed(
+const draftSeconds = computed(
     () => Math.min(3599, Math.max(5, clamp(mins.value, 59) * 60 + clamp(secs.value, 59))),
 );
 
-// Idle edits move the timer; a running one is left alone until it is restarted.
-watch(editedSeconds, (value) => {
-    if (!timer.running.value) {
-        timer.duration.value = value;
-    }
-});
+// Opens on whatever the timer is set to now, so the dialog is an edit rather
+// than a blank slate.
+function openCustom() {
+    mins.value = Math.floor(timer.duration.value / 60);
+    secs.value = timer.duration.value % 60;
+    customOpen.value = true;
+}
 
-function showDuration(seconds) {
-    mins.value = Math.floor(seconds / 60);
-    secs.value = seconds % 60;
+function applyCustom() {
+    setDuration(draftSeconds.value);
+    customOpen.value = false;
+}
+
+function setDuration(seconds) {
+    timer.duration.value = seconds;
 }
 
 /*
@@ -62,10 +77,6 @@ watch(timer.finished, (finished) => {
 });
 
 function begin(seconds = null) {
-    if (seconds !== null) {
-        showDuration(seconds);
-    }
-
     done.value = false;
     timer.start(seconds);
 }
