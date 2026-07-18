@@ -182,22 +182,24 @@ const editable = computed(() => !open.value && !timer.running.value && !done.val
     <div :class="[done ? CARD_ALERT : CARD, 'anim flex flex-wrap items-center gap-x-4 gap-y-3 p-6']">
         <span
             class="grid size-12 shrink-0 place-items-center rounded-full transition-colors"
-            :class="timer.running.value || done ? 'bg-primary/15' : 'bg-muted'"
+            :class="running || done ? 'bg-primary/15' : 'bg-muted'"
         >
             <component
                 :is="done ? Check : Timer"
                 class="size-6 transition-colors"
-                :class="timer.running.value || done ? 'text-primary' : MUTED"
+                :class="running || done ? 'text-primary' : MUTED"
                 aria-hidden="true"
             />
         </span>
 
         <div class="min-w-0">
-            <p :class="EYEBROW">{{ done ? __('Rest over') : __('Rest') }}</p>
+            <p :class="EYEBROW">
+                {{ open ? __('Elapsed') : done ? __('Rest over') : __('Rest') }}
+            </p>
             <p class="mt-0.5 text-3xl font-extrabold tabular-nums tracking-tight">
                 {{ formatClock(display) }}
-                <!-- Counting up needs the target beside it, or the number has
-                     nothing to be a fraction of. -->
+                <!-- Counting up to a length needs that length beside it, or the
+                     number has nothing to be a fraction of. Open has none. -->
                 <span
                     v-if="mode === 'up'"
                     class="text-base font-bold tabular-nums"
@@ -210,27 +212,16 @@ const editable = computed(() => !open.value && !timer.running.value && !done.val
 
         <div class="ms-auto flex shrink-0 items-center gap-1.5">
             <button
-                v-if="!timer.running.value"
                 type="button"
                 class="grid size-10 place-items-center rounded-full border border-border transition hover:bg-muted"
-                :aria-label="__('Start')"
-                @click="begin()"
+                :aria-label="running ? (open ? __('Pause') : __('Stop')) : __('Start')"
+                @click="primary()"
             >
-                <Play class="size-4" />
+                <component :is="running ? (open ? Pause : Square) : Play" class="size-4" />
             </button>
 
             <button
-                v-else
-                type="button"
-                class="grid size-10 place-items-center rounded-full border border-border transition hover:bg-muted"
-                :aria-label="__('Stop')"
-                @click="reset()"
-            >
-                <Square class="size-4" />
-            </button>
-
-            <button
-                v-if="done"
+                v-if="resettable"
                 type="button"
                 class="grid size-10 place-items-center rounded-full border border-border transition hover:bg-muted"
                 :aria-label="__('Reset')"
@@ -290,6 +281,16 @@ const editable = computed(() => !open.value && !timer.running.value && !done.val
                     @click="mode = 'up'"
                 >
                     {{ __('Up') }}
+                </button>
+                <!-- No length, no end: runs until you stop it. -->
+                <button
+                    type="button"
+                    class="px-3 py-1 text-xs font-semibold transition"
+                    :class="mode === 'open' ? SEGMENT_ON : SEGMENT_OFF"
+                    :aria-pressed="mode === 'open'"
+                    @click="mode = 'open'"
+                >
+                    {{ __('Open') }}
                 </button>
             </div>
         </div>

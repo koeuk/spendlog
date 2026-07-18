@@ -8,7 +8,7 @@ import {
     getLocalTimeZone,
     today as currentDate,
 } from '@internationalized/date';
-import { MUTED, PILL_ACTION, SEGMENT, SEGMENT_ON, SEGMENT_OFF } from '@/lib/appStyles';
+import { MUTED, PILL_ACTION } from '@/lib/appStyles';
 import { formatClock } from '@/lib/exerciseStyles';
 import { trans } from '@/lib/i18n';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
@@ -124,23 +124,6 @@ function toUnit(kg) {
 seed();
 watch(() => props.workout, seed);
 
-// Switching unit rewrites what is in the fields, so the number always means what
-// the label beside it says.
-watch(unit, (next, previous) => {
-    form.weight_unit = next;
-
-    const factor = previous === 'lb' ? 0.45359237 : 1;
-    const divisor = next === 'lb' ? 0.45359237 : 1;
-
-    form.sets = form.sets.map((set) => ({
-        ...set,
-        weight:
-            set.weight === null || set.weight === ''
-                ? set.weight
-                : Math.round(((set.weight * factor) / divisor) * 10) / 10,
-    }));
-});
-
 function addSet() {
     // Repeats the last exercise: a session is usually several sets of the same
     // movement, so defaulting to a blank picker means re-choosing it every time.
@@ -228,8 +211,8 @@ function submit() {
 
 <template>
     <form class="space-y-5" @submit.prevent="submit">
-        <!-- Date, duration, unit -->
-        <div class="grid gap-4 sm:grid-cols-3">
+        <!-- Date, duration -->
+        <div class="grid gap-4 sm:grid-cols-2">
             <!-- Not a <label>: the trigger is a button, which a label cannot
                  forward a click to. The span labels it instead. -->
             <div class="block">
@@ -266,22 +249,6 @@ function submit() {
                     class="mt-1 h-10 w-full rounded-xl border border-border bg-card/70 px-3 text-sm"
                 />
             </label>
-
-            <div>
-                <span class="text-xs font-semibold">{{ __('Weight unit') }}</span>
-                <div :class="[SEGMENT, 'mt-1 flex']">
-                    <button
-                        v-for="option in ['kg', 'lb']"
-                        :key="option"
-                        type="button"
-                        class="flex-1 px-3 py-1.5 text-xs font-semibold transition"
-                        :class="unit === option ? SEGMENT_ON : SEGMENT_OFF"
-                        @click="unit = option"
-                    >
-                        {{ option }}
-                    </button>
-                </div>
-            </div>
         </div>
 
         <!-- The stopwatch. Client-side: it fills the duration field, and the
