@@ -4,6 +4,7 @@ namespace Tests\Feature\Settings;
 
 use App\Enums\Permission;
 use App\Enums\RoleName;
+use App\Enums\UserStatus;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -135,5 +136,49 @@ class UserPermissionsTest extends TestCase
         $this->actingAs($this->admin())
             ->put($this->url($target), ['permissions' => ['expenses.invent_money']])
             ->assertSessionHasErrors('permissions.0');
+    }
+
+    /**
+     * The edit form can change status just as changeStatus() can, so it owes the
+     * same cleanup. It used to save the new status and leave the tokens alone:
+     * the web session died on the next request, but a phone kept working.
+     */
+    public function test_suspending_from_the_edit_form_revokes_the_users_tokens(): void
+    {
+        $admin = User::factory()->create();
+        $admin->applyRole(RoleName::Admin);
+
+        $victim = User::factory()->create();
+        $victim->createToken('iPhone 15');
+
+        $this->assertSame(1, $victim->tokens()->count());
+
+        $this->actingAs($admin)->patch(route('users.update', $victim), [
+            'name' => $victim->name,
+            'email' => $victim->email,
+            'role' => RoleName::User->value,
+            'status' => UserStatus::Suspended->value,
+        ])->assertRedirect();
+
+        $this->assertSame(0, $victim->fresh()->tokens()->count());
+    }
+
+    /** An ordinary edit leaves a working account's tokens alone. */
+    public function test_editing_an_active_user_does_not_touch_their_tokens(): void
+    {
+        $admin = User::factory()->create();
+        $admin->applyRole(RoleName::Admin);
+
+        $victim = User::factory()->create();
+        $victim->createToken('iPhone 15');
+
+        $this->actingAs($admin)->patch(route('users.update', $victim), [
+            'name' => 'Renamed',
+            'email' => $victim->email,
+            'role' => RoleName::User->value,
+            'status' => UserStatus::Active->value,
+        ])->assertRedirect();
+
+        $this->assertSame(1, $victim->fresh()->tokens()->count());
     }
 }
