@@ -26,7 +26,7 @@ class WorkoutController extends Controller
         Gate::authorize('viewAny', Workout::class);
 
         $query = QueryBuilder::for(Workout::class)
-            ->allowedFilters([
+            ->allowedFilters(
                 AllowedFilter::callback('from', fn ($query, $value) => $query->whereDate('performed_on', '>=', $value)),
                 AllowedFilter::callback('to', fn ($query, $value) => $query->whereDate('performed_on', '<=', $value)),
                 // Filter by the public UUID; the column itself stays internal.
@@ -34,7 +34,7 @@ class WorkoutController extends Controller
                     'sets.exerciseType',
                     fn ($q) => $q->whereIn('uuid', (array) $value),
                 )),
-            ])
+            )
             ->allowedSorts('performed_on', 'duration_seconds')
             ->defaultSort('-performed_on', '-id')
             ->with(['sets.exerciseType:id,uuid,name,color,icon,muscle_group,is_cardio']);

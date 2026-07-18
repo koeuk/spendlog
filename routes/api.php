@@ -71,5 +71,28 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::post('budgets', [BudgetController::class, 'store'])->name('budgets.store');
             Route::delete('budgets/{budget:uuid}', [BudgetController::class, 'destroy'])->name('budgets.destroy');
         });
+
+        /*
+         * The exercise module.
+         *
+         * Nothing here needs a special guard for the module being opt-in: the
+         * ability is derived from exercise.* permissions (TokenAbility::
+         * grantableTo), so an account that was never granted the module cannot
+         * hold a token carrying these in the first place. The policies check
+         * again behind them.
+         */
+        Route::middleware('abilities:'.TokenAbility::ExerciseRead->value)->group(function () {
+            Route::get('workouts', [WorkoutController::class, 'index'])->name('workouts.index');
+            Route::get('workouts/summary', [WorkoutController::class, 'summary'])->name('workouts.summary');
+            Route::get('exercises', [WorkoutController::class, 'exercises'])->name('exercises.index');
+            // After the literal segments above, or 'summary' binds as a uuid.
+            Route::get('workouts/{workout:uuid}', [WorkoutController::class, 'show'])->name('workouts.show');
+        });
+
+        Route::middleware('abilities:'.TokenAbility::ExerciseWrite->value)->group(function () {
+            Route::post('workouts', [WorkoutController::class, 'store'])->name('workouts.store');
+            Route::patch('workouts/{workout:uuid}', [WorkoutController::class, 'update'])->name('workouts.update');
+            Route::delete('workouts/{workout:uuid}', [WorkoutController::class, 'destroy'])->name('workouts.destroy');
+        });
     });
 });
