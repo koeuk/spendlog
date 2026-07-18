@@ -2,8 +2,11 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\Currency;
+use App\Models\AppSetting;
 use App\Models\Category;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class BudgetRequest extends FormRequest
@@ -24,6 +27,9 @@ class BudgetRequest extends FormRequest
             'category_uuid' => ['nullable', 'uuid', 'exists:categories,uuid'],
             'month' => ['required', 'date_format:Y-m'],
             'amount' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
+            // What the *entered* amount is denominated in. Absent means USD, so
+            // existing callers keep working. See App\Enums\Currency.
+            'currency' => ['nullable', Rule::enum(Currency::class)],
         ];
     }
 
@@ -49,10 +55,15 @@ class BudgetRequest extends FormRequest
         // 'nullable' leaves the key absent rather than null.
         $categoryUuid = $data['category_uuid'] ?? null;
 
+        // Budgets are compared against stored expense prices, which are always
+        // USD — a riel budget left unconverted would read as ~4100x its real
+        // size and never report as over. Same conversion as ExpenseRequest.
+        $currency = Currency::tryFrom((string) $this->input('currency')) ?? Currency::Usd;
+
         return [
             'category_id' => $categoryUuid ? $this->resolveCategoryId($categoryUuid) : null,
             'month' => $data['month'].'-01',
-            'amount' => $data['amount'],
+            'amount' => $currency->toUsd((float) $data['amount'], AppSetting::current()->khrPerUsd()),
         ];
     }
 

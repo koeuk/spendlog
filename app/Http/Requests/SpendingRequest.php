@@ -60,12 +60,18 @@ class SpendingRequest extends FormRequest
      */
     public function spendingAttributes(): array
     {
-        return [
+        $attributes = [
             'spending_guidance_enabled' => $this->boolean('enabled'),
             'spending_warning' => $this->translations('warning'),
             'spending_advice' => $this->translations('advice'),
-            'khr_per_usd' => (float) $this->validated('khr_per_usd'),
         ];
+
+        // Omitted means "leave it as it is" — see the `sometimes` rule above.
+        if ($this->has('khr_per_usd')) {
+            $attributes['khr_per_usd'] = (float) $this->validated('khr_per_usd');
+        }
+
+        return $attributes;
     }
 
     /**

@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import BudgetProgress from '@/Components/BudgetProgress.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
@@ -92,9 +92,36 @@ const form = useForm({
     category_uuid: null,
     month: props.month,
     amount: '',
+    // What the amount is typed in. Stored as USD either way — see Currency.
+    currency: 'USD',
     // CategoryPicker writes this key; budgets.store ignores it (creation is
     // disabled there), but it has to exist for the picker to bind to.
     new_category: '',
+});
+
+const khrPerUsd = computed(() => Number(usePage().props.khr_per_usd) || 4100);
+
+/**
+ * What a riel budget will actually be stored as.
+ *
+ * Mirrors App\Enums\Currency::toUsd — same divisor, same rounding — so the hint
+ * matches the row that gets written. Nothing to say for a USD amount: it is
+ * stored exactly as typed.
+ */
+const convertedPreview = computed(() => {
+    if (form.currency !== 'KHR') {
+        return '';
+    }
+
+    const amount = Number(form.amount);
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+        return trans('Entered in riel, stored in US dollars.');
+    }
+
+    return trans('Stored as :amount', {
+        amount: money.format(Math.round((amount / khrPerUsd.value) * 100) / 100),
+    });
 });
 
 function openEdit(row, categoryUuid = null) {

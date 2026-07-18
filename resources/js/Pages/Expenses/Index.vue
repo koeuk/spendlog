@@ -29,8 +29,14 @@ const props = defineProps({
     can: { type: Object, default: () => ({ view_all: false, create_category: false }) },
     users: { type: Array, default: () => [] },
     filters: { type: Object, default: () => ({}) },
-    // 'all' | 'week' | 'month' | 'year' — the active date filter.
-    period: { type: String, default: 'all' },
+    // The two date filters. '' means "every one" for each, and they are
+    // independent: a year alone shows the whole year, a month alone shows that
+    // month across every year.
+    month: { type: String, default: '' },
+    year: { type: String, default: '' },
+    // Month labels are built server-side so they follow the app locale.
+    months: { type: Array, default: () => [] },
+    years: { type: Array, default: () => [] },
 });
 
 const viewingAll = computed(() => props.scope === 'all');
@@ -45,7 +51,7 @@ const { navigating } = useNavigating();
  * Empty values are dropped rather than sent blank: ?filter[item]= is a filter
  * for the empty string, not the absence of one.
  */
-function navigate({ scope, period, ...changes } = {}) {
+function navigate({ scope, month, year, ...changes } = {}) {
     const filter = { ...(props.filters?.filter ?? {}), ...changes };
     const query = {};
 
@@ -55,13 +61,18 @@ function navigate({ scope, period, ...changes } = {}) {
         query.scope = 'all';
     }
 
-    // Carried as a top-level param, not a filter (spatie would reject an unknown
-    // filter). Preserved across every other control so changing the category
-    // does not silently clear the chosen date range.
-    const nextPeriod = period !== undefined ? period : props.period;
+    // Carried as top-level params, not filters (spatie rejects an unknown
+    // filter). Each is preserved unless this call changes it, so picking a
+    // category does not silently clear the month you chose.
+    const nextMonth = month !== undefined ? month : props.month;
+    const nextYear = year !== undefined ? year : props.year;
 
-    if (nextPeriod && nextPeriod !== 'all') {
-        query.period = nextPeriod;
+    if (nextMonth) {
+        query.month = nextMonth;
+    }
+
+    if (nextYear) {
+        query.year = nextYear;
     }
 
     for (const [key, value] of Object.entries(filter)) {
@@ -104,20 +115,29 @@ function applyCategoryFilter(uuid) {
     navigate({ category: uuid });
 }
 
-// Date range. 'all' is the no-filter option so it round-trips through
-// navigate()'s drop untouched, same as the empty category value.
-const dateFilter = ref(props.period ?? 'all');
+// Two independent date controls. '' is the "no filter" option in each, so it
+// round-trips through navigate()'s empty-value drop like the category one.
+const monthFilter = ref(props.month ?? '');
+const yearFilter = ref(props.year ?? '');
 
-const dateOptions = computed(() => [
-    { value: 'all', label: trans('All dates') },
-    { value: 'week', label: trans('This week') },
-    { value: 'month', label: trans('This month') },
-    { value: 'year', label: trans('This year') },
+const monthOptions = computed(() => [
+    { value: '', label: trans('All months') },
+    ...props.months.map((m) => ({ value: m.value, label: m.label })),
 ]);
 
-function applyDateFilter(value) {
-    dateFilter.value = value;
-    navigate({ period: value });
+const yearOptions = computed(() => [
+    { value: '', label: trans('All years') },
+    ...props.years.map((y) => ({ value: String(y), label: String(y) })),
+]);
+
+function applyMonthFilter(value) {
+    monthFilter.value = value;
+    navigate({ month: value });
+}
+
+function applyYearFilter(value) {
+    yearFilter.value = value;
+    navigate({ year: value });
 }
 
 // Admin-only: narrow the everyone view to a single person.

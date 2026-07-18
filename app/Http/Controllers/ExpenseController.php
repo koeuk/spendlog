@@ -3,11 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Enums\Permission;
-use App\Enums\TrendGranularity;
 use App\Http\Requests\ExpenseRequest;
 use App\Models\Category;
 use App\Models\Expense;
 use App\Models\User;
+use App\Support\CalendarOptions;
 use App\Support\Concerns\PaginatesLists;
 use App\Support\TranslatableQuery;
 use Carbon\CarbonImmutable;
