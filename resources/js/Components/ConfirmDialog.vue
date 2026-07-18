@@ -71,12 +71,12 @@ function focusCancel(event) {
     <AlertDialogRoot :open="open" @update:open="emit('update:open', $event)">
         <AlertDialogPortal>
             <AlertDialogOverlay
-                class="data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 fixed inset-0 z-50 bg-black/50"
+                class="data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 fixed inset-0 z-50 bg-black/50 duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
             />
 
             <AlertDialogContent
                 :class="[
-                    'bg-popover text-popover-foreground data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-90 data-open:zoom-in-90 data-open:ease-[cubic-bezier(0.34,1.56,0.64,1)] ring-foreground/10 fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl p-6 text-sm ring-1 duration-300 outline-none sm:max-w-md',
+                    'bg-popover text-popover-foreground data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 ease-[cubic-bezier(0.16,1,0.3,1)] ring-foreground/10 fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl p-6 text-sm ring-1 duration-300 outline-none sm:max-w-md',
                     pulsing && 'dialog-pulse',
                 ]"
                 @open-auto-focus="focusCancel"

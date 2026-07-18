@@ -43,10 +43,6 @@ const form = useForm({
     sets: [],
 });
 
-const typeByUuid = computed(
-    () => new Map(props.exerciseTypes.map((type) => [type.uuid, type])),
-);
-
 // SearchableSelect wants {value, label}. The star marks a movement the viewer
 // added themselves, exactly as the old <option> did.
 const typeOptions = computed(() =>
@@ -59,9 +55,10 @@ const typeOptions = computed(() =>
 /**
  * Seed the rows from the workout being edited.
  *
- * Weights come back in kilograms and are shown in the viewer's unit, so the
- * number in the field matches what they would have typed rather than the stored
- * canonical value.
+ * Only the movement is editable now, but every measure is still carried:
+ * an update rewrites each set row wholesale, so anything dropped here would be
+ * nulled out in the database on the next save. Weights come back in kilograms
+ * and are held in the viewer's unit, the same shape the form has always sent.
  */
 function seed() {
     form.sets = (props.workout?.sets ?? []).map((set) => ({
@@ -70,8 +67,6 @@ function seed() {
         weight: set.weight_kg === null ? null : toUnit(set.weight_kg),
         distance_m: set.distance_m,
         duration_seconds: set.duration_seconds,
-        // No longer editable, but still carried: an update rewrites every set
-        // row, so dropping it here would null out the values already recorded.
         rpe: set.rpe,
     }));
 }
@@ -102,10 +97,6 @@ function addSet() {
 
 function removeSet(index) {
     form.sets.splice(index, 1);
-}
-
-function isCardio(index) {
-    return Boolean(typeByUuid.value.get(form.sets[index]?.exercise_type_uuid)?.is_cardio);
 }
 
 /* --- the stopwatch ---------------------------------------------------- */
@@ -255,55 +246,6 @@ function submit() {
                         </button>
                     </div>
 
-                    <!-- Which fields show follows the movement's own is_cardio
-                         flag, so a run asks for distance and time while a press
-                         asks for reps and load. -->
-                    <div class="mt-2 grid grid-cols-2 gap-2 ps-8">
-                        <template v-if="isCardio(index)">
-                            <label class="block">
-                                <span class="text-[11px]" :class="MUTED">{{ __('Distance (m)') }}</span>
-                                <input
-                                    v-model.number="set.distance_m"
-                                    type="number"
-                                    min="0"
-                                    class="mt-0.5 h-9 w-full rounded-xl border border-border bg-card/70 px-2 text-sm"
-                                />
-                            </label>
-                            <label class="block">
-                                <span class="text-[11px]" :class="MUTED">{{ __('Time (s)') }}</span>
-                                <input
-                                    v-model.number="set.duration_seconds"
-                                    type="number"
-                                    min="0"
-                                    class="mt-0.5 h-9 w-full rounded-xl border border-border bg-card/70 px-2 text-sm"
-                                />
-                            </label>
-                        </template>
-
-                        <template v-else>
-                            <label class="block">
-                                <span class="text-[11px]" :class="MUTED">{{ __('Reps') }}</span>
-                                <input
-                                    v-model.number="set.reps"
-                                    type="number"
-                                    min="1"
-                                    class="mt-0.5 h-9 w-full rounded-xl border border-border bg-card/70 px-2 text-sm"
-                                />
-                            </label>
-                            <label class="block">
-                                <span class="text-[11px]" :class="MUTED">
-                                    {{ __('Weight') }} ({{ unit }})
-                                </span>
-                                <input
-                                    v-model.number="set.weight"
-                                    type="number"
-                                    step="0.5"
-                                    min="0"
-                                    class="mt-0.5 h-9 w-full rounded-xl border border-border bg-card/70 px-2 text-sm"
-                                />
-                            </label>
-                        </template>
-                    </div>
                 </li>
             </ul>
         </div>

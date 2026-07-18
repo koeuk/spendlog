@@ -5,7 +5,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import BudgetProgress from '@/Components/BudgetProgress.vue';
 import SpendingTrendChart from '@/Components/SpendingTrendChart.vue';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
-import { CARD, CARD_TINT, EYEBROW, FIGURE, MUTED } from '@/lib/appStyles';
+import { CARD, CARD_BRAND, CARD_TINT, EYEBROW, FIGURE, MUTED } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 import { ArrowRight, Lightbulb, TriangleAlert } from 'lucide-vue-next';
@@ -180,7 +180,7 @@ const statusText = {
                  set, so an admin can show just one of the two. -->
             <div
                 v-if="guidance"
-                :class="[CARD, 'anim space-y-3 p-6 sm:p-7']"
+                :class="[CARD_BRAND, 'anim space-y-3 p-6 sm:p-7']"
                 style="--d: 40ms"
             >
                 <div v-if="guidance.warning" class="flex items-start gap-3">

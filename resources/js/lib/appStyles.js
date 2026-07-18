@@ -88,6 +88,26 @@ export const CARD_ALERT =
     'dark:border-red-500/25 dark:bg-red-950/40';
 
 /**
+ * CARD's branded sibling — the same glass, washed with the admin's button
+ * colour, for a block that should read as the app speaking rather than as
+ * another data card.
+ *
+ * --primary, not a literal: this is the one surface meant to carry the brand,
+ * so it has to move when an admin picks a colour instead of pinning a hue the
+ * rest of the app no longer uses.
+ *
+ * 10% fill and a 20% edge, because --primary is a *button* fill: at full
+ * strength it is a solid slab behind body copy. A tenth of it reads as a tint
+ * on both themes while leaving the derived card text its contrast.
+ *
+ * No dark: variant, and no CARD_LIFT — matching ACTIVE and CARD_ALERT
+ * respectively. --primary is already theme-aware, and nothing here is clickable.
+ */
+export const CARD_BRAND =
+    'rounded-[28px] border border-primary/20 bg-primary/10 ' +
+    'backdrop-blur-xl backdrop-saturate-150';
+
+/**
  * A lighter pane for nested surfaces (modals, popovers) that sit above a card
  * and would otherwise blur an already-blurred layer — stacking backdrop filters
  * costs a lot and muddies both.

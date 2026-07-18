@@ -65,13 +65,34 @@ const dialogOpen = computed({
 
 const deleteForm = useForm({});
 
-function destroy(workout) {
-    if (!window.confirm(trans('Delete this workout? Its sets go with it.'))) {
+// The workout awaiting confirmation. Holding the row itself, not just a flag,
+// lets the prompt name what is about to go.
+const confirming = ref(null);
+const deleting = ref(null);
+
+function confirmDestroy(workout) {
+    confirming.value = workout;
+}
+
+function destroy() {
+    const workout = confirming.value;
+
+    if (!workout) {
         return;
     }
 
+    deleting.value = workout.uuid;
+
     deleteForm.delete(route('exercise.workouts.destroy', workout.uuid), {
         preserveScroll: true,
+        // Closed on success, not on click: a failed delete should leave the
+        // prompt up rather than vanish with the row still there.
+        onSuccess: () => {
+            confirming.value = null;
+        },
+        onFinish: () => {
+            deleting.value = null;
+        },
     });
 }
 
@@ -209,7 +230,7 @@ function formatDate(value) {
                             type="button"
                             class="grid size-9 place-items-center rounded-full text-neutral-400 transition hover:bg-red-500/10 hover:text-red-600"
                             :aria-label="__('Delete')"
-                            @click="destroy(workout)"
+                            @click="confirmDestroy(workout)"
                         >
                             <Trash2 class="size-4" />
                         </button>
@@ -248,5 +269,24 @@ function formatDate(value) {
                 :only="['workouts', 'pagination']"
             />
         </div>
+
+        <ConfirmDialog
+            :open="confirming !== null"
+            :title="__('Delete this workout?')"
+            :description="
+                confirming
+                    ? __('The session on :date and its :count sets will be removed. This cannot be undone.', {
+                          date: formatDate(confirming.performed_on),
+                          count: confirming.sets.length,
+                      })
+                    : ''
+            "
+            :confirm-label="__('Delete')"
+            :cancel-label="__('Cancel')"
+            :processing="deleting !== null"
+            :processing-label="__('Deleting…')"
+            @update:open="confirming = $event ? confirming : null"
+            @confirm="destroy"
+        />
     </AuthenticatedLayout>
 </template>
