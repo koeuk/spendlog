@@ -216,10 +216,6 @@ function formatDate(value) {
                         <p class="text-sm font-bold">{{ formatDate(workout.performed_on) }}</p>
 
                         <div class="mt-1 flex flex-wrap items-center gap-3 text-xs" :class="MUTED">
-                            <span v-if="workout.duration_seconds" class="inline-flex items-center gap-1">
-                                <Timer class="size-3.5" />
-                                {{ formatDuration(workout.duration_seconds) }}
-                            </span>
                             <span v-if="workout.volume_kg > 0" class="inline-flex items-center gap-1">
                                 <Dumbbell class="size-3.5" />
                                 {{ formatWeight(workout.volume_kg, unit) }}
@@ -227,6 +223,19 @@ function formatDate(value) {
                             <span>{{ __(':count sets', { count: workout.sets.length }) }}</span>
                         </div>
                     </div>
+
+                    <!-- How long it took now carries the session, so it reads at
+                         the size the numbers it replaced used to. Centred by
+                         growing to fill the gap between the date and the
+                         actions, rather than by absolute positioning — this way
+                         it wraps to its own line instead of overlapping them. -->
+                    <span
+                        v-if="workout.duration_seconds"
+                        class="flex flex-1 items-center justify-center gap-1.5 text-lg font-extrabold tabular-nums tracking-tight"
+                    >
+                        <Timer class="size-4 shrink-0" :class="MUTED" />
+                        {{ formatDuration(workout.duration_seconds) }}
+                    </span>
 
                     <div class="flex items-center gap-1">
                         <button
