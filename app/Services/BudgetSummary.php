@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\Currency;
 use App\Models\Budget;
 use App\Models\Category;
 use App\Models\Expense;
@@ -154,9 +155,13 @@ class BudgetSummary
 
         return [
             ...$extra,
-            'spent' => round($spent, 2),
+            // Rounded at the column's own scale, not to cents: the page shows
+            // these figures in riel as well as dollars, and snapping to cents
+            // first would put a ៛100 spend back at ៛82 — the very rounding the
+            // four-place column exists to avoid. The view formats to cents.
+            'spent' => round($spent, Currency::SCALE),
             'budget' => $amount,
-            'remaining' => $amount !== null ? round($amount - $spent, 2) : null,
+            'remaining' => $amount !== null ? round($amount - $spent, Currency::SCALE) : null,
             'percent' => $percent,
             // Capped so the bar never overflows its track; percent keeps the truth.
             'bar_percent' => $percent !== null ? min($percent, 100) : 0,
