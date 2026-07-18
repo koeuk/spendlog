@@ -26,7 +26,9 @@ class BudgetRequest extends FormRequest
             // Null means the overall budget covering every category.
             'category_uuid' => ['nullable', 'uuid', 'exists:categories,uuid'],
             'month' => ['required', 'date_format:Y-m'],
-            'amount' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
+            // The floor is per-currency: ៛99 is not a payable amount, $0 is a
+            // real budget. See Currency::minimumInput.
+            'amount' => ['required', 'numeric', 'min:'.$this->enteredCurrency()->minimumInput(), 'max:99999999.99'],
             // What the *entered* amount is denominated in. Absent means USD, so
             // existing callers keep working. See App\Enums\Currency.
             'currency' => ['nullable', Rule::enum(Currency::class)],
@@ -55,16 +57,28 @@ class BudgetRequest extends FormRequest
         // 'nullable' leaves the key absent rather than null.
         $categoryUuid = $data['category_uuid'] ?? null;
 
-        // Budgets are compared against stored expense prices, which are always
-        // USD — a riel budget left unconverted would read as ~4100x its real
-        // size and never report as over. Same conversion as ExpenseRequest.
-        $currency = Currency::tryFrom((string) $this->input('currency')) ?? Currency::Usd;
-
         return [
             'category_id' => $categoryUuid ? $this->resolveCategoryId($categoryUuid) : null,
             'month' => $data['month'].'-01',
-            'amount' => $currency->toUsd((float) $data['amount'], AppSetting::current()->khrPerUsd()),
+            // Budgets are compared against stored expense prices, which are
+            // always USD — a riel budget left unconverted would read as ~4100x
+            // its real size and never report as over. Same as ExpenseRequest.
+            'amount' => $this->enteredCurrency()
+                ->toUsd((float) $data['amount'], AppSetting::current()->khrPerUsd()),
         ];
+    }
+
+    /**
+     * What the submitted amount is denominated in.
+     *
+     * Read straight off the raw input rather than the validated data, because
+     * rules() needs it to build the amount rule and validation has not run yet.
+     * An absent or unrecognised value means USD, so callers predating the
+     * currency toggle keep working.
+     */
+    private function enteredCurrency(): Currency
+    {
+        return Currency::tryFrom((string) $this->input('currency')) ?? Currency::Usd;
     }
 
     /**

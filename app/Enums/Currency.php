@@ -29,6 +29,23 @@ enum Currency: string
     public const SCALE = 4;
 
     /**
+     * The smallest amount worth entering in this currency.
+     *
+     * ៛100 is the smallest note in circulation, so a riel figure below it is not
+     * an amount anyone can actually pay — and at this rate the whole 1–99៛ range
+     * collapses to under two cents, which reads back as a budget of $0.00. The
+     * dollar has no equivalent floor: cents are real money, and $0 is a
+     * deliberate "nothing budgeted for this" rather than a typo.
+     */
+    public function minimumInput(): float
+    {
+        return match ($this) {
+            self::Usd => 0.0,
+            self::Khr => 100.0,
+        };
+    }
+
+    /**
      * Convert an entered amount into the USD value that gets stored.
      *
      * Rounded here rather than left to the decimal cast, which truncates: at two

@@ -588,7 +588,7 @@ function clearBudget() {
                             class="mt-1"
                             type="number"
                             :step="form.currency === 'KHR' ? '100' : '0.01'"
-                            min="0"
+                            :min="form.currency === 'KHR' ? '100' : '0'"
                             inputmode="decimal"
                             :placeholder="form.currency === 'KHR' ? '0' : '0.00'"
                         />

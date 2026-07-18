@@ -124,10 +124,28 @@ function toggleTimer() {
     timer.toggle();
 }
 
-// Records the clock against the workout rather than submitting on its own —
-// the person may still want to add sets before saving.
-function applyTimer() {
-    form.duration_seconds = timer.elapsedSeconds.value;
+/*
+ * The reading is the duration — there is no separate field to copy it into, so
+ * it follows the clock rather than waiting to be taken.
+ *
+ * Guarded on `> 0` because the timer starts at zero: writing that through on
+ * mount would wipe a duration the form opened with, either handed over by the
+ * dashboard timer or already saved on the workout being edited.
+ */
+watch(timer.elapsedSeconds, (seconds) => {
+    if (seconds > 0) {
+        form.duration_seconds = seconds;
+    }
+});
+
+// What the form opened on, to fall back to when the clock is wound back.
+const openedWith = props.workout?.duration_seconds ?? props.initialDurationSeconds;
+
+// Resetting means "that reading was wrong", so the duration goes back to what
+// was there before the clock ran rather than to nothing.
+function resetTimer() {
+    timer.reset();
+    form.duration_seconds = openedWith;
 }
 
 /* --- submit ----------------------------------------------------------- */
