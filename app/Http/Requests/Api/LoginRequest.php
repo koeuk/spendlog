@@ -20,7 +20,13 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email'],
+            /*
+             * Either credential. Not validated as an email — a username is a
+             * valid value here, and the `email` rule would reject it before the
+             * lookup happens. Still named `email` on the wire so existing
+             * clients keep working, and so the error bag key does not change.
+             */
+            'email' => ['required', 'string'],
             'password' => ['required', 'string'],
             // Names the token in the user's token list, so it can be revoked
             // individually later ("iPhone 15" rather than "token #4").

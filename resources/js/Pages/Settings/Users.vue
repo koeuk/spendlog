@@ -49,6 +49,9 @@ const editing = ref(null);
 
 const form = useForm({
     name: '',
+    // Optional display handle. Blank is sent as '' and normalised to null
+    // server-side — see App\Rules\UsernameRules.
+    username: '',
     email: '',
     password: '',
     password_confirmation: '',
@@ -66,6 +69,7 @@ function openCreate() {
 function openEdit(user) {
     editing.value = user;
     form.name = user.name;
+    form.username = user.username ?? '';
     form.email = user.email;
     // Left blank on edit: the server keeps the existing password unless one is typed.
     form.password = '';
@@ -307,6 +311,26 @@ const passwordHint = computed(() =>
                             <Input id="user_name" v-model="form.name" class="mt-1" autocomplete="off" />
                             <p v-if="form.errors.name" class="mt-1 text-sm text-red-600 dark:text-red-400">
                                 {{ form.errors.name }}
+                            </p>
+                        </div>
+
+                        <div>
+                            <Label for="user_username">{{ __('Username') }}</Label>
+                            <Input
+                                id="user_username"
+                                v-model="form.username"
+                                class="mt-1"
+                                autocomplete="off"
+                                autocapitalize="none"
+                                spellcheck="false"
+                                placeholder="koeuk"
+                                :aria-invalid="!!form.errors.username"
+                            />
+                            <p class="mt-1 text-xs" :class="MUTED">
+                                {{ __('Optional. Lowercase letters, numbers, underscores and hyphens. Can also be used to sign in.') }}
+                            </p>
+                            <p v-if="form.errors.username" class="mt-1 text-sm text-red-600 dark:text-red-400">
+                                {{ form.errors.username }}
                             </p>
                         </div>
 

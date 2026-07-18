@@ -38,6 +38,8 @@ class UserController extends Controller
             ->map(fn (User $user) => [
                 'uuid' => $user->uuid,
                 'name' => $user->name,
+                // Null when unset — the edit dialog seeds a blank field from it.
+                'username' => $user->username,
                 'email' => $user->email,
                 'role' => $role = $user->roles->first()?->name ?? RoleName::User->value,
                 // Rendered instead of capitalising the raw value, which turns

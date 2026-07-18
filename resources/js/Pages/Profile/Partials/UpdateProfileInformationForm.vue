@@ -14,6 +14,8 @@ const user = usePage().props.auth.user;
 
 const form = useForm({
     name: user.name,
+    // Optional; '' clears it back to null server-side.
+    username: user.username ?? '',
     email: user.email,
 });
 </script>
@@ -38,6 +40,27 @@ const form = useForm({
             />
             <p v-if="form.errors.name" class="mt-1 text-sm text-red-600 dark:text-red-400">
                 {{ form.errors.name }}
+            </p>
+        </div>
+
+        <div>
+            <Label for="username">{{ __('Username') }}</Label>
+            <Input
+                id="username"
+                v-model="form.username"
+                type="text"
+                autocomplete="username"
+                autocapitalize="none"
+                spellcheck="false"
+                class="mt-1"
+                placeholder="koeuk"
+                :aria-invalid="!!form.errors.username"
+            />
+            <p class="mt-1 text-xs" :class="MUTED">
+                {{ __('Optional. Lowercase letters, numbers, underscores and hyphens. You can sign in with this instead of your email.') }}
+            </p>
+            <p v-if="form.errors.username" class="mt-1 text-sm text-red-600 dark:text-red-400">
+                {{ form.errors.username }}
             </p>
         </div>
 
