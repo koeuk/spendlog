@@ -12,12 +12,19 @@ let nextId = 0;
 
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue';
+import { useMediaQuery } from '@vueuse/core';
 import { Check, ChevronDown, Search } from 'lucide-vue-next';
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
 } from '@/Components/ui/popover';
+import {
+    Sheet,
+    SheetContent,
+    SheetTitle,
+    SheetTrigger,
+} from '@/Components/ui/sheet';
 import { cn } from '@/lib/utils';
 
 const props = defineProps({
@@ -48,6 +55,43 @@ const emit = defineEmits(['update:modelValue']);
 const open = ref(false);
 const query = ref('');
 const searchRef = ref(null);
+
+/*
+ * A popover anchored to a pill in a toolbar has nowhere to go on a phone: at
+ * 430px the list either runs off the top of the viewport or covers the very
+ * control it belongs to. Below sm the same list is therefore presented as a
+ * bottom sheet — anchored to the thumb, sized to its content, dismissed by the
+ * overlay.
+ *
+ * The shells are swapped rather than the panel duplicated, so the list, the
+ * search box and all the keyboard wiring below have exactly one definition.
+ * Both shells are reka Dialog/Popover roots taking `open`, and both triggers
+ * accept as-child, so the same markup slots into either.
+ */
+const isMobile = useMediaQuery('(max-width: 639px)');
+
+const shell = computed(() => (isMobile.value ? Sheet : Popover));
+const shellTrigger = computed(() => (isMobile.value ? SheetTrigger : PopoverTrigger));
+const shellContent = computed(() => (isMobile.value ? SheetContent : PopoverContent));
+
+const shellContentProps = computed(() =>
+    isMobile.value
+        ? {
+              side: 'bottom',
+              // Own header below, so the built-in floating X is off — it would
+              // otherwise land on top of the title.
+              showCloseButton: false,
+              class: cn(
+                  'gap-0 rounded-t-2xl p-0',
+                  // dvh, not vh: with the browser chrome shown, 75vh on iOS
+                  // reaches past the bottom of what is actually visible.
+                  'max-h-[75dvh]',
+                  // Clear of the home indicator / gesture bar.
+                  'pb-[env(safe-area-inset-bottom)]',
+              ),
+          }
+        : { align: props.align, class: cn('p-0', props.contentClass) },
+);
 
 const selected = computed(
     () => props.options.find((option) => option.value === props.modelValue) ?? null,
@@ -139,7 +183,13 @@ watch(open, async (isOpen) => {
     setActive(current === -1 ? 0 : current);
 
     await nextTick();
-    searchRef.value?.focus();
+
+    // Not on the sheet: focusing the box raises the on-screen keyboard, which
+    // eats the lower half of the screen and pushes the list the user came here
+    // to tap out of reach. Typing is still one tap away if they want it.
+    if (!isMobile.value) {
+        searchRef.value?.focus();
+    }
 });
 
 function choose(option) {
@@ -151,8 +201,8 @@ function choose(option) {
 </script>
 
 <template>
-    <Popover v-model:open="open">
-        <PopoverTrigger as-child>
+    <component :is="shell" v-model:open="open">
+        <component :is="shellTrigger" as-child>
             <button
                 type="button"
                 :class="
@@ -183,21 +233,42 @@ function choose(option) {
                     :class="open ? 'rotate-180' : ''"
                 />
             </button>
-        </PopoverTrigger>
+        </component>
 
-        <PopoverContent :class="cn('p-0', contentClass)" :align="align">
+        <component :is="shellContent" v-bind="shellContentProps">
+            <!-- The sheet is a dialog, so it owes a title: reka warns without
+                 one and a screen reader announces an unnamed panel. The popover
+                 is labelled by its trigger instead and needs no header. -->
+            <div
+                v-if="isMobile"
+                class="flex items-center justify-between gap-2 border-b border-border px-4 py-3"
+            >
+                <SheetTitle class="text-sm font-semibold text-foreground">
+                    {{ label }}
+                </SheetTitle>
+                <button
+                    type="button"
+                    class="-me-1 rounded-lg px-2 py-1 text-xs font-semibold text-muted-foreground transition hover:text-foreground"
+                    @click="open = false"
+                >
+                    {{ __('Done') }}
+                </button>
+            </div>
+
             <!-- Tokens throughout, not neutral-*: appStyles.js spells out why a
                  literal colour here paints over the admin's chosen palette and
                  makes the setting silently do nothing. -->
-            <div class="flex items-center gap-2 border-b border-border px-3">
+            <div class="flex shrink-0 items-center gap-2 border-b border-border px-3">
                 <Search class="size-3.5 shrink-0 text-muted-foreground" />
                 <!-- A plain input, not the shadcn one: this needs no ring or
-                     border of its own inside an already-bordered popover. -->
+                     border of its own inside an already-bordered popover.
+                     text-base on the sheet, not text-xs: iOS Safari zooms the
+                     whole page in when a font under 16px takes focus. -->
                 <input
                     ref="searchRef"
                     v-model="query"
                     type="text"
-                    class="h-9 w-full border-0 bg-transparent p-0 text-xs font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-0"
+                    class="w-full border-0 bg-transparent p-0 font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-0 max-sm:h-12 max-sm:text-base sm:h-9 sm:text-xs"
                     :placeholder="searchPlaceholder || __('Search…')"
                     role="combobox"
                     aria-autocomplete="list"
@@ -213,7 +284,14 @@ function choose(option) {
                 />
             </div>
 
-            <ul :id="listboxId" class="max-h-64 overflow-y-auto p-1" role="listbox">
+            <!-- min-h-0 so this, and not the sheet, is what scrolls: a flex
+                 child defaults to its content's height and would otherwise push
+                 the panel past the max-h instead of overflowing inside it. -->
+            <ul
+                :id="listboxId"
+                class="overflow-y-auto overscroll-contain p-1 max-sm:min-h-0 max-sm:flex-1 sm:max-h-64"
+                role="listbox"
+            >
                 <!-- role="none" on the wrapper: a listbox's children have to be
                      options, and a bare <li> in between breaks that tree. -->
                 <li
@@ -225,7 +303,7 @@ function choose(option) {
                         :id="optionId(index)"
                         :ref="(el) => (optionRefs[index] = el)"
                         type="button"
-                        class="flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-start text-xs font-medium transition"
+                        class="flex w-full items-center justify-between gap-2 rounded-lg text-start font-medium transition max-sm:min-h-11 max-sm:px-3 max-sm:py-2.5 max-sm:text-sm sm:px-2.5 sm:py-1.5 sm:text-xs"
                         :class="[
                             /* Two different states, so they are shown two
                                different ways: weight marks what is *selected*,
@@ -263,6 +341,6 @@ function choose(option) {
                     {{ emptyText || __('Nothing found.') }}
                 </li>
             </ul>
-        </PopoverContent>
-    </Popover>
+        </component>
+    </component>
 </template>

@@ -351,7 +351,7 @@ const filtered = computed(() =>
                         :search-placeholder="__('Search people…')"
                         :empty-text="__('No one found.')"
                         content-class="w-44"
-                        trigger-class="h-8 w-44 rounded-full border border-neutral-200 bg-white px-3 text-xs font-medium text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200"
+                        trigger-class="h-8 rounded-full border border-neutral-200 bg-white px-3 text-xs font-medium text-neutral-700 sm:w-44 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200"
                         @update:model-value="applyUserFilter"
                     />
 

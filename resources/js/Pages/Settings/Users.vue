@@ -342,7 +342,13 @@ const passwordHint = computed(() =>
                             </p>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-4">
+                        <!-- Side by side only once there is room. In a dialog on a
+                             320px screen two columns are 112px each, and the
+                             triggers are whitespace-nowrap with a line-clamp, so
+                             "Super admin" and "Deactivated" collapsed to a stub
+                             that read the same as its neighbours in the closed
+                             state — the one state you pick from. -->
+                        <div class="grid gap-4 sm:grid-cols-2">
                             <div>
                                 <Label for="user_role">{{ __('Role') }}</Label>
                                 <Select v-model="form.role">

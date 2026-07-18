@@ -302,7 +302,7 @@ const sections = computed(() => {
                             <button
                                 v-if="type.can_update"
                                 type="button"
-                                class="grid size-8 place-items-center rounded-full text-neutral-400 transition hover:bg-muted hover:text-foreground"
+                                class="grid size-10 place-items-center rounded-full text-neutral-400 transition hover:bg-muted hover:text-foreground"
                                 :aria-label="__('Edit')"
                                 @click="open(type)"
                             >
@@ -312,7 +312,7 @@ const sections = computed(() => {
                             <button
                                 v-if="type.can_delete"
                                 type="button"
-                                class="grid size-8 place-items-center rounded-full text-neutral-400 transition hover:bg-red-500/10 hover:text-red-600"
+                                class="grid size-10 place-items-center rounded-full text-neutral-400 transition hover:bg-red-500/10 hover:text-red-600"
                                 :aria-label="__('Delete')"
                                 @click="confirmDestroy(type)"
                             >

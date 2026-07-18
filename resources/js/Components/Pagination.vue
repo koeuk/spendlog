@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next';
-import { MUTED } from '@/lib/appStyles';
+import { MUTED, TAP_TARGET } from '@/lib/appStyles';
 import {
     Select,
     SelectContent,
@@ -111,7 +111,10 @@ function setPerPage(size) {
             <div v-if="hasPages" class="flex items-center gap-1">
                 <button
                     type="button"
-                    class="grid size-7 place-items-center rounded-full border border-neutral-200 text-neutral-600 transition hover:bg-neutral-50 disabled:opacity-40 disabled:hover:bg-transparent dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                    :class="[
+                        TAP_TARGET,
+                        'grid size-7 place-items-center rounded-full border border-neutral-200 text-neutral-600 transition hover:bg-neutral-50 disabled:opacity-40 disabled:hover:bg-transparent dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800',
+                    ]"
                     :disabled="!meta.prev_page_url || disabled"
                     :aria-label="__('Newer')"
                     @click="visit(meta.prev_page_url)"
@@ -125,7 +128,10 @@ function setPerPage(size) {
 
                 <button
                     type="button"
-                    class="grid size-7 place-items-center rounded-full border border-neutral-200 text-neutral-600 transition hover:bg-neutral-50 disabled:opacity-40 disabled:hover:bg-transparent dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                    :class="[
+                        TAP_TARGET,
+                        'grid size-7 place-items-center rounded-full border border-neutral-200 text-neutral-600 transition hover:bg-neutral-50 disabled:opacity-40 disabled:hover:bg-transparent dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800',
+                    ]"
                     :disabled="!meta.next_page_url || disabled"
                     :aria-label="__('Older')"
                     @click="visit(meta.next_page_url)"

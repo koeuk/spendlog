@@ -148,11 +148,18 @@ const statusLabel = (value) => props.statuses.find((s) => s.value === value)?.la
                     :key="faq.uuid"
                     :class="[CARD, 'flex items-start gap-3 p-4']"
                 >
-                    <!-- Reorder controls -->
-                    <div class="flex flex-col">
+                    <!-- Reorder controls
+
+                         Real size rather than an expanded hit area: these two are
+                         stacked with nothing between them, so 44px boxes would
+                         overlap and a tap near the seam would land on whichever
+                         came second in the DOM — pressing "up" and moving the row
+                         down. 36px each, genuinely separated, is the honest
+                         version of the same fix. -->
+                    <div class="flex flex-col gap-0.5">
                         <button
                             type="button"
-                            class="grid size-6 place-items-center rounded text-neutral-400 transition hover:text-neutral-900 disabled:opacity-30 dark:hover:text-neutral-100"
+                            class="grid size-9 place-items-center rounded text-neutral-400 transition hover:text-neutral-900 disabled:opacity-30 dark:hover:text-neutral-100"
                             :disabled="index === 0"
                             :aria-label="__('Move up')"
                             @click="move(index, -1)"
@@ -161,7 +168,7 @@ const statusLabel = (value) => props.statuses.find((s) => s.value === value)?.la
                         </button>
                         <button
                             type="button"
-                            class="grid size-6 place-items-center rounded text-neutral-400 transition hover:text-neutral-900 disabled:opacity-30 dark:hover:text-neutral-100"
+                            class="grid size-9 place-items-center rounded text-neutral-400 transition hover:text-neutral-900 disabled:opacity-30 dark:hover:text-neutral-100"
                             :disabled="index === faqs.length - 1"
                             :aria-label="__('Move down')"
                             @click="move(index, 1)"
@@ -187,10 +194,13 @@ const statusLabel = (value) => props.statuses.find((s) => s.value === value)?.la
                         </p>
                     </div>
 
-                    <div class="flex shrink-0 gap-1">
+                    <!-- Edit sits next to Delete, so both get real size and a real
+                         gap rather than overlapping invisible hit areas — the
+                         neighbour here is destructive. -->
+                    <div class="flex shrink-0 gap-1.5">
                         <button
                             type="button"
-                            class="grid size-8 place-items-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                            class="grid size-10 place-items-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
                             :aria-label="__('Edit')"
                             @click="openEdit(faq)"
                         >
@@ -198,7 +208,7 @@ const statusLabel = (value) => props.statuses.find((s) => s.value === value)?.la
                         </button>
                         <button
                             type="button"
-                            class="grid size-8 place-items-center rounded-full text-red-600/80 transition hover:bg-red-500/10 hover:text-red-700 dark:text-red-400/80 dark:hover:text-red-300"
+                            class="grid size-10 place-items-center rounded-full text-red-600/80 transition hover:bg-red-500/10 hover:text-red-700 dark:text-red-400/80 dark:hover:text-red-300"
                             :aria-label="__('Delete')"
                             @click="confirmDelete(faq)"
                         >

@@ -155,6 +155,24 @@ export const PILL_ACTION =
     'h-10 rounded-full px-4 text-sm font-semibold active:translate-y-0 active:scale-[0.99]';
 
 /**
+ * Widens a small icon button's hit area to 44px without resizing it.
+ *
+ * An invisible centred pseudo-element, so the control keeps the size the layout
+ * was designed around — several of these sit in dense rows where a genuinely
+ * 44px button would push the row apart — while a fingertip still gets the area
+ * it needs. The pseudo carries no paint, so hover and focus rings continue to
+ * describe the visible button rather than a larger invisible box.
+ *
+ * Only for controls with room around them. Two of these placed side by side
+ * inside 44px of each other overlap, and the one later in the DOM silently wins
+ * the tap — which on an up/down pair means the arrow you did not press. Adjacent
+ * pairs get real size and real spacing instead.
+ */
+export const TAP_TARGET =
+    "relative after:absolute after:left-1/2 after:top-1/2 after:size-11 " +
+    "after:-translate-x-1/2 after:-translate-y-1/2 after:content-['']";
+
+/**
  * A quiet outline pill for a secondary action beside a heading — the PDF and
  * Excel downloads on Reports.
  *

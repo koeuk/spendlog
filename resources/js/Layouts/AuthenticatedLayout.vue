@@ -26,7 +26,7 @@ import { useFlashToasts } from '@/composables/useFlashToasts';
 import { useOverBudget } from '@/composables/useOverBudget';
 import { useTheme } from '@/composables/useTheme';
 import { useBrandColors } from '@/composables/useBrandColors';
-import { APP_PAGE, CARD, EYEBROW } from '@/lib/appStyles';
+import { APP_PAGE, CARD } from '@/lib/appStyles';
 import { Check, ChevronDown, Dumbbell, Menu, TriangleAlert, Wallet, X } from 'lucide-vue-next';
 import { Link, usePage } from '@inertiajs/vue3';
 
@@ -456,33 +456,10 @@ watch(() => page.url, () => nextTick(measurePill));
                     </ResponsiveNavLink>
                 </div>
 
-                <!-- The switcher's mobile half. Without this the second module
-                     would be unreachable on a phone, since the header pill is
-                     hidden below md. -->
-                <div
-                    v-if="showSwitcher"
-                    class="mt-2 border-t border-neutral-100 pt-2 dark:border-neutral-800"
-                >
-                    <p class="px-4 pb-1 pt-1" :class="EYEBROW">{{ __('Workspace') }}</p>
-
-                    <div class="flex flex-col gap-0.5">
-                        <ResponsiveNavLink
-                            v-for="module in availableModules"
-                            :key="module.key"
-                            :href="route(module.home)"
-                            :active="module.key === activeModule.key"
-                        >
-                            <span class="flex items-center gap-2">
-                                <component
-                                    :is="module.icon"
-                                    class="size-4 shrink-0"
-                                    aria-hidden="true"
-                                />
-                                {{ __(module.label) }}
-                            </span>
-                        </ResponsiveNavLink>
-                    </div>
-                </div>
+                <!-- No Workspace section here. It existed because the header
+                     pill was once icon-only and easy to miss on a phone, but the
+                     pill renders at every width and now carries its name, so
+                     this was the same two links a thumb's width below itself. -->
 
                 <div class="mt-2 border-t border-neutral-100 pt-2 dark:border-neutral-800">
                     <div class="px-4 py-2">

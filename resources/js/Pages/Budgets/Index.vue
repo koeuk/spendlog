@@ -4,7 +4,7 @@ import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import BudgetProgress from '@/Components/BudgetProgress.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
-import { CARD, CARD_ALERT, EYEBROW, MUTED } from '@/lib/appStyles';
+import { CARD, CARD_ALERT, EYEBROW, MUTED, TAP_TARGET } from '@/lib/appStyles';
 import { formatRiel } from '@/lib/currency';
 import CategoryBadge from '@/Components/CategoryBadge.vue';
 import CategoryPicker from '@/Components/CategoryPicker.vue';
@@ -273,7 +273,10 @@ function clearBudget() {
                     <Link
                         :href="route('budgets.index', { month: prev_month })"
                         preserve-scroll
-                        class="grid size-8 place-items-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                        :class="[
+                            TAP_TARGET,
+                            'grid size-8 place-items-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100',
+                        ]"
                         :aria-label="__('Previous month')"
                     >
                         <ChevronLeft class="size-4" />
@@ -310,7 +313,10 @@ function clearBudget() {
                     <Link
                         :href="route('budgets.index', { month: next_month })"
                         preserve-scroll
-                        class="grid size-8 place-items-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                        :class="[
+                            TAP_TARGET,
+                            'grid size-8 place-items-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100',
+                        ]"
                         :aria-label="__('Next month')"
                     >
                         <ChevronRight class="size-4" />
