@@ -4,6 +4,8 @@ import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { Dumbbell, Flame, Layers, Timer, Trophy } from 'lucide-vue-next';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import ConsistencyHeatmap from '@/Components/Exercise/ConsistencyHeatmap.vue';
+import WallClock from '@/Components/Exercise/WallClock.vue';
+import SessionStopwatch from '@/Components/Exercise/SessionStopwatch.vue';
 import ExerciseBadge from '@/Components/Exercise/ExerciseBadge.vue';
 import VolumeTrendChart from '@/Components/Exercise/VolumeTrendChart.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
@@ -146,6 +148,15 @@ const cards = computed(() => [
                         </span>
                     </p>
                 </div>
+            </div>
+
+            <!-- Two cards, not one: the clock is something you read and the
+                 stopwatch is something you operate. Both are about right now
+                 rather than the month being browsed, so they sit under the
+                 streak and above the month figures. -->
+            <div class="grid gap-3 sm:grid-cols-2">
+                <WallClock style="--d: 30ms" />
+                <SessionStopwatch style="--d: 45ms" />
             </div>
 
             <!-- Month figures -->

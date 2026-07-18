@@ -37,10 +37,16 @@ const editing = computed(() => props.workout !== null);
 // kilograms server-side — the same contract the expense form has with currency.
 const unit = ref(page.props.default_weight_unit ?? 'kg');
 
-const today = new Date().toISOString().slice(0, 10);
+// Local, not toISOString(): that returns UTC, so anywhere east of Greenwich a
+// session logged in the small hours would be dated to the day before.
+function localToday() {
+    return currentDate(getLocalTimeZone()).toString();
+}
+
+const seededOn = localToday();
 
 const form = useForm({
-    performed_on: props.workout?.performed_on ?? today,
+    performed_on: props.workout?.performed_on ?? seededOn,
     duration_seconds: props.workout?.duration_seconds ?? null,
     notes: props.workout?.notes ?? '',
     weight_unit: unit.value,
@@ -162,6 +168,27 @@ function isCardio(index) {
 
 const timer = useSessionTimer();
 
+/**
+ * Starting the clock is what dates the session.
+ *
+ * The dialog can sit open a while before the first rep — across midnight, even
+ * — so the date it was opened on is the wrong answer. Restamped on the first
+ * start only: a resume after a pause must not move the date, and a date the
+ * person picked by hand outranks the clock, so an edited field is left alone.
+ */
+let stamped = false;
+
+function toggleTimer() {
+    const untouched = form.performed_on === seededOn;
+
+    if (!timer.running.value && !stamped && !editing.value && untouched) {
+        stamped = true;
+        form.performed_on = localToday();
+    }
+
+    timer.toggle();
+}
+
 // Writes the clock into the duration field rather than submitting on its own —
 // the person may still want to add sets before saving.
 function applyTimer() {
@@ -269,7 +296,7 @@ function submit() {
                     type="button"
                     class="grid size-9 place-items-center rounded-full border border-border transition hover:bg-card"
                     :aria-label="timer.running.value ? __('Pause') : __('Start')"
-                    @click="timer.toggle()"
+                    @click="toggleTimer()"
                 >
                     <component :is="timer.running.value ? Pause : Play" class="size-4" />
                 </button>
