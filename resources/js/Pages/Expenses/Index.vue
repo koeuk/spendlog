@@ -370,16 +370,31 @@ const filtered = computed(() =>
                         @update:model-value="applyCategoryFilter"
                     />
 
+                    <!-- Month and year are separate controls: either narrows on
+                         its own, and together they pin a single month. -->
                     <SearchableSelect
-                        :options="dateOptions"
-                        :model-value="dateFilter"
-                        :label="__('Filter by date')"
+                        :options="monthOptions"
+                        :model-value="monthFilter"
+                        :label="__('Filter by month')"
                         :search-placeholder="__('Search…')"
                         :empty-text="__('Nothing found.')"
                         align="start"
                         content-class="w-44"
-                        trigger-class="border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 rounded-md border bg-transparent px-2.5 py-2 text-sm shadow-xs sm:w-44"
-                        @update:model-value="applyDateFilter"
+                        trigger-class="border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 rounded-md border bg-transparent px-2.5 py-2 text-sm shadow-xs sm:w-40"
+                        @update:model-value="applyMonthFilter"
+                    />
+
+                    <SearchableSelect
+                        :options="yearOptions"
+                        :model-value="yearFilter"
+                        :label="__('Filter by year')"
+                        :search-placeholder="__('Search…')"
+                        :empty-text="__('Nothing found.')"
+                        match-value
+                        align="start"
+                        content-class="w-36"
+                        trigger-class="border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 rounded-md border bg-transparent px-2.5 py-2 text-sm shadow-xs sm:w-32"
+                        @update:model-value="applyYearFilter"
                     />
                 </div>
 

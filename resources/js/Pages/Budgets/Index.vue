@@ -4,9 +4,10 @@ import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import BudgetProgress from '@/Components/BudgetProgress.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
-import { CARD, CARD_ALERT, EYEBROW } from '@/lib/appStyles';
+import { CARD, CARD_ALERT, EYEBROW, MUTED } from '@/lib/appStyles';
 import CategoryBadge from '@/Components/CategoryBadge.vue';
 import CategoryPicker from '@/Components/CategoryPicker.vue';
+import CurrencyToggle from '@/Components/CurrencyToggle.vue';
 import { useNavigating } from '@/composables/useNavigating';
 import { trans } from '@/lib/i18n';
 import { Skeleton } from '@/Components/ui/skeleton';
@@ -130,6 +131,9 @@ function openEdit(row, categoryUuid = null) {
     form.category_uuid = categoryUuid;
     form.month = props.month;
     form.amount = row.budget !== null ? String(row.budget) : '';
+    // Stored budgets are USD, so the prefilled figure is too — a currency left
+    // on KHR from a previous open would relabel it as riel and divide it away.
+    form.currency = 'USD';
     form.clearErrors();
     showDialog.value = true;
 }
@@ -156,6 +160,7 @@ function openAdd() {
     form.category_uuid = null;
     form.month = props.month;
     form.amount = '';
+    form.currency = 'USD';
     form.clearErrors();
     showDialog.value = true;
 }
@@ -524,17 +529,28 @@ function clearBudget() {
                             />
                         </div>
 
-                        <Label for="amount">{{ __('Amount') }}</Label>
+                        <div class="flex items-center justify-between gap-2">
+                            <Label for="amount">{{ __('Amount') }}</Label>
+                            <CurrencyToggle v-model="form.currency" />
+                        </div>
+
                         <Input
                             id="amount"
                             v-model="form.amount"
                             class="mt-1"
                             type="number"
-                            step="0.01"
+                            :step="form.currency === 'KHR' ? '100' : '0.01'"
                             min="0"
                             inputmode="decimal"
-                            placeholder="0.00"
+                            :placeholder="form.currency === 'KHR' ? '0' : '0.00'"
                         />
+
+                        <!-- Only stored amounts are USD, so say what a riel figure
+                             will become before it is saved rather than after. -->
+                        <p v-if="convertedPreview" class="mt-1 text-xs" :class="MUTED">
+                            {{ convertedPreview }}
+                        </p>
+
                         <p v-if="form.errors.amount" class="mt-1 text-sm text-red-600 dark:text-red-400">
                             {{ form.errors.amount }}
                         </p>

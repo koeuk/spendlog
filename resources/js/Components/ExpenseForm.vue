@@ -1,27 +1,27 @@
 <script setup>
-import { computed } from "vue";
-import { usePage } from "@inertiajs/vue3";
+import { computed } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import {
     CalendarDate,
     DateFormatter,
     getLocalTimeZone,
     today,
-} from "@internationalized/date";
-import CategoryPicker from "@/Components/CategoryPicker.vue";
-import CurrencyToggle from "@/Components/CurrencyToggle.vue";
-import LocaleTabs from "@/Components/LocaleTabs.vue";
-import { categoryColor, categoryIcon } from "@/lib/categoryStyles";
-import { MUTED } from "@/lib/appStyles";
-import { trans } from "@/lib/i18n";
-import { Button } from "@/Components/ui/button";
-import { Input } from "@/Components/ui/input";
-import { Label } from "@/Components/ui/label";
-import { Calendar } from "@/Components/ui/calendar";
+} from '@internationalized/date';
+import CategoryPicker from '@/Components/CategoryPicker.vue';
+import CurrencyToggle from '@/Components/CurrencyToggle.vue';
+import LocaleTabs from '@/Components/LocaleTabs.vue';
+import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
+import { MUTED } from '@/lib/appStyles';
+import { trans } from '@/lib/i18n';
+import { Button } from '@/Components/ui/button';
+import { Input } from '@/Components/ui/input';
+import { Label } from '@/Components/ui/label';
+import { Calendar } from '@/Components/ui/calendar';
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
-} from "@/Components/ui/popover";
+} from '@/Components/ui/popover';
 
 const props = defineProps({
     form: { type: Object, required: true },
@@ -30,7 +30,7 @@ const props = defineProps({
     canCreateCategory: { type: Boolean, default: false },
 });
 
-const formatter = new DateFormatter("en-US", { dateStyle: "medium" });
+const formatter = new DateFormatter('en-US', { dateStyle: 'medium' });
 
 // The form holds a plain 'YYYY-MM-DD' string; the Calendar needs a CalendarDate.
 const spentOn = computed({
@@ -38,18 +38,18 @@ const spentOn = computed({
         if (!props.form.spent_on) {
             return undefined;
         }
-        const [year, month, day] = props.form.spent_on.split("-").map(Number);
+        const [year, month, day] = props.form.spent_on.split('-').map(Number);
         return new CalendarDate(year, month, day);
     },
     set(value) {
-        props.form.spent_on = value ? value.toString() : "";
+        props.form.spent_on = value ? value.toString() : '';
     },
 });
 
 const spentOnLabel = computed(() =>
     spentOn.value
         ? formatter.format(spentOn.value.toDate(getLocalTimeZone()))
-        : "Pick a date",
+        : 'Pick a date',
 );
 
 // Logging a future expense is rejected server-side; block it in the picker too.
@@ -57,9 +57,9 @@ const maxDate = today(getLocalTimeZone());
 
 const khrPerUsd = computed(() => Number(usePage().props.khr_per_usd) || 4100);
 
-const usd = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
+const usd = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
 });
 
 /**
@@ -70,17 +70,17 @@ const usd = new Intl.NumberFormat("en-US", {
  * stored exactly as typed.
  */
 const convertedPreview = computed(() => {
-    if (props.form.currency !== "KHR") {
-        return "";
+    if (props.form.currency !== 'KHR') {
+        return '';
     }
 
     const amount = Number(props.form.price);
 
     if (!Number.isFinite(amount) || amount <= 0) {
-        return trans("Entered in riel, stored in US dollars.");
+        return trans('Entered in riel, stored in US dollars.');
     }
 
-    return trans("Stored as :amount", {
+    return trans('Stored as :amount', {
         amount: usd.format(Math.round((amount / khrPerUsd.value) * 100) / 100),
     });
 });
@@ -94,7 +94,7 @@ const convertedPreview = computed(() => {
             :placeholders="{ en: 'e.g. Coffee', km: 'ឧ. កាហ្វេ' }"
         >
             <template #label>
-                <Label for="item_en">{{ __("Item") }}</Label>
+                <Label for="item_en">{{ __('Item') }}</Label>
             </template>
 
             <template #default="{ locale, placeholder, isRequired }">
@@ -124,7 +124,7 @@ const convertedPreview = computed(() => {
         -->
         <div>
             <div class="flex items-center justify-between gap-2">
-                <Label for="price">{{ __("Price") }}</Label>
+                <Label for="price">{{ __('Price') }}</Label>
 
                 <CurrencyToggle v-model="form.currency" />
             </div>
@@ -159,7 +159,7 @@ const convertedPreview = computed(() => {
              a short label, and neither grows. -->
         <div class="grid gap-4 sm:grid-cols-2">
             <div>
-                <Label for="category">{{ __("Category") }}</Label>
+                <Label for="category">{{ __('Category') }}</Label>
                 <CategoryPicker
                     :form="form"
                     :categories="categories"
@@ -168,7 +168,7 @@ const convertedPreview = computed(() => {
             </div>
 
             <div>
-                <Label>{{ __("Date") }}</Label>
+                <Label>{{ __('Date') }}</Label>
                 <Popover>
                     <PopoverTrigger as-child>
                         <Button
