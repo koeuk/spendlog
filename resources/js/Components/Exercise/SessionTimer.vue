@@ -15,12 +15,16 @@ import {
 } from '@/Components/ui/dialog';
 
 /**
- * A timer you set yourself — the rest between sets.
+ * The session timer, in three modes.
  *
- * Runs in either direction over the same length: down from it, or up from zero
- * towards it. Both readings come off one useRestTimer, since "1:30 left" and
- * "0:30 done of 2:00" are the same clock described from opposite ends — running
- * a second engine for the count-up would be two things to keep in step.
+ *   down — from the length you set, to zero
+ *   up   — from zero, to the length you set
+ *   open — from zero, until you stop it
+ *
+ * Down and up share one useRestTimer: "1:30 left" and "0:30 done of 2:00" are
+ * the same clock described from opposite ends, so a second engine there would be
+ * two things to keep in step. Open genuinely is a different clock — it has no
+ * length to be measured against — and useSessionTimer already models it.
  *
  * Client-side and per-page, so navigating away loses it, the same trade
  * useSessionTimer already documents. Nothing here is persisted: the workout form
@@ -31,9 +35,12 @@ import {
 const PRESETS = [60, 90, 120, 180];
 
 const timer = useRestTimer(90);
+const stopwatch = useSessionTimer();
 
-// 'down' counts to zero; 'up' counts from zero to the length that was set.
+// 'down' and 'up' run against a set length; 'open' just runs.
 const mode = ref('down');
+
+const open = computed(() => mode.value === 'open');
 
 /*
  * The custom-length dialog. Its fields are a draft rather than the timer
@@ -84,15 +91,67 @@ watch(timer.finished, (finished) => {
     }
 });
 
-function begin(seconds = null) {
+/*
+ * Leaving a mode parks the clock it was driving. Down and up hand over to each
+ * other untouched — same engine, same run — but open and the countdown are
+ * different engines, and letting the abandoned one keep ticking would leave an
+ * interval running behind a reading nobody is looking at.
+ */
+watch(mode, (next, previous) => {
+    if (next === 'open' && previous !== 'open') {
+        timer.stop();
+        done.value = false;
+    }
+
+    if (previous === 'open' && next !== 'open') {
+        stopwatch.pause();
+    }
+});
+
+const running = computed(() =>
+    open.value ? stopwatch.running.value : timer.running.value,
+);
+
+/*
+ * The primary button. Open pauses and resumes, since a stopwatch you cannot
+ * pause loses the reading the moment you need both hands; the countdown stops
+ * outright, because resuming a rest that has already been broken is not a thing
+ * anyone wants.
+ */
+function primary() {
+    if (open.value) {
+        stopwatch.toggle();
+        return;
+    }
+
+    if (timer.running.value) {
+        reset();
+        return;
+    }
+
     done.value = false;
-    timer.start(seconds);
+    timer.start();
 }
 
 function reset() {
     done.value = false;
+
+    if (open.value) {
+        stopwatch.reset();
+        return;
+    }
+
     timer.stop();
 }
+
+// Nothing to reset before the clock has moved.
+const resettable = computed(() => {
+    if (open.value) {
+        return stopwatch.running.value || stopwatch.elapsedSeconds.value > 0;
+    }
+
+    return done.value;
+});
 
 /*
  * What the big number reads.
@@ -102,6 +161,10 @@ function reset() {
  * for 'up' is the length that was set.
  */
 const display = computed(() => {
+    if (open.value) {
+        return stopwatch.elapsedSeconds.value;
+    }
+
     if (done.value) {
         return mode.value === 'down' ? 0 : timer.duration.value;
     }
@@ -111,7 +174,8 @@ const display = computed(() => {
         : timer.duration.value - timer.remaining.value;
 });
 
-const editable = computed(() => !timer.running.value && !done.value);
+// Open has no length to set, so the lengths have nothing to offer it.
+const editable = computed(() => !open.value && !timer.running.value && !done.value);
 </script>
 
 <template>
