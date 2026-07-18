@@ -26,8 +26,8 @@ import { useFlashToasts } from '@/composables/useFlashToasts';
 import { useOverBudget } from '@/composables/useOverBudget';
 import { useTheme } from '@/composables/useTheme';
 import { useBrandColors } from '@/composables/useBrandColors';
-import { APP_PAGE, CARD } from '@/lib/appStyles';
-import { ChevronDown, Menu, TriangleAlert, X } from 'lucide-vue-next';
+import { APP_PAGE, CARD, EYEBROW } from '@/lib/appStyles';
+import { Check, ChevronDown, Dumbbell, Menu, TriangleAlert, Wallet, X } from 'lucide-vue-next';
 import { Link, usePage } from '@inertiajs/vue3';
 
 const showingNavigationDropdown = ref(false);
@@ -72,15 +72,68 @@ useBrandColors(isDark);
 const granted = computed(() => page.props.auth?.permissions ?? []);
 const can = (permission) => granted.value.includes(permission);
 
-const links = computed(() =>
-    [
-        { label: 'Dashboard', route: 'dashboard', active: 'dashboard', permission: 'dashboard.view' },
-        { label: 'Categories', route: 'categories.index', active: 'categories.*', permission: 'categories.view' },
-        { label: 'Expenses', route: 'expenses.index', active: 'expenses.*', permission: 'expenses.view' },
-        { label: 'Budgets', route: 'budgets.index', active: 'budgets.*', permission: 'budgets.view' },
-        { label: 'Reports', route: 'reports.index', active: 'reports.*', permission: 'reports.view' },
-    ].filter((link) => can(link.permission)),
+/*
+ * The app is two modules sharing one shell: Finance and Exercise.
+ *
+ * Each owns its own nav, so the tabs swap wholesale when you switch rather than
+ * growing into one long bar of unrelated pages. Which module you are in is read
+ * off the route, not held in state — that way a deep link, a browser back and a
+ * fresh page load all agree, and there is no "current module" to get out of sync
+ * with the URL.
+ *
+ * Finance has no pattern on purpose: it is the default, so it is what you are in
+ * whenever nothing more specific matches. Adding a third module means giving it
+ * a pattern and leaving Finance last in the fallback.
+ */
+const MODULES = [
+    {
+        key: 'finance',
+        label: 'Finance',
+        icon: Wallet,
+        home: 'dashboard',
+        pattern: null,
+        // Always available. Every link inside is still permission-filtered, so a
+        // user with nothing here simply gets an empty nav, not a broken app.
+        permission: null,
+        links: [
+            { label: 'Dashboard', route: 'dashboard', active: 'dashboard', permission: 'dashboard.view' },
+            { label: 'Categories', route: 'categories.index', active: 'categories.*', permission: 'categories.view' },
+            { label: 'Expenses', route: 'expenses.index', active: 'expenses.*', permission: 'expenses.view' },
+            { label: 'Budgets', route: 'budgets.index', active: 'budgets.*', permission: 'budgets.view' },
+            { label: 'Reports', route: 'reports.index', active: 'reports.*', permission: 'reports.view' },
+        ],
+    },
+    {
+        key: 'exercise',
+        label: 'Exercise',
+        icon: Dumbbell,
+        home: 'exercise.dashboard',
+        pattern: 'exercise.*',
+        // The module ships locked — an admin grants this per person. Without it
+        // the switcher never renders, so the module is invisible rather than
+        // merely unreachable.
+        permission: 'exercise.view',
+        links: [
+            { label: 'Dashboard', route: 'exercise.dashboard', active: 'exercise.dashboard', permission: 'exercise.view' },
+            { label: 'Workouts', route: 'exercise.workouts.index', active: 'exercise.workouts.*', permission: 'exercise.view' },
+            { label: 'Movements', route: 'exercise.types.index', active: 'exercise.types.*', permission: 'exercise.view' },
+        ],
+    },
+];
+
+const activeModule = computed(
+    () => MODULES.find((m) => m.pattern && route().current(m.pattern)) ?? MODULES[0],
 );
+
+const availableModules = computed(() =>
+    MODULES.filter((m) => !m.permission || can(m.permission)),
+);
+
+// One module means nothing to switch between, so the control would be a button
+// that does nothing. This is the common case — most accounts never see it.
+const showSwitcher = computed(() => availableModules.value.length > 1);
+
+const links = computed(() => activeModule.value.links.filter((link) => can(link.permission)));
 
 /*
  * The sliding nav pill.
@@ -200,7 +253,7 @@ watch(() => page.url, () => nextTick(measurePill));
             <nav class="flex h-20 items-center justify-between gap-4">
                 <div class="flex items-center gap-6">
                     <Link
-                        :href="route('dashboard')"
+                        :href="route(activeModule.home)"
                         class="flex shrink-0 items-center gap-2 text-sm font-bold tracking-tight"
                     >
                         <!-- An uploaded logo replaces the lettermark; without one
@@ -223,6 +276,58 @@ watch(() => page.url, () => nextTick(measurePill));
                         </span>
                         <span class="hidden sm:inline">{{ branding.name }}</span>
                     </Link>
+
+                    <!--
+                        The workspace switcher.
+
+                        Renders only for accounts that hold more than one module,
+                        which is the minority — so for most people the header is
+                        exactly as it was. Sits beside the wordmark rather than in
+                        the user dropdown because switching workspace is a
+                        navigation act, not an account setting, and burying it
+                        would put three clicks between someone and their log.
+                    -->
+                    <Dropdown v-if="showSwitcher" align="left" width="48">
+                        <template #trigger>
+                            <button
+                                type="button"
+                                class="inline-flex items-center gap-1.5 rounded-full border border-border bg-card/70 py-1.5 pe-2 ps-3 text-xs font-semibold text-foreground transition hover:bg-muted"
+                            >
+                                <component
+                                    :is="activeModule.icon"
+                                    class="size-3.5 shrink-0"
+                                    aria-hidden="true"
+                                />
+                                <span class="hidden sm:inline">{{ __(activeModule.label) }}</span>
+                                <ChevronDown class="size-3.5 text-neutral-400" />
+                            </button>
+                        </template>
+
+                        <template #content>
+                            <DropdownLink
+                                v-for="module in availableModules"
+                                :key="module.key"
+                                :href="route(module.home)"
+                            >
+                                <span class="flex items-center gap-2">
+                                    <component
+                                        :is="module.icon"
+                                        class="size-4 shrink-0"
+                                        aria-hidden="true"
+                                    />
+                                    {{ __(module.label) }}
+                                    <!-- Marks where you already are, so the menu
+                                         answers "which workspace is this?" as
+                                         well as offering the other one. -->
+                                    <Check
+                                        v-if="module.key === activeModule.key"
+                                        class="ms-auto size-4 shrink-0"
+                                        aria-hidden="true"
+                                    />
+                                </span>
+                            </DropdownLink>
+                        </template>
+                    </Dropdown>
 
                     <div ref="navRef" class="relative hidden items-center gap-1 md:flex">
                         <!-- One pill for the whole nav, slid to the active link.
@@ -272,6 +377,17 @@ watch(() => page.url, () => nextTick(measurePill));
                             </template>
 
                             <template #content>
+                                <!-- The second way into the module, alongside
+                                     the workspace pill. Only rendered while you
+                                     are outside it, so it reads as "go there"
+                                     rather than as a link to the page you are
+                                     already on. -->
+                                <DropdownLink
+                                    v-if="showSwitcher && activeModule.key !== 'exercise'"
+                                    :href="route('exercise.dashboard')"
+                                >
+                                    {{ __('Exercise') }}
+                                </DropdownLink>
                                 <DropdownLink :href="route('settings')">
                                     {{ __('Settings') }}
                                 </DropdownLink>
@@ -311,6 +427,34 @@ watch(() => page.url, () => nextTick(measurePill));
                     >
                         {{ __(link.label) }}
                     </ResponsiveNavLink>
+                </div>
+
+                <!-- The switcher's mobile half. Without this the second module
+                     would be unreachable on a phone, since the header pill is
+                     hidden below md. -->
+                <div
+                    v-if="showSwitcher"
+                    class="mt-2 border-t border-neutral-100 pt-2 dark:border-neutral-800"
+                >
+                    <p class="px-4 pb-1 pt-1" :class="EYEBROW">{{ __('Workspace') }}</p>
+
+                    <div class="flex flex-col gap-0.5">
+                        <ResponsiveNavLink
+                            v-for="module in availableModules"
+                            :key="module.key"
+                            :href="route(module.home)"
+                            :active="module.key === activeModule.key"
+                        >
+                            <span class="flex items-center gap-2">
+                                <component
+                                    :is="module.icon"
+                                    class="size-4 shrink-0"
+                                    aria-hidden="true"
+                                />
+                                {{ __(module.label) }}
+                            </span>
+                        </ResponsiveNavLink>
+                    </div>
                 </div>
 
                 <div class="mt-2 border-t border-neutral-100 pt-2 dark:border-neutral-800">

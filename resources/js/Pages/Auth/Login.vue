@@ -85,15 +85,26 @@ const slides = computed(() => [
 
                     <form class="mt-8" @submit.prevent="submit">
                         <div class="anim" style="--d: 180ms">
-                            <Label for="email" class="sr-only">{{ __('Email') }}</Label>
+                            <Label for="email" class="sr-only">
+                                {{ __('Email or username') }}
+                            </Label>
+                            <!--
+                                type="text", not "email": the browser's own
+                                validation would refuse a username before the
+                                form could ever be submitted. The field is still
+                                named `email` so saved password-manager entries
+                                and the server's error-bag key both keep working.
+                            -->
                             <Input
                                 id="email"
                                 v-model="form.email"
-                                type="email"
+                                type="text"
                                 required
                                 autofocus
                                 autocomplete="username"
-                                :placeholder="__('Email')"
+                                autocapitalize="none"
+                                spellcheck="false"
+                                :placeholder="__('Email or username')"
                                 :aria-invalid="!!form.errors.email"
                                 :class="PILL_INPUT"
                             />

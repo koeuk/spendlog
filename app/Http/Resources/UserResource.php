@@ -19,6 +19,9 @@ class UserResource extends JsonResource
         return [
             'uuid' => $this->uuid,
             'name' => $this->name,
+            // A display handle, not a credential — though it may be used to sign
+            // in alongside the email.
+            'username' => $this->username,
             'email' => $this->email,
             'is_admin' => $this->isAdmin(),
             'email_verified_at' => $this->email_verified_at?->toIso8601String(),

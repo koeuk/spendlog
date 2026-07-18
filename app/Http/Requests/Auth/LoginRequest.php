@@ -28,7 +28,18 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email'],
+            /*
+             * One field, either credential. Not validated as an email: a username
+             * is a perfectly good value here, and `email` would reject it before
+             * the attempt is ever made.
+             *
+             * Still named `email` on the wire. Renaming it would break every
+             * saved password manager entry and every existing client, and this
+             * request's error bag is keyed on it throughout — including the
+             * status and throttle messages below, which the login page renders
+             * under this field.
+             */
+            'email' => ['required', 'string'],
             'password' => ['required', 'string'],
         ];
     }
@@ -42,7 +53,7 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+        if (! Auth::attempt($this->credentials(), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
@@ -68,6 +79,28 @@ class LoginRequest extends FormRequest
         }
 
         RateLimiter::clear($this->throttleKey());
+    }
+
+    /**
+     * The submitted identifier resolved to the column it belongs to.
+     *
+     * Deliberately not "try email, then try username": two attempts means two
+     * password hashes computed, and the timing difference between a hit on the
+     * first and a hit on the second is measurable. One column, one attempt.
+     *
+     * A value containing '@' is an email — usernames cannot contain one, which
+     * is exactly why UsernameRules excludes it.
+     *
+     * @return array<string, string>
+     */
+    protected function credentials(): array
+    {
+        $login = (string) $this->string('email');
+
+        return [
+            str_contains($login, '@') ? 'email' : 'username' => $login,
+            'password' => (string) $this->string('password'),
+        ];
     }
 
     /**
