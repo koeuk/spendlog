@@ -183,8 +183,18 @@ const change = computed(() => {
                     <p v-if="change" class="mt-2 flex items-center gap-1 text-xs font-semibold" :class="change.tone">
                         <component :is="change.icon" class="size-3.5" />
                         {{ change.text }}
+                        <!--
+                            While the period is still running the comparison is
+                            against the same stretch of the previous one, not all
+                            of it. Saying so is the difference between a figure
+                            the reader can trust and one that looks like a drop.
+                        -->
                         <span :class="[MUTED, 'font-medium']">
-                            {{ __('vs :period', { period: stats.previous_label }) }}
+                            {{
+                                stats.previous_is_partial
+                                    ? __('vs :period so far', { period: stats.previous_label })
+                                    : __('vs :period', { period: stats.previous_label })
+                            }}
                         </span>
                     </p>
                     <p v-else :class="[MUTED, 'mt-2 text-xs font-medium']">

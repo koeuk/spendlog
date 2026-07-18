@@ -135,6 +135,7 @@
     "Average": "មធ្យមភាគ",
     "Share": "ភាគរយ",
     "vs :period": "ធៀបនឹង :period",
+    "vs :period so far": "ធៀបនឹង :period រហូតមកដល់ពេលនេះ",
     "No earlier period to compare.": "គ្មានអំឡុងពេលមុនដើម្បីប្រៀបធៀបទេ។",
     "Over elapsed days only.": "គិតតែថ្ងៃដែលកន្លងផុតទៅប៉ុណ្ណោះ។",
     "Nothing logged in this period.": "គ្មានការកត់ត្រាក្នុងអំឡុងពេលនេះទេ។",

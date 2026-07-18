@@ -135,6 +135,7 @@
     "Average": "Average",
     "Share": "Share",
     "vs :period": "vs :period",
+    "vs :period so far": "vs :period so far",
     "No earlier period to compare.": "No earlier period to compare.",
     "Over elapsed days only.": "Over elapsed days only.",
     "Nothing logged in this period.": "Nothing logged in this period.",
