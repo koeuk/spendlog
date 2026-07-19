@@ -1,11 +1,10 @@
 <script setup>
-import { computed, ref } from 'vue';
-import { Head, router, useForm } from '@inertiajs/vue3';
+import { ref } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { KeyRound, MoreHorizontal, Pencil, Plus, ShieldCheck, Trash2 } from 'lucide-vue-next';
 import SettingsLayout from '@/Layouts/SettingsLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import Pagination from '@/Components/Pagination.vue';
-import UserPermissionsSheet from '@/Components/UserPermissionsSheet.vue';
 import UserStatusDialog from '@/Components/UserStatusDialog.vue';
 import { Button } from '@/Components/ui/button';
 import {
@@ -15,88 +14,15 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/Components/ui/dropdown-menu';
-import { Input } from '@/Components/ui/input';
-import { Label } from '@/Components/ui/label';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/Components/ui/dialog';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/Components/ui/select';
 import { MUTED } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
 
 const props = defineProps({
     users: { type: Array, required: true },
     pagination: { type: Object, required: true },
-    roles: { type: Array, required: true },
     statuses: { type: Array, required: true },
-    permission_groups: { type: Object, required: true },
     can: { type: Object, required: true },
 });
-
-const showDialog = ref(false);
-const editing = ref(null);
-
-const form = useForm({
-    name: '',
-    // Optional display handle. Blank is sent as '' and normalised to null
-    // server-side — see App\Rules\UsernameRules.
-    username: '',
-    email: '',
-    password: '',
-    password_confirmation: '',
-    role: 'user',
-    status: 'active',
-});
-
-function openCreate() {
-    editing.value = null;
-    form.reset();
-    form.clearErrors();
-    showDialog.value = true;
-}
-
-function openEdit(user) {
-    editing.value = user;
-    form.name = user.name;
-    form.username = user.username ?? '';
-    form.email = user.email;
-    // Left blank on edit: the server keeps the existing password unless one is typed.
-    form.password = '';
-    form.password_confirmation = '';
-    form.role = user.role;
-    form.status = user.status;
-    form.clearErrors();
-    showDialog.value = true;
-}
-
-function submit() {
-    const options = {
-        preserveScroll: true,
-        onSuccess: () => {
-            showDialog.value = false;
-        },
-    };
-
-    if (editing.value) {
-        form.patch(route('users.update', editing.value.uuid), options);
-    } else {
-        form.post(route('users.store'), options);
-    }
-}
-
-// The row whose permissions drawer is open, or null.
-const permissionsFor = ref(null);
 
 const busy = ref(null);
 
@@ -131,9 +57,6 @@ function hasActions(user) {
     );
 }
 
-const passwordHint = computed(() =>
-    editing.value ? trans('Leave blank to keep the current password.') : '',
-);
 </script>
 
 <template>
@@ -144,7 +67,7 @@ const passwordHint = computed(() =>
         :description="trans('Who can sign in, and what they can do.')"
     >
         <template #actions>
-            <Button v-if="can.create" size="sm" @click="openCreate">
+            <Button v-if="can.create" :as="Link" :href="route('users.create')" size="sm">
                 <Plus class="size-4" />
                 {{ __('Add user') }}
             </Button>
@@ -218,7 +141,7 @@ const passwordHint = computed(() =>
                                 <DropdownMenuContent align="end" class="w-48">
                                     <DropdownMenuItem
                                         v-if="user.can.update"
-                                        @select="openEdit(user)"
+                                        @select="router.get(route('users.edit', user.uuid))"
                                     >
                                         <Pencil class="size-4" />
                                         {{ __('Edit') }}
@@ -226,7 +149,7 @@ const passwordHint = computed(() =>
 
                                     <DropdownMenuItem
                                         v-if="user.can.manage_permissions"
-                                        @select="permissionsFor = user"
+                                        @select="router.get(route('users.permissions.edit', user.uuid))"
                                     >
                                         <KeyRound class="size-4" />
                                         {{ __('Permissions') }}
@@ -270,12 +193,6 @@ const passwordHint = computed(() =>
             @close="statusFor = null"
         />
 
-        <UserPermissionsSheet
-            :user="permissionsFor"
-            :groups="permission_groups"
-            @close="permissionsFor = null"
-        />
-
         <ConfirmDialog
             :open="confirming !== null"
             :title="__('Delete this user?')"
@@ -293,136 +210,5 @@ const passwordHint = computed(() =>
             @update:open="(v) => !v && (confirming = null)"
         />
 
-        <Dialog v-model:open="showDialog">
-            <DialogContent class="sm:max-w-md">
-                <form @submit.prevent="submit">
-                    <DialogHeader>
-                        <DialogTitle>
-                            {{ editing ? __('Edit user') : __('Add user') }}
-                        </DialogTitle>
-                        <DialogDescription>
-                            {{ __('Admins can manage categories, branding and other users.') }}
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div class="grid gap-4 py-4">
-                        <div>
-                            <Label for="user_name">{{ __('Name') }}</Label>
-                            <Input id="user_name" v-model="form.name" class="mt-1" autocomplete="off" />
-                            <p v-if="form.errors.name" class="mt-1 text-sm text-red-600 dark:text-red-400">
-                                {{ form.errors.name }}
-                            </p>
-                        </div>
-
-                        <div>
-                            <Label for="user_username">{{ __('Username') }}</Label>
-                            <Input
-                                id="user_username"
-                                v-model="form.username"
-                                class="mt-1"
-                                autocomplete="off"
-                                autocapitalize="none"
-                                spellcheck="false"
-                                placeholder="koeuk"
-                                :aria-invalid="!!form.errors.username"
-                            />
-                            <p class="mt-1 text-xs" :class="MUTED">
-                                {{ __('Optional. Lowercase letters, numbers, underscores and hyphens. Can also be used to sign in.') }}
-                            </p>
-                            <p v-if="form.errors.username" class="mt-1 text-sm text-red-600 dark:text-red-400">
-                                {{ form.errors.username }}
-                            </p>
-                        </div>
-
-                        <div>
-                            <Label for="user_email">{{ __('Email') }}</Label>
-                            <Input id="user_email" v-model="form.email" type="email" class="mt-1" autocomplete="off" />
-                            <p v-if="form.errors.email" class="mt-1 text-sm text-red-600 dark:text-red-400">
-                                {{ form.errors.email }}
-                            </p>
-                        </div>
-
-                        <!-- Side by side only once there is room. In a dialog on a
-                             320px screen two columns are 112px each, and the
-                             triggers are whitespace-nowrap with a line-clamp, so
-                             "Super admin" and "Deactivated" collapsed to a stub
-                             that read the same as its neighbours in the closed
-                             state — the one state you pick from. -->
-                        <div class="grid gap-4 sm:grid-cols-2">
-                            <div>
-                                <Label for="user_role">{{ __('Role') }}</Label>
-                                <Select v-model="form.role">
-                                    <SelectTrigger id="user_role" class="mt-1 w-full">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem v-for="r in roles" :key="r.value" :value="r.value">
-                                            {{ r.label }}
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <p v-if="form.errors.role" class="mt-1 text-sm text-red-600 dark:text-red-400">
-                                    {{ form.errors.role }}
-                                </p>
-                            </div>
-
-                            <div>
-                                <Label for="user_status">{{ __('Status') }}</Label>
-                                <Select v-model="form.status">
-                                    <SelectTrigger id="user_status" class="mt-1 w-full">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem v-for="s in statuses" :key="s.value" :value="s.value">
-                                            {{ s.label }}
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <p v-if="form.errors.status" class="mt-1 text-sm text-red-600 dark:text-red-400">
-                                    {{ form.errors.status }}
-                                </p>
-                            </div>
-                        </div>
-
-                        <div>
-                            <Label for="user_password">{{ __('Password') }}</Label>
-                            <Input
-                                id="user_password"
-                                v-model="form.password"
-                                type="password"
-                                class="mt-1"
-                                autocomplete="new-password"
-                            />
-                            <p v-if="passwordHint" class="mt-1 text-xs" :class="MUTED">
-                                {{ passwordHint }}
-                            </p>
-                            <p v-if="form.errors.password" class="mt-1 text-sm text-red-600 dark:text-red-400">
-                                {{ form.errors.password }}
-                            </p>
-                        </div>
-
-                        <div v-if="form.password">
-                            <Label for="user_password_confirmation">{{ __('Confirm password') }}</Label>
-                            <Input
-                                id="user_password_confirmation"
-                                v-model="form.password_confirmation"
-                                type="password"
-                                class="mt-1"
-                                autocomplete="new-password"
-                            />
-                        </div>
-                    </div>
-
-                    <DialogFooter>
-                        <Button type="button" variant="outline" @click="showDialog = false">
-                            {{ __('Cancel') }}
-                        </Button>
-                        <Button type="submit" :disabled="form.processing">
-                            {{ editing ? __('Save') : __('Create') }}
-                        </Button>
-                    </DialogFooter>
-                </form>
-            </DialogContent>
-        </Dialog>
     </SettingsLayout>
 </template>

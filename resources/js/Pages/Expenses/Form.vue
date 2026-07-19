@@ -4,7 +4,6 @@ import FormScreenLayout from '@/Layouts/FormScreenLayout.vue';
 import ExpenseForm from '@/Components/ExpenseForm.vue';
 import FormActions from '@/Components/FormActions.vue';
 import { Button } from '@/Components/ui/button';
-import { CARD } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
 
 /**
@@ -81,7 +80,7 @@ function submit() {
         :title="editing ? __('Edit expense') : __('Add expense')"
         :back-label="__('Back to expenses')"
     >
-        <form :class="[CARD, 'p-4 sm:p-6']" @submit.prevent="submit">
+        <form class="flex flex-1 flex-col" @submit.prevent="submit">
             <ExpenseForm
                 :form="form"
                 :categories="categories"

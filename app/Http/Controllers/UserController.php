@@ -70,18 +70,85 @@ class UserController extends Controller
         return Inertia::render('Settings/Users', [
             'users' => $users,
             'pagination' => $this->paginationMeta($paginator),
-            // assignable(), not cases(): super admin must not be offerable from
-            // the form. UserRequest enforces the same thing on the way back in.
-            'roles' => array_map(
-                fn (RoleName $role) => ['value' => $role->value, 'label' => $role->label()],
-                RoleName::assignable(),
-            ),
+            // roles and permission_groups moved to the create/edit and
+            // permissions screens — the list itself renders neither.
             'statuses' => UserStatus::options(),
-            // Grouped server-side so the drawer, the seeder and the policies all
-            // read the same catalogue.
-            'permission_groups' => PermissionEnum::grouped(),
             'can' => ['create' => $me->can('create', User::class)],
         ]);
+    }
+
+    public function create(Request $request): Response
+    {
+        Gate::authorize('create', User::class);
+
+        return Inertia::render('Settings/UserForm', [
+            'roles' => $this->roleOptions(),
+            'statuses' => UserStatus::options(),
+        ]);
+    }
+
+    public function edit(Request $request, User $user): Response
+    {
+        Gate::authorize('update', $user);
+
+        return Inertia::render('Settings/UserForm', [
+            'user' => [
+                'uuid' => $user->uuid,
+                'name' => $user->name,
+                // Null when unset — the form seeds a blank field from it.
+                'username' => $user->username,
+                'email' => $user->email,
+                'role' => $user->roles->first()?->name ?? RoleName::User->value,
+                'status' => $user->status->value,
+            ],
+            'roles' => $this->roleOptions(),
+            'statuses' => UserStatus::options(),
+            // Whether the role select may be touched at all: the last-admin rule
+            // is per-row, so the form cannot infer it.
+            'can' => [
+                'change_role' => $request->user()->can('changeRole', $user),
+            ],
+        ]);
+    }
+
+    /**
+     * The permissions editor.
+     *
+     * Its own screen rather than the side sheet it was: twenty-nine checkboxes
+     * across seven groups is some 1900px of content, which no sheet on a phone
+     * can show without becoming a scroller inside a scroller.
+     */
+    public function permissions(Request $request, User $user): Response
+    {
+        Gate::authorize('managePermissions', $user);
+
+        return Inertia::render('Settings/UserPermissions', [
+            'user' => [
+                'uuid' => $user->uuid,
+                'name' => $user->name,
+                'role' => $user->roles->first()?->name ?? RoleName::User->value,
+                // Their whole set. Roles grant nothing at run time, so this is
+                // the complete picture — no second list to merge in.
+                'direct_permissions' => $user->permissions->pluck('name')->values(),
+            ],
+            // Grouped server-side so the screen, the seeder and the policies all
+            // read the same catalogue.
+            'permission_groups' => PermissionEnum::grouped(),
+        ]);
+    }
+
+    /**
+     * assignable(), not cases(): super admin must not be offerable from the
+     * form. UserRequest enforces the same thing on the way back in.
+     *
+     * @return array<int, array<string, string>>
+     */
+    private function roleOptions(): array
+    {
+        return array_map(
+            fn (RoleName $role) => ['value' => $role->value, 'label' => $role->label()],
+            RoleName::assignable(),
+        );
     }
 
     public function store(UserRequest $request): RedirectResponse
@@ -103,7 +170,9 @@ class UserController extends Controller
             // Same verification mail the public register flow sends.
             event(new Registered($user));
 
-            return back()->withSuccess(__('User created successfully.'));
+            // Not back(): the form is its own page, so back() would land on
+            // the form that was just submitted.
+            return redirect()->route('users.index')->withSuccess(__('User created successfully.'));
         } catch (\Exception $e) {
             DB::rollback();
 
@@ -165,7 +234,7 @@ class UserController extends Controller
 
             DB::commit();
 
-            return back()->withSuccess(__('User updated successfully.'));
+            return redirect()->route('users.index')->withSuccess(__('User updated successfully.'));
         } catch (\Exception $e) {
             DB::rollback();
 
@@ -249,7 +318,7 @@ class UserController extends Controller
 
             DB::commit();
 
-            return back()->withSuccess(__('Permissions updated for :name.', ['name' => $user->name]));
+            return redirect()->route('users.index')->withSuccess(__('Permissions updated for :name.', ['name' => $user->name]));
         } catch (\Exception $e) {
             DB::rollback();
 

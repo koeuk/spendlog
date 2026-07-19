@@ -84,9 +84,13 @@ const branding = computed(
                 </div>
             </header>
 
-            <!-- No footer and no tab bar, so the form is free to end where it
-                 ends. pb clears the home indicator instead. -->
-            <main class="flex-1 pb-[max(2rem,env(safe-area-inset-bottom))] pt-5">
+            <!-- A flex column, so the form inside can claim the full height and
+                 push its action bar onto the bottom edge with mt-auto. Without
+                 flex-1 reaching all the way down, a short form's buttons would
+                 come to rest wherever the fields happened to end.
+
+                 No footer and no tab bar: FormActions is the only thing below. -->
+            <main class="flex flex-1 flex-col pt-5">
                 <slot />
             </main>
         </div>

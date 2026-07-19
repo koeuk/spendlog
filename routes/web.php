@@ -100,6 +100,11 @@ Route::middleware('auth')->group(function () {
 
         // Admin only — enforced by UserPolicy in the controller.
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        // Own screens: seven fields for the form, and twenty-nine checkboxes for
+        // the permissions editor, neither of which fits a phone-sized modal.
+        Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
+        Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+        Route::get('/users/{user}/permissions', [UserController::class, 'permissions'])->name('users.permissions.edit');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
         Route::patch('/users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::put('/users/{user}/permissions', [UserController::class, 'updatePermissions'])->name('users.permissions');
@@ -123,6 +128,10 @@ Route::middleware('auth')->group(function () {
 
         // Gated on the settings.faq permission in the controller, not just the UI.
         Route::get('/faqs', [FaqController::class, 'index'])->name('faqs.index');
+        // Own screens: the answer is a textarea and both fields carry a locale
+        // tab strip, which overran a dialog once a validation line appeared.
+        Route::get('/faqs/create', [FaqController::class, 'create'])->name('faqs.create');
+        Route::get('/faqs/{faq}/edit', [FaqController::class, 'edit'])->name('faqs.edit');
         Route::post('/faqs', [FaqController::class, 'store'])->name('faqs.store');
         Route::post('/faqs/reorder', [FaqController::class, 'reorder'])->name('faqs.reorder');
         Route::patch('/faqs/{faq}', [FaqController::class, 'update'])->name('faqs.update');

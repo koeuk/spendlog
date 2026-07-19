@@ -40,7 +40,7 @@ const delegatedProps = reactiveOmit(props, "class", "size");
       :data-size="props.size ?? 'default'"
       :class="
         cn(
-          'border-input placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 dark:hover:bg-input/50 focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:aria-invalid:border-destructive/50 h-9 max-sm:h-11 w-full min-w-0 appearance-none rounded-md border bg-transparent py-1 pr-8 pl-2.5 text-base md:text-sm transition-[color,box-shadow] select-none focus-visible:ring-3 aria-invalid:ring-3 data-[size=sm]:h-8 max-sm:data-[size=sm]:h-11 outline-none disabled:pointer-events-none disabled:cursor-not-allowed',
+          'border-input placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 dark:hover:bg-input/50 focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:aria-invalid:border-destructive/50 h-9 max-sm:h-11 w-full min-w-0 appearance-none rounded-md border bg-background py-1 pr-8 pl-2.5 text-base md:text-sm transition-[color,box-shadow] select-none focus-visible:ring-3 aria-invalid:ring-3 data-[size=sm]:h-8 max-sm:data-[size=sm]:h-11 outline-none disabled:pointer-events-none disabled:cursor-not-allowed',
           props.class,
         )
       "

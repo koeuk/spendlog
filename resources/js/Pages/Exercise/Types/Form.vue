@@ -2,7 +2,6 @@
 import { Head, router } from '@inertiajs/vue3';
 import FormScreenLayout from '@/Layouts/FormScreenLayout.vue';
 import ExerciseTypeForm from '@/Components/Exercise/ExerciseTypeForm.vue';
-import { CARD } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
 
 /**
@@ -33,12 +32,10 @@ function leave() {
         :title="type ? __('Edit movement') : __('Add movement')"
         :back-label="__('Back to movements')"
     >
-        <div :class="[CARD, 'p-4 sm:p-6']">
-            <ExerciseTypeForm
-                :type="type"
-                :muscle-groups="muscle_groups"
-                @cancel="leave"
-            />
-        </div>
+        <ExerciseTypeForm
+            :type="type"
+            :muscle-groups="muscle_groups"
+            @cancel="leave"
+        />
     </FormScreenLayout>
 </template>

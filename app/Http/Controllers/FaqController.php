@@ -39,11 +39,34 @@ class FaqController extends Controller
                     'answer' => $this->localeMap($faq, 'answer'),
                     'status' => $faq->status->value,
                 ]),
-            'statuses' => array_map(
-                fn (FaqStatus $status) => ['value' => $status->value, 'label' => $status->label()],
-                FaqStatus::cases(),
-            ),
+            'statuses' => $this->statusOptions(),
             // Locales come from the globally shared list (LocaleTabs reads it).
+        ]);
+    }
+
+    public function create(): Response
+    {
+        Gate::authorize('manageFaqs');
+
+        return Inertia::render('Settings/FaqForm', [
+            'statuses' => $this->statusOptions(),
+        ]);
+    }
+
+    public function edit(Faq $faq): Response
+    {
+        Gate::authorize('manageFaqs');
+
+        return Inertia::render('Settings/FaqForm', [
+            'faq' => [
+                'uuid' => $faq->uuid,
+                // Raw per-locale maps, always with both keys, so the form has a
+                // box for each even before anything is written.
+                'question' => $this->localeMap($faq, 'question'),
+                'answer' => $this->localeMap($faq, 'answer'),
+                'status' => $faq->status->value,
+            ],
+            'statuses' => $this->statusOptions(),
         ]);
     }
 
@@ -59,7 +82,9 @@ class FaqController extends Controller
             'position' => (int) Faq::max('position') + 1,
         ]);
 
-        return back()->with('success', __('FAQ entry created.'));
+        // Not back(): the form is its own page, so back() would land on
+        // the form that was just submitted.
+        return redirect()->route('faqs.index')->with('success', __('FAQ entry created.'));
     }
 
     public function update(FaqRequest $request, Faq $faq): RedirectResponse
@@ -73,7 +98,9 @@ class FaqController extends Controller
         $faq->status = $request->input('status');
         $faq->save();
 
-        return back()->with('success', __('FAQ entry updated.'));
+        // Not back(): the form is its own page, so back() would land on
+        // the form that was just submitted.
+        return redirect()->route('faqs.index')->with('success', __('FAQ entry updated.'));
     }
 
     public function destroy(Faq $faq): RedirectResponse
@@ -106,6 +133,19 @@ class FaqController extends Controller
         });
 
         return back()->with('success', __('Order saved.'));
+    }
+
+    /**
+     * The publish states, shared by the list and the form.
+     *
+     * @return array<int, array<string, string>>
+     */
+    private function statusOptions(): array
+    {
+        return array_map(
+            fn (FaqStatus $status) => ['value' => $status->value, 'label' => $status->label()],
+            FaqStatus::cases(),
+        );
     }
 
     /**

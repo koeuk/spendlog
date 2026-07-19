@@ -7,7 +7,7 @@ import LocaleTabs from '@/Components/LocaleTabs.vue';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
-import { CARD, MUTED } from '@/lib/appStyles';
+import { MUTED } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
 
 /**
@@ -55,7 +55,7 @@ function submit() {
         :title="editing ? __('Edit category') : __('New category')"
         :back-label="__('Back to categories')"
     >
-        <form :class="[CARD, 'p-4 sm:p-6']" @submit.prevent="submit">
+        <form class="flex flex-1 flex-col" @submit.prevent="submit">
             <p class="mb-4 text-sm" :class="MUTED">
                 {{ __('Categories are shared by everyone logging expenses.') }}
             </p>

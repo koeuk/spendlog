@@ -255,19 +255,36 @@ class SuperAdminTest extends TestCase
         $this->assertFalse($target->fresh()->isSuperAdmin());
     }
 
+    /**
+     * The role options ship with the create and edit screens, not the list —
+     * the form moved off the index onto its own route. Both are checked: they
+     * are separate controller actions, so one could grow the option back
+     * without the other noticing.
+     */
     public function test_the_role_dropdown_does_not_offer_super_admin(): void
     {
-        $response = $this->actingAs($this->admin())->get(route('users.index'));
+        $admin = $this->admin();
+        $target = $this->user();
 
-        $response->assertOk();
+        $routes = [
+            route('users.create'),
+            route('users.edit', $target->uuid),
+        ];
 
-        preg_match('/data-page="([^"]*)"/', $response->getContent(), $matches);
-        $props = json_decode(html_entity_decode($matches[1], ENT_QUOTES), true)['props'];
+        foreach ($routes as $url) {
+            $response = $this->actingAs($admin)->get($url);
 
-        $this->assertSame(
-            [RoleName::Admin->value, RoleName::User->value],
-            array_column($props['roles'], 'value'),
-        );
+            $response->assertOk();
+
+            preg_match('/data-page="([^"]*)"/', $response->getContent(), $matches);
+            $props = json_decode(html_entity_decode($matches[1], ENT_QUOTES), true)['props'];
+
+            $this->assertSame(
+                [RoleName::Admin->value, RoleName::User->value],
+                array_column($props['roles'], 'value'),
+                "super_admin was offerable at {$url}",
+            );
+        }
     }
 
     public function test_assignable_excludes_super_admin_but_keeps_the_rest(): void

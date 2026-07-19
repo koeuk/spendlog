@@ -2,7 +2,6 @@
 import { Head, router } from '@inertiajs/vue3';
 import FormScreenLayout from '@/Layouts/FormScreenLayout.vue';
 import WorkoutForm from '@/Components/Exercise/WorkoutForm.vue';
-import { CARD } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
 
 /**
@@ -39,16 +38,14 @@ function leave() {
         :title="workout ? __('Edit workout') : __('Log a workout')"
         :back-label="__('Back to workouts')"
     >
-        <div :class="[CARD, 'p-4 sm:p-6']">
-            <!-- WorkoutForm owns its own useForm and submit, so the page only
-                 says where to go afterwards. Saving redirects to the index
-                 server-side; cancel is the same trip without one. -->
-            <WorkoutForm
-                :workout="workout"
-                :exercise-types="exercise_types"
-                :initial-duration-seconds="initial_duration_seconds"
-                @cancel="leave"
-            />
-        </div>
+        <!-- WorkoutForm owns its own useForm and submit, so the page only
+             says where to go afterwards. Saving redirects to the index
+             server-side; cancel is the same trip without one. -->
+        <WorkoutForm
+            :workout="workout"
+            :exercise-types="exercise_types"
+            :initial-duration-seconds="initial_duration_seconds"
+            @cancel="leave"
+        />
     </FormScreenLayout>
 </template>

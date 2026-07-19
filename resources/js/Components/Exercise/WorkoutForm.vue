@@ -180,7 +180,7 @@ function submit() {
 </script>
 
 <template>
-    <form class="space-y-5" @submit.prevent="submit">
+    <form class="flex flex-1 flex-col space-y-5" @submit.prevent="submit">
         <!-- Date and duration have no fields of their own: the stopwatch sets
              both. The date is stamped when the clock starts, and the duration
              tracks the reading — hence the caption, which is the only thing
