@@ -90,6 +90,29 @@ class CategoryController extends Controller
         ]);
     }
 
+    public function create(): Response
+    {
+        Gate::authorize('create', Category::class);
+
+        return Inertia::render('Categories/Form');
+    }
+
+    public function edit(Category $category): Response
+    {
+        Gate::authorize('update', $category);
+
+        return Inertia::render('Categories/Form', [
+            // name is the raw translatable JSON: the form edits every locale at
+            // once, so seeding from ->name would drop the ones not active.
+            'category' => [
+                'uuid' => $category->uuid,
+                'name' => $category->getTranslations('name'),
+                'color' => $category->color?->value,
+                'icon' => $category->icon?->value,
+            ],
+        ]);
+    }
+
     public function store(CategoryRequest $request): RedirectResponse
     {
         Gate::authorize('create', Category::class);
@@ -101,7 +124,9 @@ class CategoryController extends Controller
 
             DB::commit();
 
-            return redirect()->back()->withSuccess(__('Category created successfully.'));
+            return redirect()
+                ->route('categories.index')
+                ->withSuccess(__('Category created successfully.'));
         } catch (\Exception $e) {
             DB::rollback();
 
@@ -125,7 +150,9 @@ class CategoryController extends Controller
 
             DB::commit();
 
-            return redirect()->back()->withSuccess(__('Category updated successfully.'));
+            return redirect()
+                ->route('categories.index')
+                ->withSuccess(__('Category updated successfully.'));
         } catch (\Exception $e) {
             DB::rollback();
 

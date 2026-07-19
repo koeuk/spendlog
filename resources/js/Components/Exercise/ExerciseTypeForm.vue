@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import LocaleTabs from '@/Components/LocaleTabs.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
+import FormActions from '@/Components/FormActions.vue';
 import { PILL_ACTION } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
 import {
@@ -146,23 +147,28 @@ function submit() {
             </div>
         </div>
 
-        <div class="flex justify-end gap-2">
-            <button
-                type="button"
-                class="rounded-full border border-border px-4 text-sm font-semibold transition hover:bg-muted"
-                :class="PILL_ACTION"
-                @click="emit('cancel')"
-            >
-                {{ trans('Cancel') }}
-            </button>
-            <button
-                type="submit"
-                class="bg-primary text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
-                :class="PILL_ACTION"
-                :disabled="form.processing"
-            >
-                {{ trans('Save') }}
-            </button>
-        </div>
+        <FormActions>
+            <template #cancel>
+                <button
+                    type="button"
+                    class="w-full rounded-full border border-border px-4 text-sm font-semibold transition hover:bg-muted max-sm:h-12 sm:w-auto"
+                    :class="PILL_ACTION"
+                    @click="emit('cancel')"
+                >
+                    {{ trans('Cancel') }}
+                </button>
+            </template>
+
+            <template #submit>
+                <button
+                    type="submit"
+                    class="w-full bg-primary text-primary-foreground transition hover:opacity-90 disabled:opacity-50 max-sm:h-12 sm:w-auto"
+                    :class="PILL_ACTION"
+                    :disabled="form.processing"
+                >
+                    {{ trans('Save') }}
+                </button>
+            </template>
+        </FormActions>
     </form>
 </template>

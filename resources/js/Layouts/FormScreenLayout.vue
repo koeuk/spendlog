@@ -7,7 +7,7 @@ import { useTheme } from '@/composables/useTheme';
 import { useBrandColors } from '@/composables/useBrandColors';
 import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import { APP_PAGE, MUTED } from '@/lib/appStyles';
+import { APP_PAGE } from '@/lib/appStyles';
 
 /**
  * A pushed screen: one task, one way out.
@@ -30,7 +30,6 @@ import { APP_PAGE, MUTED } from '@/lib/appStyles';
 defineProps({
     backHref: { type: String, required: true },
     title: { type: String, required: true },
-    subtitle: { type: String, default: '' },
     backLabel: { type: String, default: 'Back' },
 });
 
@@ -72,20 +71,17 @@ const branding = computed(
 
                 <!-- min-w-0 so a long name truncates instead of pushing the row
                      wider than the viewport. -->
-                <div class="min-w-0 flex-1">
-                    <h1 class="truncate text-lg font-semibold leading-tight">
-                        {{ title }}
-                    </h1>
-                    <p
-                        v-if="subtitle"
-                        class="truncate text-xs leading-tight"
-                        :class="MUTED"
-                    >
-                        {{ subtitle }}
-                    </p>
-                </div>
+                <h1 class="min-w-0 flex-1 truncate text-center text-lg font-semibold leading-tight">
+                    {{ title }}
+                </h1>
 
-                <slot name="actions" />
+                <!-- Balances the back button so the title is centred on the bar
+                     rather than on the space left over beside it. Takes the
+                     actions slot when there is one, and holds its width when
+                     there is not — an aria-hidden spacer, not a control. -->
+                <div class="flex size-11 shrink-0 items-center justify-end">
+                    <slot name="actions" />
+                </div>
             </header>
 
             <!-- No footer and no tab bar, so the form is free to end where it

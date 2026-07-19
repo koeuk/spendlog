@@ -1,26 +1,13 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
-import { Head, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import CategoryBadge from '@/Components/CategoryBadge.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import SearchInput from '@/Components/SearchInput.vue';
 import { ACTIVE, CARD } from '@/lib/appStyles';
-import CategoryStylePicker from '@/Components/CategoryStylePicker.vue';
-import LocaleTabs from '@/Components/LocaleTabs.vue';
 import { localized } from '@/lib/i18n';
 import { Button } from '@/Components/ui/button';
-import { Input } from '@/Components/ui/input';
-import { Label } from '@/Components/ui/label';
-import ResponsiveDialog from '@/Components/ResponsiveDialog.vue';
-// Header/footer/title are plain wrappers over reka's DialogTitle etc, and Sheet
-// is a DialogRoot too — so they sit inside either shell unchanged.
-import {
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/Components/ui/dialog';
 import {
     Table,
     TableBody,
@@ -93,50 +80,6 @@ function applySort(key) {
     navigate({ sort: key });
 }
 
-const showDialog = ref(false);
-const editing = ref(null);
-
-const form = useForm({
-    name: { en: '', km: '' },
-    color: 'slate',
-    icon: null,
-});
-
-function openCreate() {
-    editing.value = null;
-    form.reset();
-    form.clearErrors();
-    showDialog.value = true;
-}
-
-function openEdit(category) {
-    editing.value = category;
-    // name is the raw JSON field, so both inputs read straight from it.
-    form.name = {
-        en: category.name?.en ?? '',
-        km: category.name?.km ?? '',
-    };
-    form.color = category.color;
-    form.icon = category.icon;
-    form.clearErrors();
-    showDialog.value = true;
-}
-
-function submit() {
-    const options = {
-        preserveScroll: true,
-        onSuccess: () => {
-            showDialog.value = false;
-        },
-    };
-
-    if (editing.value) {
-        form.put(route('categories.update', editing.value.uuid), options);
-    } else {
-        form.post(route('categories.store'), options);
-    }
-}
-
 const deleting = ref(null);
 const deleteForm = useForm({});
 
@@ -181,7 +124,12 @@ function destroy() {
                 <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-neutral-100">
                     {{ __('Categories') }}
                 </h2>
-                <Button v-if="can.create" size="sm" @click="openCreate">
+                <Button
+                    v-if="can.create"
+                    :as="Link"
+                    :href="route('categories.create')"
+                    size="sm"
+                >
                     {{ __('Add category') }}
                 </Button>
             </div>
@@ -269,9 +217,10 @@ function destroy() {
                                     <div class="flex justify-end gap-1">
                                         <Button
                                             v-if="can.update"
+                                            :as="Link"
+                                            :href="route('categories.edit', category.uuid)"
                                             variant="ghost"
                                             size="sm"
-                                            @click="openEdit(category)"
                                         >
                                             {{ __('Edit') }}
                                         </Button>
@@ -312,55 +261,5 @@ function destroy() {
             @confirm="destroy"
         />
 
-        <ResponsiveDialog v-model:open="showDialog">
-            <form @submit.prevent="submit">
-                <DialogHeader>
-                    <DialogTitle>
-                        {{ editing ? __('Edit category') : __('New category') }}
-                    </DialogTitle>
-                    <DialogDescription>
-                        {{ __('Categories are shared by everyone logging expenses.') }}
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div class="grid gap-4 py-4">
-                    <LocaleTabs
-                        :form="form"
-                        field="name"
-                        :placeholders="{ en: 'e.g. Groceries', km: 'ឧ. គ្រឿងទេស' }"
-                    >
-                        <template #label>
-                            <Label for="name_en">{{ __('Name') }}</Label>
-                        </template>
-
-                        <template #default="{ locale, placeholder, isRequired }">
-                            <Input
-                                :id="`name_${locale}`"
-                                v-model="form.name[locale]"
-                                autocomplete="off"
-                                :placeholder="placeholder"
-                                :required="isRequired"
-                                :aria-invalid="!!form.errors[`name.${locale}`]"
-                            />
-                        </template>
-                    </LocaleTabs>
-
-                    <CategoryStylePicker :form="form" />
-                </div>
-
-                <DialogFooter>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        @click="showDialog = false"
-                    >
-                        {{ __('Cancel') }}
-                    </Button>
-                    <Button type="submit" :disabled="form.processing">
-                        {{ editing ? __('Save') : __('Create') }}
-                    </Button>
-                </DialogFooter>
-            </form>
-        </ResponsiveDialog>
     </AuthenticatedLayout>
 </template>

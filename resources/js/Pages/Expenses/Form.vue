@@ -2,6 +2,7 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import FormScreenLayout from '@/Layouts/FormScreenLayout.vue';
 import ExpenseForm from '@/Components/ExpenseForm.vue';
+import FormActions from '@/Components/FormActions.vue';
 import { Button } from '@/Components/ui/button';
 import { CARD } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
@@ -78,7 +79,6 @@ function submit() {
     <FormScreenLayout
         :back-href="backHref"
         :title="editing ? __('Edit expense') : __('Add expense')"
-        :subtitle="editing ? expense.item : ''"
         :back-label="__('Back to expenses')"
     >
         <form :class="[CARD, 'p-4 sm:p-6']" @submit.prevent="submit">
@@ -88,22 +88,24 @@ function submit() {
                 :can-create-category="can.create_category"
             />
 
-            <!-- Stacked and full-width on a phone, where a row of two would
-                 put Cancel within a thumb's width of Save. -->
-            <div class="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                <Button
-                    :as="Link"
-                    :href="backHref"
-                    variant="outline"
-                    class="sm:w-auto"
-                >
-                    {{ __('Cancel') }}
-                </Button>
+            <FormActions>
+                <template #cancel>
+                    <Button
+                        :as="Link"
+                        :href="backHref"
+                        variant="outline"
+                        class="w-full max-sm:h-12 sm:w-auto"
+                    >
+                        {{ __('Cancel') }}
+                    </Button>
+                </template>
 
-                <Button type="submit" :disabled="form.processing" class="sm:w-auto">
-                    {{ form.processing ? __('Saving…') : __('Save') }}
-                </Button>
-            </div>
+                <template #submit>
+                    <Button type="submit" :disabled="form.processing" class="w-full max-sm:h-12 sm:w-auto">
+                        {{ form.processing ? __('Saving…') : __('Save') }}
+                    </Button>
+                </template>
+            </FormActions>
         </form>
     </FormScreenLayout>
 </template>

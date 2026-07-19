@@ -31,7 +31,6 @@ function leave() {
     <FormScreenLayout
         :back-href="backHref"
         :title="type ? __('Edit movement') : __('Add movement')"
-        :subtitle="type ? type.name : ''"
         :back-label="__('Back to movements')"
     >
         <div :class="[CARD, 'p-4 sm:p-6']">

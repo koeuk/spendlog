@@ -291,24 +291,28 @@ function submit() {
             />
         </label>
 
-        <div class="flex justify-end gap-2">
-            <button
-                type="button"
-                class="rounded-full border border-border px-4 text-sm font-semibold transition hover:bg-muted"
-                :class="PILL_ACTION"
-                @click="emit('cancel')"
-            >
-                {{ __('Cancel') }}
-            </button>
+        <FormActions>
+            <template #cancel>
+                <button
+                    type="button"
+                    class="w-full rounded-full border border-border px-4 text-sm font-semibold transition hover:bg-muted max-sm:h-12 sm:w-auto"
+                    :class="PILL_ACTION"
+                    @click="emit('cancel')"
+                >
+                    {{ trans('Cancel') }}
+                </button>
+            </template>
 
-            <button
-                type="submit"
-                class="bg-primary text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
-                :class="PILL_ACTION"
-                :disabled="form.processing"
-            >
-                {{ editing ? __('Save changes') : __('Log workout') }}
-            </button>
-        </div>
+            <template #submit>
+                <button
+                    type="submit"
+                    class="w-full bg-primary text-primary-foreground transition hover:opacity-90 disabled:opacity-50 max-sm:h-12 sm:w-auto"
+                    :class="PILL_ACTION"
+                    :disabled="form.processing"
+                >
+                    {{ editing ? trans('Save changes') : trans('Log workout') }}
+                </button>
+            </template>
+        </FormActions>
     </form>
 </template>

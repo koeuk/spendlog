@@ -31,8 +31,10 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
     ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    // Own screens: the colour and icon grids are some fifty tiles between them,
+    // which overran a bottom sheet with the submit button below the fold.
     Route::resource('categories', CategoryController::class)
-        ->only(['index', 'store', 'update', 'destroy']);
+        ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
 
     // create/edit are real screens rather than a dialog on the index: the form
     // opens a category picker and a calendar of its own, and a popover inside a

@@ -37,7 +37,6 @@ function leave() {
     <FormScreenLayout
         :back-href="backHref"
         :title="workout ? __('Edit workout') : __('Log a workout')"
-        :subtitle="workout ? workout.performed_on : ''"
         :back-label="__('Back to workouts')"
     >
         <div :class="[CARD, 'p-4 sm:p-6']">
