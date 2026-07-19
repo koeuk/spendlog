@@ -1,5 +1,6 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import { useMediaQuery } from '@vueuse/core';
 import { usePage } from '@inertiajs/vue3';
 import {
     CalendarDate,
@@ -22,6 +23,8 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from '@/Components/ui/popover';
+import { Sheet, SheetContent, SheetTrigger } from '@/Components/ui/sheet';
+import { cn } from '@/lib/utils';
 
 const props = defineProps({
     form: { type: Object, required: true },
@@ -54,6 +57,46 @@ const spentOnLabel = computed(() =>
 
 // Logging a future expense is rejected server-side; block it in the picker too.
 const maxDate = today(getLocalTimeZone());
+
+/*
+ * The calendar as a bottom sheet on a phone, a popover on a desk — the third
+ * control on this screen to want it, after the category list and the movement
+ * picker. A grid seven columns wide anchored to a full-width trigger has nowhere
+ * to sit at 430px: it opened over the field and ran under the action bar.
+ */
+const isMobile = useMediaQuery('(max-width: 639px)');
+
+const dateOpen = ref(false);
+
+const dateShell = computed(() => (isMobile.value ? Sheet : Popover));
+const dateTrigger = computed(() => (isMobile.value ? SheetTrigger : PopoverTrigger));
+const dateContent = computed(() => (isMobile.value ? SheetContent : PopoverContent));
+
+const dateContentProps = computed(() =>
+    isMobile.value
+        ? {
+              side: 'bottom',
+              showCloseButton: false,
+              class: cn(
+                  'gap-0 rounded-t-2xl',
+                  // The calendar sizes itself, so the sheet only has to centre
+                  // it and stay clear of the home indicator.
+                  'flex items-center justify-center p-4',
+                  'pb-[max(1rem,env(safe-area-inset-bottom))]',
+              ),
+          }
+        : { class: 'w-auto p-0' },
+);
+
+/**
+ * Close on pick.
+ *
+ * A popover can be left open — the date is visible behind it. A sheet covers the
+ * form, so staying open after a choice hides the very field it just filled.
+ */
+function onDatePicked() {
+    dateOpen.value = false;
+}
 
 const khrPerUsd = computed(() => Number(usePage().props.khr_per_usd) || 4100);
 
@@ -169,8 +212,8 @@ const convertedPreview = computed(() => {
 
             <div>
                 <Label>{{ __('Date') }}</Label>
-                <Popover>
-                    <PopoverTrigger as-child>
+                <component :is="dateShell" v-model:open="dateOpen">
+                    <component :is="dateTrigger" as-child>
                         <!-- Sized and rounded as a field, not a button: it sits
                              in the same column as the inputs above it, and the
                              button scale is a step shorter. -->
@@ -181,15 +224,16 @@ const convertedPreview = computed(() => {
                         >
                             {{ spentOnLabel }}
                         </Button>
-                    </PopoverTrigger>
-                    <PopoverContent class="w-auto p-0">
+                    </component>
+                    <component :is="dateContent" v-bind="dateContentProps">
                         <Calendar
                             v-model="spentOn"
                             :max-value="maxDate"
                             initial-focus
+                            @update:model-value="onDatePicked"
                         />
-                    </PopoverContent>
-                </Popover>
+                    </component>
+                </component>
                 <p
                     v-if="form.errors.spent_on"
                     class="mt-1 text-sm text-red-600"
