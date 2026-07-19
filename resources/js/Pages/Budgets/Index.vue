@@ -15,13 +15,7 @@ import { Skeleton } from '@/Components/ui/skeleton';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/Components/ui/select';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 import { ChevronLeft, ChevronRight, TriangleAlert } from 'lucide-vue-next';
 import ResponsiveDialog from '@/Components/ResponsiveDialog.vue';
 import {
@@ -44,6 +38,12 @@ const props = defineProps({
 // 'YYYY-MM' is one value on the wire but two controls on screen.
 const monthPart = computed(() => props.month.split('-')[1]);
 const yearPart = computed(() => props.month.split('-')[0]);
+
+// years arrives as plain numbers; the picker wants {value, label}, and the value
+// has to be a string so it compares equal to yearPart.
+const yearOptions = computed(() =>
+    props.years.map((year) => ({ value: String(year), label: String(year) })),
+);
 
 // Only categories the user actually spent in this month — the long tail of
 // untouched categories is noise on this page. A category with a budget set but
@@ -281,33 +281,27 @@ function clearBudget() {
                         <ChevronLeft class="size-4" />
                     </Link>
 
-                    <Select :model-value="monthPart" @update:model-value="goToMonth">
-                        <SelectTrigger
-                            class="h-8 min-w-0 flex-1 rounded-full border-0 bg-transparent px-3 text-sm font-semibold shadow-none focus-visible:ring-0 sm:w-[7.5rem] sm:flex-none dark:bg-transparent"
-                            :aria-label="__('Month')"
-                        >
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem v-for="m in months" :key="m.value" :value="m.value">
-                                {{ m.label }}
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                        :model-value="monthPart"
+                        :options="months"
+                        :label="__('Month')"
+                        :searchable="false"
+                        trigger-class="h-8 min-w-0 flex-1 rounded-full border-0 bg-transparent px-3 text-sm font-semibold max-sm:h-11 sm:w-[7.5rem] sm:flex-none"
+                        content-class="w-44"
+                        align="start"
+                        @update:model-value="goToMonth"
+                    />
 
-                    <Select :model-value="yearPart" @update:model-value="goToYear">
-                        <SelectTrigger
-                            class="h-8 min-w-0 shrink rounded-full border-0 bg-transparent px-3 text-sm font-semibold tabular-nums shadow-none focus-visible:ring-0 sm:w-[5.5rem] sm:shrink-0 dark:bg-transparent"
-                            :aria-label="__('Year')"
-                        >
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem v-for="y in years" :key="y" :value="String(y)">
-                                {{ y }}
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                        :model-value="yearPart"
+                        :options="yearOptions"
+                        :label="__('Year')"
+                        :searchable="false"
+                        trigger-class="h-8 min-w-0 shrink rounded-full border-0 bg-transparent px-3 text-sm font-semibold tabular-nums max-sm:h-11 sm:w-[5.5rem] sm:shrink-0"
+                        content-class="w-32"
+                        align="start"
+                        @update:model-value="goToYear"
+                    />
 
                     <Link
                         :href="route('budgets.index', { month: next_month })"

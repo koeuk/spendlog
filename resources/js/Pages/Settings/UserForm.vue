@@ -6,13 +6,7 @@ import FormActions from '@/Components/FormActions.vue';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/Components/ui/select';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 import { MUTED } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
 
@@ -120,37 +114,39 @@ function submit() {
                      state — the one state you pick from. -->
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div>
-                        <Label for="user_role">{{ __('Role') }}</Label>
+                        <!-- A span, not a Label: the trigger is a button, which
+                             a label cannot forward a click to. Same reasoning as
+                             the movement form. -->
+                        <span class="text-sm font-medium">{{ __('Role') }}</span>
                         <!-- Disabled where the last-admin rule forbids a change,
                              rather than hidden: the current role is still worth
                              showing. -->
-                        <Select v-model="form.role" :disabled="!can.change_role">
-                            <SelectTrigger id="user_role" class="mt-1 w-full">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem v-for="r in roles" :key="r.value" :value="r.value">
-                                    {{ r.label }}
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
+                        <SearchableSelect
+                            v-model="form.role"
+                            :options="roles"
+                            :disabled="!can.change_role"
+                            :label="__('Role')"
+                            :searchable="false"
+                            align="start"
+                            trigger-class="mt-1 h-10 w-full rounded-xl border border-input bg-background px-3 text-sm max-sm:h-11"
+                            content-class="w-[--reka-popover-trigger-width]"
+                        />
                         <p v-if="form.errors.role" class="mt-1 text-sm text-red-600 dark:text-red-400">
                             {{ form.errors.role }}
                         </p>
                     </div>
 
                     <div>
-                        <Label for="user_status">{{ __('Status') }}</Label>
-                        <Select v-model="form.status">
-                            <SelectTrigger id="user_status" class="mt-1 w-full">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem v-for="s in statuses" :key="s.value" :value="s.value">
-                                    {{ s.label }}
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
+                        <span class="text-sm font-medium">{{ __('Status') }}</span>
+                        <SearchableSelect
+                            v-model="form.status"
+                            :options="statuses"
+                            :label="__('Status')"
+                            :searchable="false"
+                            align="start"
+                            trigger-class="mt-1 h-10 w-full rounded-xl border border-input bg-background px-3 text-sm max-sm:h-11"
+                            content-class="w-[--reka-popover-trigger-width]"
+                        />
                         <p v-if="form.errors.status" class="mt-1 text-sm text-red-600 dark:text-red-400">
                             {{ form.errors.status }}
                         </p>

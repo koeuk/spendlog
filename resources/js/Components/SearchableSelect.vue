@@ -48,6 +48,16 @@ const props = defineProps({
     triggerClass: { type: [String, Array, Object], default: '' },
     contentClass: { type: [String, Array, Object], default: 'w-56' },
     align: { type: String, default: 'end' },
+    /*
+     * Whether to show the search row. A filter over three options is a control
+     * that costs a tap and earns nothing, and on a phone it also opens the
+     * keyboard over the list it is meant to narrow — so short, fixed lists
+     * (role, status, per-page) pass false and get a plain sheet of choices.
+     *
+     * The keyboard wiring stays either way: arrows, Home/End and Enter are
+     * bound to the panel, not to the input.
+     */
+    searchable: { type: Boolean, default: true },
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -235,7 +245,20 @@ function choose(option) {
             </button>
         </component>
 
-        <component :is="shellContent" v-bind="shellContentProps">
+        <!-- Key handling sits on the panel, not on the search input: the input
+             is optional (see `searchable`), and arrow/Enter navigation has to
+             work whether or not it is rendered. Keystrokes from the input still
+             reach here by bubbling. -->
+        <component
+            :is="shellContent"
+            v-bind="shellContentProps"
+            @keydown.down.prevent="move(1)"
+            @keydown.up.prevent="move(-1)"
+            @keydown.home.prevent="setActive(0)"
+            @keydown.end.prevent="setActive(filtered.length - 1)"
+            @keydown.enter.prevent="activeOption && choose(activeOption)"
+            @keydown.esc="open = false"
+        >
             <!-- The sheet is a dialog, so it owes a title: reka warns without
                  one and a screen reader announces an unnamed panel. The popover
                  is labelled by its trigger instead and needs no header. -->
@@ -258,7 +281,10 @@ function choose(option) {
             <!-- Tokens throughout, not neutral-*: appStyles.js spells out why a
                  literal colour here paints over the admin's chosen palette and
                  makes the setting silently do nothing. -->
-            <div class="flex shrink-0 items-center gap-2 border-b border-border px-3">
+            <div
+                v-if="searchable"
+                class="flex shrink-0 items-center gap-2 border-b border-border px-3"
+            >
                 <Search class="size-3.5 shrink-0 text-muted-foreground" />
                 <!-- A plain input, not the shadcn one: this needs no ring or
                      border of its own inside an already-bordered popover.
@@ -275,12 +301,6 @@ function choose(option) {
                     :aria-controls="listboxId"
                     :aria-expanded="open"
                     :aria-activedescendant="activeOption ? optionId(activeIndex) : undefined"
-                    @keydown.down.prevent="move(1)"
-                    @keydown.up.prevent="move(-1)"
-                    @keydown.home.prevent="setActive(0)"
-                    @keydown.end.prevent="setActive(filtered.length - 1)"
-                    @keydown.enter.prevent="activeOption && choose(activeOption)"
-                    @keydown.esc="open = false"
                 />
             </div>
 

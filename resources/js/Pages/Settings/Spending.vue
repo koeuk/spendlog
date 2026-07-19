@@ -7,13 +7,7 @@ import { Checkbox } from '@/Components/ui/checkbox';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
 import { Textarea } from '@/Components/ui/textarea';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/Components/ui/select';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 import { MUTED } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
 
@@ -152,23 +146,16 @@ function submit() {
                     {{ __('Which currency the amount fields start on. Amounts are always stored in US dollars — this only saves retoggling when most spending is in one currency.') }}
                 </p>
                 <div class="mt-2">
-                    <Select
+                    <SearchableSelect
                         :model-value="form.default_currency"
+                        :options="currencies"
+                        :label="__('Currency')"
+                        :searchable="false"
+                        align="start"
+                        trigger-class="h-10 w-40 rounded-xl border border-input bg-background px-3 text-sm max-sm:h-11"
+                        content-class="w-40"
                         @update:model-value="form.default_currency = $event"
-                    >
-                        <SelectTrigger id="default_currency" class="max-w-40">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem
-                                v-for="currency in currencies"
-                                :key="currency.value"
-                                :value="currency.value"
-                            >
-                                {{ currency.label }}
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
+                    />
                 </div>
                 <p v-if="form.errors.default_currency" class="mt-1 text-sm text-red-600 dark:text-red-400">
                     {{ form.errors.default_currency }}
