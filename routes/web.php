@@ -76,7 +76,7 @@ Route::middleware('auth')->group(function () {
          */
         Route::resource('types', ExerciseTypeController::class)
             ->parameters(['types' => 'exercise_type'])
-            ->only(['index', 'store', 'update', 'destroy']);
+            ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
     });
 
     /*

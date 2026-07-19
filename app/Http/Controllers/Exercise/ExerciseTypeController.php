@@ -69,6 +69,35 @@ class ExerciseTypeController extends Controller
         ]);
     }
 
+    public function create(Request $request): Response
+    {
+        Gate::authorize('create', ExerciseType::class);
+
+        return Inertia::render('Exercise/Types/Form', [
+            'muscle_groups' => MuscleGroup::options(),
+        ]);
+    }
+
+    public function edit(Request $request, ExerciseType $exercise_type): Response
+    {
+        Gate::authorize('update', $exercise_type);
+
+        return Inertia::render('Exercise/Types/Form', [
+            // Two shapes on purpose: the header renders the active locale, while
+            // the form has to populate a field per locale.
+            'type' => [
+                'uuid' => $exercise_type->uuid,
+                'name' => $exercise_type->name,
+                'name_translations' => $exercise_type->getTranslations('name'),
+                'muscle_group' => $exercise_type->muscle_group?->value,
+                'is_cardio' => $exercise_type->is_cardio,
+                'color' => $exercise_type->color?->value,
+                'icon' => $exercise_type->icon?->value,
+            ],
+            'muscle_groups' => MuscleGroup::options(),
+        ]);
+    }
+
     public function store(ExerciseTypeRequest $request): RedirectResponse
     {
         Gate::authorize('create', ExerciseType::class);
@@ -86,7 +115,11 @@ class ExerciseTypeController extends Controller
 
             DB::commit();
 
-            return redirect()->back()->withSuccess(__('Exercise added successfully.'));
+            // Not back(): the form is its own page, so back() would land on
+            // the form that was just submitted.
+            return redirect()
+                ->route('exercise.types.index')
+                ->withSuccess(__('Exercise added successfully.'));
         } catch (\Exception $e) {
             DB::rollback();
 
@@ -110,7 +143,11 @@ class ExerciseTypeController extends Controller
 
             DB::commit();
 
-            return redirect()->back()->withSuccess(__('Exercise updated successfully.'));
+            // Not back(): the form is its own page, so back() would land on
+            // the form that was just submitted.
+            return redirect()
+                ->route('exercise.types.index')
+                ->withSuccess(__('Exercise updated successfully.'));
         } catch (\Exception $e) {
             DB::rollback();
 

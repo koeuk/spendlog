@@ -1,19 +1,12 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { Head, useForm, usePage } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { trans } from '@/lib/i18n';
 import { Dumbbell, Pencil, Plus, Timer, Trash2 } from 'lucide-vue-next';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import ExerciseBadge from '@/Components/Exercise/ExerciseBadge.vue';
-import WorkoutForm from '@/Components/Exercise/WorkoutForm.vue';
 import Pagination from '@/Components/Pagination.vue';
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from '@/Components/ui/dialog';
 import { CARD, EYEBROW, MUTED, PILL_ACTION } from '@/lib/appStyles';
 import { formatDistance, formatDuration, formatWeight } from '@/lib/exerciseStyles';
 
@@ -27,42 +20,6 @@ const props = defineProps({
 
 const page = usePage();
 const unit = computed(() => page.props.default_weight_unit ?? 'kg');
-
-// null = closed, 'new' = adding, an object = editing that workout.
-const editing = ref(null);
-
-/*
- * Arriving from the dashboard timer with ?duration=173 opens the form on the
- * spot with that many seconds already in it. Read from the URL rather than a
- * prop so the timer can hand over without the controller having to know the
- * dashboard exists.
- */
-const handedOverSeconds = ref(null);
-
-const seconds = Number(new URLSearchParams(window.location.search).get('duration'));
-
-if (Number.isFinite(seconds) && seconds > 0) {
-    handedOverSeconds.value = Math.floor(seconds);
-    editing.value = 'new';
-}
-
-function close() {
-    editing.value = null;
-    // One handover per arrival: reopening the form afterwards should be blank,
-    // not stamped with a timer reading from earlier in the session.
-    handedOverSeconds.value = null;
-}
-
-// The dialog wants a boolean, but `editing` has to stay the source of truth —
-// it is what tells WorkoutForm whether this is a create or an update.
-const dialogOpen = computed({
-    get: () => editing.value !== null,
-    set: (value) => {
-        if (!value) {
-            close();
-        }
-    },
-});
 
 const deleteForm = useForm({});
 
@@ -164,38 +121,17 @@ function formatDate(value) {
                     </h1>
                 </div>
 
-                <button
+                <Link
                     v-if="can.create"
-                    type="button"
+                    :href="route('exercise.workouts.create')"
                     class="bg-primary text-primary-foreground inline-flex items-center gap-2 transition hover:opacity-90"
                     :class="PILL_ACTION"
-                    @click="editing = 'new'"
                 >
                     <Plus class="size-4" />
                     {{ trans('Log a workout') }}
-                </button>
+                </Link>
             </div>
         </template>
-
-        <!-- Matches the Movements form: the list stays where it is instead of
-             being pushed down the page while you type. -->
-        <Dialog v-model:open="dialogOpen">
-            <DialogContent class="sm:max-w-2xl max-h-[85svh] overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle>
-                        {{ editing === 'new' ? trans('Log a workout') : trans('Edit workout') }}
-                    </DialogTitle>
-                </DialogHeader>
-
-                <WorkoutForm
-                    :workout="editing === 'new' ? null : editing"
-                    :exercise-types="exercise_types"
-                    :initial-duration-seconds="handedOverSeconds"
-                    @saved="close"
-                    @cancel="close"
-                />
-            </DialogContent>
-        </Dialog>
 
         <div class="space-y-3">
             <p
@@ -239,14 +175,13 @@ function formatDate(value) {
                     </span>
 
                     <div class="flex items-center gap-1">
-                        <button
-                            type="button"
+                        <Link
+                            :href="route('exercise.workouts.edit', workout.uuid)"
                             class="grid size-9 place-items-center rounded-full text-neutral-400 transition hover:bg-muted hover:text-foreground"
                             :aria-label="trans('Edit')"
-                            @click="editing = workout"
                         >
                             <Pencil class="size-4" />
-                        </button>
+                        </Link>
                         <button
                             type="button"
                             class="grid size-9 place-items-center rounded-full text-neutral-400 transition hover:bg-red-500/10 hover:text-red-600"
