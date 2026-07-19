@@ -1,3 +1,20 @@
+<script>
+/**
+ * Where the marker sat on the settings page we came from.
+ *
+ * Every settings page wraps this layout in its own template, so Inertia tears
+ * the nav down and builds a new one on each visit — the element does not
+ * survive, which a probe confirms. A ref would therefore reset on arrival and
+ * the marker would simply be *there*, under the new tab, having travelled
+ * nowhere.
+ *
+ * Holding the last position outside the component lets the fresh nav start
+ * where the old one ended and animate from there. Same technique, and the same
+ * reason, as lastPill in AuthenticatedLayout.
+ */
+let lastMarker = null;
+</script>
+
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
@@ -83,24 +100,24 @@ const markerStyle = computed(() => ({
     opacity: hasMarker.value ? 1 : 0,
 }));
 
+function activeBox() {
+    const active = navRef.value?.querySelector('[aria-current="page"]');
+
+    // Width 0 = nothing matched. Keep the last position and fade out, rather
+    // than collapsing to a sliver parked at the first tab.
+    return active
+        ? {
+              x: active.offsetLeft,
+              y: active.offsetTop,
+              w: active.offsetWidth,
+              h: active.offsetHeight,
+          }
+        : { ...marker.value, w: 0 };
+}
+
 function measure() {
-    const nav = navRef.value;
-    const active = nav?.querySelector('[aria-current="page"]');
-
-    if (!active) {
-        // Keep the last position and fade out, rather than collapsing to a
-        // sliver parked at the first tab.
-        marker.value = { ...marker.value, w: 0 };
-
-        return;
-    }
-
-    marker.value = {
-        x: active.offsetLeft,
-        y: active.offsetTop,
-        w: active.offsetWidth,
-        h: active.offsetHeight,
-    };
+    marker.value = activeBox();
+    lastMarker = marker.value;
 }
 
 /*
@@ -168,14 +185,38 @@ function revealActive(behavior) {
 let observer;
 
 onMounted(() => {
-    measure();
+    const target = activeBox();
+    // A remount carrying a different position means a tab was clicked. Compare
+    // both axes: the row runs horizontally on a phone and vertically from lg: up.
+    const moved = lastMarker && (lastMarker.x !== target.x || lastMarker.y !== target.y);
+
+    if (moved && target.w > 0) {
+        // Start where the previous page's nav left off, unanimated...
+        markerAnimates.value = false;
+        marker.value = lastMarker;
+
+        // ...let that paint, then turn the transition on and move. Two frames,
+        // because enabling the transition and setting the target in one go lets
+        // the browser collapse both into a single style resolution and skip the
+        // animation — which looks exactly like the teleport this replaces.
+        requestAnimationFrame(() => {
+            markerAnimates.value = true;
+            requestAnimationFrame(() => {
+                marker.value = target;
+            });
+        });
+    } else {
+        marker.value = target;
+        requestAnimationFrame(() => (markerAnimates.value = true));
+    }
+
+    lastMarker = target;
+
     readEdges();
     // 'auto', not 'smooth': on a fresh load there is nothing to follow, so an
     // animated scroll is just the page appearing to settle late.
     revealActive('auto');
     nextTick(readEdges);
-
-    requestAnimationFrame(() => (markerAnimates.value = true));
 
     // Catches the row/column switch at lg, and label widths changing when the
     // locale switches or the webfont lands.
