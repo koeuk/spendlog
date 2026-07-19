@@ -28,8 +28,12 @@
     <!-- The negative margin cancels the layout column's gutter so the glass
          reaches the screen edges, while the buttons stay on the same grid as
          the fields above. -->
+    <!-- Phone: a bar on the bottom edge, full-bleed past the column's gutter.
+         Desk: an ordinary row at the end of the card, which is what a form
+         inside a panel has always looked like here — so every phone-only rule
+         is unset again at sm. -->
     <div
-        class="sticky bottom-0 -mx-3 mt-auto border-t border-border/60 bg-background/90 px-3 pt-3 backdrop-blur-xl pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:-mx-4 lg:px-4"
+        class="sticky bottom-0 -mx-3 mt-auto border-t border-border/60 bg-background/90 px-3 pt-3 backdrop-blur-xl pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:static sm:mx-0 sm:mt-6 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none"
     >
         <div class="grid grid-cols-2 gap-2 sm:flex sm:justify-end">
             <slot name="cancel" />
