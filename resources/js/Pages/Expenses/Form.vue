@@ -1,8 +1,7 @@
 <script setup>
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import FormScreenLayout from '@/Layouts/FormScreenLayout.vue';
 import ExpenseForm from '@/Components/ExpenseForm.vue';
-import FormScreenHeader from '@/Components/FormScreenHeader.vue';
 import { Button } from '@/Components/ui/button';
 import { CARD } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
@@ -76,39 +75,35 @@ function submit() {
 <template>
     <Head :title="editing ? trans('Edit expense') : trans('Add expense')" />
 
-    <AuthenticatedLayout>
-        <div class="mx-auto max-w-3xl">
-            <FormScreenHeader
-                :back-href="backHref"
-                :title="editing ? __('Edit expense') : __('Add expense')"
-                :subtitle="editing ? expense.item : ''"
-                :back-label="__('Back to expenses')"
+    <FormScreenLayout
+        :back-href="backHref"
+        :title="editing ? __('Edit expense') : __('Add expense')"
+        :subtitle="editing ? expense.item : ''"
+        :back-label="__('Back to expenses')"
+    >
+        <form :class="[CARD, 'p-4 sm:p-6']" @submit.prevent="submit">
+            <ExpenseForm
+                :form="form"
+                :categories="categories"
+                :can-create-category="can.create_category"
             />
 
-            <form :class="[CARD, 'p-4 sm:p-6']" @submit.prevent="submit">
-                <ExpenseForm
-                    :form="form"
-                    :categories="categories"
-                    :can-create-category="can.create_category"
-                />
+            <!-- Stacked and full-width on a phone, where a row of two would
+                 put Cancel within a thumb's width of Save. -->
+            <div class="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <Button
+                    :as="Link"
+                    :href="backHref"
+                    variant="outline"
+                    class="sm:w-auto"
+                >
+                    {{ __('Cancel') }}
+                </Button>
 
-                <!-- Stacked and full-width on a phone, where a row of two would
-                     put Cancel within a thumb's width of Save. -->
-                <div class="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                    <Button
-                        :as="Link"
-                        :href="backHref"
-                        variant="outline"
-                        class="sm:w-auto"
-                    >
-                        {{ __('Cancel') }}
-                    </Button>
-
-                    <Button type="submit" :disabled="form.processing" class="sm:w-auto">
-                        {{ form.processing ? __('Saving…') : __('Save') }}
-                    </Button>
-                </div>
-            </form>
-        </div>
-    </AuthenticatedLayout>
+                <Button type="submit" :disabled="form.processing" class="sm:w-auto">
+                    {{ form.processing ? __('Saving…') : __('Save') }}
+                </Button>
+            </div>
+        </form>
+    </FormScreenLayout>
 </template>

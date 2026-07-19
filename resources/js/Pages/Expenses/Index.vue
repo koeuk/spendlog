@@ -165,6 +165,22 @@ const returnQuery = computed(() =>
     ),
 );
 
+/**
+ * The edit screen for a row, with the list's position carried along.
+ *
+ * Ziggy puts named parameters in the path and anything left over in the query,
+ * so spreading returnQuery here is what turns it into ?month=…&scope=….
+ */
+function editHref(expense) {
+    return route('expenses.edit', { expense: expense.uuid, ...returnQuery.value });
+}
+
+// The whole row is a click target, not just the Edit button. The buttons inside
+// it carry @click.stop so they do not fire this as well.
+function openEdit(expense) {
+    router.get(editHref(expense));
+}
+
 const deleting = ref(null);
 const deleteForm = useForm({});
 
@@ -484,7 +500,7 @@ const filtered = computed(() =>
                             >
                                 <Button
                                     :as="Link"
-                                    :href="route('expenses.edit', [expense.uuid, returnQuery])"
+                                    :href="editHref(expense)"
                                     variant="ghost"
                                     size="sm"
                                     @click.stop

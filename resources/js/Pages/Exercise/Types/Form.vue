@@ -1,8 +1,7 @@
 <script setup>
 import { Head, router } from '@inertiajs/vue3';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import FormScreenLayout from '@/Layouts/FormScreenLayout.vue';
 import ExerciseTypeForm from '@/Components/Exercise/ExerciseTypeForm.vue';
-import FormScreenHeader from '@/Components/FormScreenHeader.vue';
 import { CARD } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
 
@@ -29,22 +28,18 @@ function leave() {
 <template>
     <Head :title="type ? trans('Edit movement') : trans('Add movement')" />
 
-    <AuthenticatedLayout>
-        <div class="mx-auto max-w-lg">
-            <FormScreenHeader
-                :back-href="backHref"
-                :title="type ? __('Edit movement') : __('Add movement')"
-                :subtitle="type ? type.name : ''"
-                :back-label="__('Back to movements')"
+    <FormScreenLayout
+        :back-href="backHref"
+        :title="type ? __('Edit movement') : __('Add movement')"
+        :subtitle="type ? type.name : ''"
+        :back-label="__('Back to movements')"
+    >
+        <div :class="[CARD, 'p-4 sm:p-6']">
+            <ExerciseTypeForm
+                :type="type"
+                :muscle-groups="muscle_groups"
+                @cancel="leave"
             />
-
-            <div :class="[CARD, 'p-4 sm:p-6']">
-                <ExerciseTypeForm
-                    :type="type"
-                    :muscle-groups="muscle_groups"
-                    @cancel="leave"
-                />
-            </div>
         </div>
-    </AuthenticatedLayout>
+    </FormScreenLayout>
 </template>
