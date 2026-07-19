@@ -27,7 +27,21 @@ import { useOverBudget } from '@/composables/useOverBudget';
 import { useTheme } from '@/composables/useTheme';
 import { useBrandColors } from '@/composables/useBrandColors';
 import { APP_PAGE, CARD } from '@/lib/appStyles';
-import { Check, ChevronDown, Dumbbell, Menu, TriangleAlert, Wallet, X } from 'lucide-vue-next';
+import {
+    ChartColumn,
+    Check,
+    ChevronDown,
+    Dumbbell,
+    LayoutDashboard,
+    ListChecks,
+    Menu,
+    PiggyBank,
+    Receipt,
+    Shapes,
+    TriangleAlert,
+    Wallet,
+    X,
+} from 'lucide-vue-next';
 import { Link, usePage } from '@inertiajs/vue3';
 
 const showingNavigationDropdown = ref(false);
@@ -95,12 +109,14 @@ const MODULES = [
         // Always available. Every link inside is still permission-filtered, so a
         // user with nothing here simply gets an empty nav, not a broken app.
         permission: null,
+        // The icons are for the phone tab bar only — the desktop nav stays text,
+        // where there is room for the word and an icon beside it would be noise.
         links: [
-            { label: 'Dashboard', route: 'dashboard', active: 'dashboard', permission: 'dashboard.view' },
-            { label: 'Categories', route: 'categories.index', active: 'categories.*', permission: 'categories.view' },
-            { label: 'Expenses', route: 'expenses.index', active: 'expenses.*', permission: 'expenses.view' },
-            { label: 'Budgets', route: 'budgets.index', active: 'budgets.*', permission: 'budgets.view' },
-            { label: 'Reports', route: 'reports.index', active: 'reports.*', permission: 'reports.view' },
+            { label: 'Dashboard', route: 'dashboard', active: 'dashboard', permission: 'dashboard.view', icon: LayoutDashboard },
+            { label: 'Categories', route: 'categories.index', active: 'categories.*', permission: 'categories.view', icon: Shapes },
+            { label: 'Expenses', route: 'expenses.index', active: 'expenses.*', permission: 'expenses.view', icon: Receipt },
+            { label: 'Budgets', route: 'budgets.index', active: 'budgets.*', permission: 'budgets.view', icon: PiggyBank },
+            { label: 'Reports', route: 'reports.index', active: 'reports.*', permission: 'reports.view', icon: ChartColumn },
         ],
     },
     {
@@ -114,9 +130,9 @@ const MODULES = [
         // merely unreachable.
         permission: 'exercise.view',
         links: [
-            { label: 'Dashboard', route: 'exercise.dashboard', active: 'exercise.dashboard', permission: 'exercise.view' },
-            { label: 'Workouts', route: 'exercise.workouts.index', active: 'exercise.workouts.*', permission: 'exercise.view' },
-            { label: 'Movements', route: 'exercise.types.index', active: 'exercise.types.*', permission: 'exercise.view' },
+            { label: 'Dashboard', route: 'exercise.dashboard', active: 'exercise.dashboard', permission: 'exercise.view', icon: LayoutDashboard },
+            { label: 'Workouts', route: 'exercise.workouts.index', active: 'exercise.workouts.*', permission: 'exercise.view', icon: Dumbbell },
+            { label: 'Movements', route: 'exercise.types.index', active: 'exercise.types.*', permission: 'exercise.view', icon: ListChecks },
         ],
     },
 ];
@@ -230,7 +246,12 @@ watch(() => page.url, () => nextTick(measurePill));
 
         <!-- flex column at full viewport height so the footer can be pushed to
              the bottom on short pages (main grows) rather than floating mid-page. -->
-        <div class="mx-auto flex min-h-screen max-w-6xl flex-col px-3 pb-10 lg:px-4">
+        <!-- pb clears the fixed tab bar on a phone, so the footer and the last
+             card are scrollable to rather than sitting under the glass. Back to
+             the plain gutter from md: up, where there is no bar to clear. -->
+        <div
+            class="mx-auto flex min-h-screen max-w-6xl flex-col px-3 pb-[calc(6.5rem+env(safe-area-inset-bottom))] md:pb-10 lg:px-4"
+        >
             <!--
                 The bar floats on the page rather than spanning it edge to edge,
                 echoing the panel geometry of the auth screens.
@@ -250,8 +271,15 @@ watch(() => page.url, () => nextTick(measurePill));
                         : 'border-b border-transparent'
                 "
             >
-            <nav class="flex h-20 items-center justify-between gap-4">
-                <div class="flex items-center gap-6">
+            <!--
+                Tighter gaps below sm. At 320px the row measured 353px wide and
+                pushed the burger off the edge — the wordmark, the workspace pill,
+                the locale pair, the theme toggle and the burger are each defended
+                by a comment of their own, so the space comes out of the spacing
+                rather than out of a control. Back to the roomier gaps from sm: up.
+            -->
+            <nav class="flex h-20 items-center justify-between gap-2 sm:gap-4">
+                <div class="flex min-w-0 items-center gap-2 sm:gap-6">
                     <Link
                         :href="route(activeModule.home)"
                         class="flex shrink-0 items-center gap-2 text-sm font-bold tracking-tight"
@@ -449,23 +477,14 @@ watch(() => page.url, () => nextTick(measurePill));
                     'anim mb-3 max-h-[calc(100svh-6rem)] overflow-y-auto overscroll-contain p-2 md:hidden',
                 ]"
             >
-                <div class="flex flex-col gap-0.5">
-                    <ResponsiveNavLink
-                        v-for="link in links"
-                        :key="link.route"
-                        :href="route(link.route)"
-                        :active="route().current(link.active)"
-                    >
-                        {{ __(link.label) }}
-                    </ResponsiveNavLink>
-                </div>
+                <!-- No page links here, and no Workspace section either. Both
+                     were removed for the same reason: the tab bar at the bottom
+                     of the screen already carries every page in this module, and
+                     the workspace pill in the header carries the switch. Listing
+                     either again a thumb's width away is a second control that
+                     does the same thing, and a second place to keep in sync. -->
 
-                <!-- No Workspace section here. It existed because the header
-                     pill was once icon-only and easy to miss on a phone, but the
-                     pill renders at every width and now carries its name, so
-                     this was the same two links a thumb's width below itself. -->
-
-                <div class="mt-2 border-t border-neutral-100 pt-2 dark:border-neutral-800">
+                <div>
                     <div class="px-4 py-2">
                         <p class="text-sm font-semibold">
                             {{ $page.props.auth.user.name }}
@@ -576,6 +595,63 @@ watch(() => page.url, () => nextTick(measurePill));
 
             <AppFooter />
         </div>
+
+        <!--
+            Phone tab bar.
+
+            The five pages of a module are the whole app, and on a phone they
+            belong under the thumb rather than behind a menu: reaching them was
+            two taps and a scroll past the account block, on every navigation.
+            The header keeps the bar it has — this replaces nothing above, it
+            just stops the menu being the only way through.
+
+            Fixed, not sticky: sticky would ride inside the scrolling column and
+            leave the bar mid-page. The rounded glass slab matches the cards and
+            the scrolled header, so it reads as part of the same surface.
+
+            Hidden from md: up, where the header nav already shows the same links
+            and a second copy would be redundant.
+        -->
+        <nav
+            class="fixed inset-x-0 bottom-0 z-40 md:hidden"
+            :aria-label="__('Primary')"
+        >
+            <div class="mx-auto max-w-6xl px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">
+                <div
+                    class="flex items-stretch gap-1 rounded-[24px] border border-neutral-200/70 bg-white/85 p-1.5 shadow-[0_-6px_24px_-12px_rgba(15,23,42,0.22)] backdrop-blur-xl backdrop-saturate-150 dark:border-white/10 dark:bg-neutral-900/80 dark:shadow-[0_-6px_24px_-12px_rgba(0,0,0,0.7)]"
+                >
+                    <!--
+                        flex-1 with min-w-0: five equal columns that shrink
+                        together. Sized by count rather than by label, so a long
+                        word in Khmer cannot push a neighbour off the row.
+
+                        The label stays visible rather than showing on the active
+                        tab alone — an icon-only tab asks the reader to recognise
+                        a pictogram for "Budgets", and the row is quieter when
+                        every item has the same shape.
+                    -->
+                    <Link
+                        v-for="link in links"
+                        :key="link.route"
+                        :href="route(link.route)"
+                        :aria-current="route().current(link.active) ? 'page' : undefined"
+                        class="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[18px] px-1 py-2 transition-colors duration-200"
+                        :class="
+                            route().current(link.active)
+                                ? 'bg-primary text-primary-foreground'
+                                : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
+                        "
+                    >
+                        <component :is="link.icon" class="size-5 shrink-0" aria-hidden="true" />
+                        <!-- Truncates rather than wraps: a second line would
+                             make one tab taller than the rest. -->
+                        <span class="w-full truncate text-center text-[10px] font-semibold leading-none">
+                            {{ __(link.label) }}
+                        </span>
+                    </Link>
+                </div>
+            </div>
+        </nav>
 
         <Toaster
             :theme="isDark ? 'dark' : 'light'"

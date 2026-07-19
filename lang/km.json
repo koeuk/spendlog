@@ -209,5 +209,6 @@
     "Day :day of :days": "ថ្ងៃទី :day ក្នុងចំណោម :days",
     ":amount under an even pace": "តិចជាងល្បឿនស្មើ :amount",
     ":amount ahead of an even pace": "លើសល្បឿនស្មើ :amount",
-    "of a :amount daily pace": "ក្នុងល្បឿនប្រចាំថ្ងៃ :amount"
+    "of a :amount daily pace": "ក្នុងល្បឿនប្រចាំថ្ងៃ :amount",
+    "Primary": "មេនុយមេ"
 }

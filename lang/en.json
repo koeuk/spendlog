@@ -209,5 +209,6 @@
     "Day :day of :days": "Day :day of :days",
     ":amount under an even pace": ":amount under an even pace",
     ":amount ahead of an even pace": ":amount ahead of an even pace",
-    "of a :amount daily pace": "of a :amount daily pace"
+    "of a :amount daily pace": "of a :amount daily pace",
+    "Primary": "Primary"
 }
