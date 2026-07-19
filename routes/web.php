@@ -34,8 +34,12 @@ Route::middleware('auth')->group(function () {
     Route::resource('categories', CategoryController::class)
         ->only(['index', 'store', 'update', 'destroy']);
 
+    // create/edit are real screens rather than a dialog on the index: the form
+    // opens a category picker and a calendar of its own, and a popover inside a
+    // modal has nowhere to go on a phone. Routes also restore the system back
+    // button, which a dialog cannot — it holds no history entry.
     Route::resource('expenses', ExpenseController::class)
-        ->only(['index', 'store', 'update', 'destroy']);
+        ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
 
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/export/{format}', [ReportController::class, 'export'])->name('reports.export');
@@ -59,8 +63,10 @@ Route::middleware('auth')->group(function () {
     Route::prefix('exercise')->name('exercise.')->group(function () {
         Route::get('/', [ExerciseDashboardController::class, 'index'])->name('dashboard');
 
+        // Own screens, not a dialog: a set list with a movement picker on every
+        // row cannot open a second modal layer on a phone. See Expenses.
         Route::resource('workouts', WorkoutController::class)
-            ->only(['index', 'store', 'update', 'destroy']);
+            ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
 
         /*
          * "Movements" in the UI, exercise_types in the code. The parameter is

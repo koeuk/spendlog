@@ -107,19 +107,44 @@ class ExpenseController extends Controller
             'users' => $viewingAll
                 ? User::query()->orderBy('name')->get(['uuid', 'name'])
                 : [],
-            // Mapped rather than passed straight through: Inertia serialises via
-            // toArray(), and spatie/laravel-translatable does not translate there —
-            // the raw {"en":…,"km":…} object would reach the category dropdown.
-            // Reading ->name goes through the accessor, which does translate.
-            'categories' => Category::query()
-                ->orderBy('name')
-                ->get(['uuid', 'name', 'color', 'icon'])
-                ->map(fn (Category $category) => [
-                    'uuid' => $category->uuid,
-                    'name' => $category->name,
-                    'color' => $category->color?->value,
-                    'icon' => $category->icon?->value,
-                ]),
+            'categories' => $this->categoryOptions(),
+        ]);
+    }
+
+    public function create(Request $request): Response
+    {
+        Gate::authorize('create', Expense::class);
+
+        return Inertia::render('Expenses/Form', [
+            'categories' => $this->categoryOptions(),
+            'can' => [
+                'create_category' => $request->user()->can('create', Category::class),
+            ],
+            'return_query' => $this->returnQuery($request),
+        ]);
+    }
+
+    public function edit(Request $request, Expense $expense): Response
+    {
+        Gate::authorize('update', $expense);
+
+        return Inertia::render('Expenses/Form', [
+            // item_translations is the raw JSON column. The form edits both
+            // locales at once, so it cannot be seeded from ->item, which is only
+            // whichever one is active.
+            'expense' => [
+                'uuid' => $expense->uuid,
+                'item' => $expense->item,
+                'item_translations' => $expense->getTranslations('item'),
+                'price' => $expense->price,
+                'category_uuid' => $expense->category?->uuid,
+                'spent_on' => $expense->spent_on?->toDateString(),
+            ],
+            'categories' => $this->categoryOptions(),
+            'can' => [
+                'create_category' => $request->user()->can('create', Category::class),
+            ],
+            'return_query' => $this->returnQuery($request),
         ]);
     }
 
@@ -141,7 +166,12 @@ class ExpenseController extends Controller
 
             DB::commit();
 
-            return redirect()->back()->withSuccess(__('Expense added successfully.'));
+            // Not back(): the form is its own page now, so back() would land on
+            // the form that was just submitted. The index is where saving means
+            // to go, and returnQuery puts it back on the month it came from.
+            return redirect()
+                ->route('expenses.index', $this->returnQuery($request))
+                ->withSuccess(__('Expense added successfully.'));
         } catch (\Exception $e) {
             DB::rollback();
 
@@ -169,7 +199,9 @@ class ExpenseController extends Controller
 
             DB::commit();
 
-            return redirect()->back()->withSuccess(__('Expense updated successfully.'));
+            return redirect()
+                ->route('expenses.index', $this->returnQuery($request))
+                ->withSuccess(__('Expense updated successfully.'));
         } catch (\Exception $e) {
             DB::rollback();
 
@@ -204,6 +236,53 @@ class ExpenseController extends Controller
 
             return redirect()->back()->withError(__('Something went wrong. Please try again.'));
         }
+    }
+
+    /**
+     * The category list the picker binds to.
+     *
+     * Mapped rather than passed straight through: Inertia serialises via
+     * toArray(), and spatie/laravel-translatable does not translate there — the
+     * raw {"en":…,"km":…} object would reach the category dropdown. Reading
+     * ->name goes through the accessor, which does translate.
+     */
+    private function categoryOptions(): array
+    {
+        return Category::query()
+            ->orderBy('name')
+            ->get(['uuid', 'name', 'color', 'icon'])
+            ->map(fn (Category $category) => [
+                'uuid' => $category->uuid,
+                'name' => $category->name,
+                'color' => $category->color?->value,
+                'icon' => $category->icon?->value,
+            ])
+            ->all();
+    }
+
+    /**
+     * Where the index was when the form was opened, so saving returns to the
+     * same month and scope rather than to an unfiltered list.
+     *
+     * Whitelisted by key and revalidated, never echoed: this round-trips through
+     * a form field, and handing user input to a redirect is how open redirects
+     * happen. Only these four keys survive, and each is checked by the same
+     * helpers the index itself uses.
+     */
+    private function returnQuery(Request $request): array
+    {
+        // GET create/edit carry it in the query string; the save that follows
+        // posts it back in the body. Same four keys either way.
+        $source = is_array($request->input('return_query'))
+            ? $request->input('return_query')
+            : $request->query();
+
+        return array_filter([
+            'month' => $this->validMonth($source['month'] ?? null),
+            'year' => $this->validYear($source['year'] ?? null),
+            'scope' => ($source['scope'] ?? null) === 'all' ? 'all' : '',
+            'user' => (string) ($source['user'] ?? ''),
+        ], fn (string $value) => $value !== '');
     }
 
     /** '01'–'12', or '' for "every month". */

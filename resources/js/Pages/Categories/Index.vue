@@ -12,9 +12,10 @@ import { localized } from '@/lib/i18n';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
+import ResponsiveDialog from '@/Components/ResponsiveDialog.vue';
+// Header/footer/title are plain wrappers over reka's DialogTitle etc, and Sheet
+// is a DialogRoot too — so they sit inside either shell unchanged.
 import {
-    Dialog,
-    DialogContent,
     DialogDescription,
     DialogFooter,
     DialogHeader,
@@ -311,57 +312,55 @@ function destroy() {
             @confirm="destroy"
         />
 
-        <Dialog v-model:open="showDialog">
-            <DialogContent class="sm:max-w-md">
-                <form @submit.prevent="submit">
-                    <DialogHeader>
-                        <DialogTitle>
-                            {{ editing ? __('Edit category') : __('New category') }}
-                        </DialogTitle>
-                        <DialogDescription>
-                            {{ __('Categories are shared by everyone logging expenses.') }}
-                        </DialogDescription>
-                    </DialogHeader>
+        <ResponsiveDialog v-model:open="showDialog">
+            <form @submit.prevent="submit">
+                <DialogHeader>
+                    <DialogTitle>
+                        {{ editing ? __('Edit category') : __('New category') }}
+                    </DialogTitle>
+                    <DialogDescription>
+                        {{ __('Categories are shared by everyone logging expenses.') }}
+                    </DialogDescription>
+                </DialogHeader>
 
-                    <div class="grid gap-4 py-4">
-                        <LocaleTabs
-                            :form="form"
-                            field="name"
-                            :placeholders="{ en: 'e.g. Groceries', km: 'ឧ. គ្រឿងទេស' }"
-                        >
-                            <template #label>
-                                <Label for="name_en">{{ __('Name') }}</Label>
-                            </template>
+                <div class="grid gap-4 py-4">
+                    <LocaleTabs
+                        :form="form"
+                        field="name"
+                        :placeholders="{ en: 'e.g. Groceries', km: 'ឧ. គ្រឿងទេស' }"
+                    >
+                        <template #label>
+                            <Label for="name_en">{{ __('Name') }}</Label>
+                        </template>
 
-                            <template #default="{ locale, placeholder, isRequired }">
-                                <Input
-                                    :id="`name_${locale}`"
-                                    v-model="form.name[locale]"
-                                    autocomplete="off"
-                                    :placeholder="placeholder"
-                                    :required="isRequired"
-                                    :aria-invalid="!!form.errors[`name.${locale}`]"
-                                />
-                            </template>
-                        </LocaleTabs>
+                        <template #default="{ locale, placeholder, isRequired }">
+                            <Input
+                                :id="`name_${locale}`"
+                                v-model="form.name[locale]"
+                                autocomplete="off"
+                                :placeholder="placeholder"
+                                :required="isRequired"
+                                :aria-invalid="!!form.errors[`name.${locale}`]"
+                            />
+                        </template>
+                    </LocaleTabs>
 
-                        <CategoryStylePicker :form="form" />
-                    </div>
+                    <CategoryStylePicker :form="form" />
+                </div>
 
-                    <DialogFooter>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            @click="showDialog = false"
-                        >
-                            {{ __('Cancel') }}
-                        </Button>
-                        <Button type="submit" :disabled="form.processing">
-                            {{ editing ? __('Save') : __('Create') }}
-                        </Button>
-                    </DialogFooter>
-                </form>
-            </DialogContent>
-        </Dialog>
+                <DialogFooter>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        @click="showDialog = false"
+                    >
+                        {{ __('Cancel') }}
+                    </Button>
+                    <Button type="submit" :disabled="form.processing">
+                        {{ editing ? __('Save') : __('Create') }}
+                    </Button>
+                </DialogFooter>
+            </form>
+        </ResponsiveDialog>
     </AuthenticatedLayout>
 </template>

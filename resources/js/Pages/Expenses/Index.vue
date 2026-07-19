@@ -3,7 +3,6 @@ import { computed, ref, watch } from 'vue';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
-import ExpenseForm from '@/Components/ExpenseForm.vue';
 import { CARD, MUTED } from '@/lib/appStyles';
 import { formatRiel } from '@/lib/currency';
 import ExpenseListSkeleton from '@/Components/ExpenseListSkeleton.vue';
@@ -14,13 +13,6 @@ import { useNavigating } from '@/composables/useNavigating';
 import { localized, trans } from '@/lib/i18n';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
 import { Button } from '@/Components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/Components/ui/dialog';
 
 const props = defineProps({
     days: { type: Array, required: true },
@@ -154,79 +146,24 @@ function applyUserFilter(uuid) {
     navigate({ user: uuid });
 }
 
-function todayString() {
-    // Local date, not UTC — toISOString() would shift the day for some zones.
-    const now = new Date();
-    const offset = now.getTimezoneOffset() * 60000;
-    return new Date(now.getTime() - offset).toISOString().slice(0, 10);
-}
-
-// Which currency an amount field starts on, set in Settings → Spending. Read
-// once rather than as a computed: it seeds the form's initial value, which is
-// what form.reset() restores.
-const defaultCurrency = usePage().props.default_currency ?? 'USD';
-
-const showDialog = ref(false);
-const editing = ref(null);
-
-const form = useForm({
-    // One key per locale — item is a translatable JSON column, like category.name.
-    item: { en: '', km: '' },
-    price: '',
-    // What the price field is denominated in. Only ever 'USD' or 'KHR', and the
-    // server converts to USD before storing — see App\Enums\Currency.
-    // Seeded from the app default so somewhere that spends mostly in riel does
-    // not retoggle on every expense; form.reset() returns to it.
-    currency: defaultCurrency,
-    category_uuid: '',
-    // Set instead of category_uuid when naming a category inline.
-    new_category: '',
-    spent_on: todayString(),
-});
-
-function openCreate() {
-    editing.value = null;
-    form.reset();
-    form.spent_on = todayString();
-    form.clearErrors();
-    showDialog.value = true;
-}
-
-function openEdit(expense) {
-    editing.value = expense;
-    // item_translations is the raw JSON; item alone is only the active locale,
-    // so editing from it would quietly drop the other language on save.
-    form.item = {
-        en: expense.item_translations?.en ?? '',
-        km: expense.item_translations?.km ?? '',
-    };
-    form.price = String(expense.price);
-    // The stored price is USD whatever it was typed in, so editing always starts
-    // from USD rather than from the currency it happened to be entered in.
-    form.currency = 'USD';
-    form.category_uuid = expense.category_uuid;
-    form.new_category = '';
-    form.spent_on = expense.spent_on;
-    form.clearErrors();
-    showDialog.value = true;
-}
-
-function submit() {
-    const options = {
-        preserveScroll: true,
-        onSuccess: () => {
-            showDialog.value = false;
-            form.reset();
-            form.spent_on = todayString();
-        },
-    };
-
-    if (editing.value) {
-        form.put(route('expenses.update', editing.value.uuid), options);
-    } else {
-        form.post(route('expenses.store'), options);
-    }
-}
+/**
+ * Where this list currently is, handed to the create/edit screens so saving
+ * comes back to the same month and scope rather than to an unfiltered list.
+ *
+ * Only the four keys the server whitelists — anything else it drops, so sending
+ * more would be noise in the URL. Empty values are omitted rather than sent
+ * blank, which keeps the plain case a clean /expenses/create.
+ */
+const returnQuery = computed(() =>
+    Object.fromEntries(
+        Object.entries({
+            month: props.month,
+            year: props.year,
+            scope: props.scope === 'all' ? 'all' : '',
+            user: props.filters?.filter?.user ?? '',
+        }).filter(([, value]) => value !== '' && value != null),
+    ),
+);
 
 const deleting = ref(null);
 const deleteForm = useForm({});
@@ -355,7 +292,13 @@ const filtered = computed(() =>
                         @update:model-value="applyUserFilter"
                     />
 
-                    <Button size="sm" @click="openCreate">{{ __('Add expense') }}</Button>
+                    <Button
+                        :as="Link"
+                        :href="route('expenses.create', returnQuery)"
+                        size="sm"
+                    >
+                        {{ __('Add expense') }}
+                    </Button>
                 </div>
             </div>
         </template>
@@ -439,7 +382,13 @@ const filtered = computed(() =>
                                 : __('No expenses yet, add your first one.')
                         }}
                     </p>
-                    <Button v-if="!filtered" class="mt-4" size="sm" @click="openCreate">
+                    <Button
+                        v-if="!filtered"
+                        :as="Link"
+                        :href="route('expenses.create', returnQuery)"
+                        class="mt-4"
+                        size="sm"
+                    >
                         {{ __('Add expense') }}
                     </Button>
                 </div>
@@ -534,9 +483,11 @@ const filtered = computed(() =>
                                 class="flex shrink-0 gap-1 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
                             >
                                 <Button
+                                    :as="Link"
+                                    :href="route('expenses.edit', [expense.uuid, returnQuery])"
                                     variant="ghost"
                                     size="sm"
-                                    @click.stop="openEdit(expense)"
+                                    @click.stop
                                 >
                                     {{ __('Edit') }}
                                 </Button>
@@ -581,39 +532,5 @@ const filtered = computed(() =>
             @confirm="destroy"
         />
 
-        <Dialog v-model:open="showDialog">
-            <!-- Deliberately narrower than the max-w-5xl content column: this is
-                 a short form, and a dialog as wide as the page reads as a page. -->
-            <DialogContent class="sm:max-w-3xl">
-                <form @submit.prevent="submit">
-                    <DialogHeader>
-                        <DialogTitle>
-                            {{ editing ? __('Edit expense') : __('Add expense') }}
-                        </DialogTitle>
-                    </DialogHeader>
-
-                    <div class="py-4">
-                        <ExpenseForm
-                            :form="form"
-                            :categories="categories"
-                            :can-create-category="can.create_category"
-                        />
-                    </div>
-
-                    <DialogFooter>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            @click="showDialog = false"
-                        >
-                            {{ __('Cancel') }}
-                        </Button>
-                        <Button type="submit" :disabled="form.processing">
-                            {{ editing ? __('Save') : __('Add') }}
-                        </Button>
-                    </DialogFooter>
-                </form>
-            </DialogContent>
-        </Dialog>
     </AuthenticatedLayout>
 </template>

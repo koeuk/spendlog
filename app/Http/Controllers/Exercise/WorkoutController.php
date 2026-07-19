@@ -66,6 +66,37 @@ class WorkoutController extends Controller
         ]);
     }
 
+    public function create(Request $request): Response
+    {
+        Gate::authorize('create', Workout::class);
+
+        return Inertia::render('Exercise/Workouts/Form', [
+            'exercise_types' => $this->availableTypes($request),
+            'can' => [
+                'create_type' => $request->user()->can('create', ExerciseType::class),
+            ],
+            // The dashboard's session timer hands its reading over in the URL
+            // rather than in state, so the clock survives the navigation.
+            'initial_duration_seconds' => $this->handedOverSeconds($request),
+        ]);
+    }
+
+    public function edit(Request $request, Workout $workout): Response
+    {
+        Gate::authorize('update', $workout);
+
+        $workout->load(['sets.exerciseType:id,uuid,name,color,icon,muscle_group,is_cardio']);
+
+        return Inertia::render('Exercise/Workouts/Form', [
+            'workout' => $this->present($workout),
+            'exercise_types' => $this->availableTypes($request),
+            'can' => [
+                'create_type' => $request->user()->can('create', ExerciseType::class),
+            ],
+            'initial_duration_seconds' => 0,
+        ]);
+    }
+
     public function store(WorkoutRequest $request): RedirectResponse
     {
         Gate::authorize('create', Workout::class);
@@ -84,7 +115,11 @@ class WorkoutController extends Controller
 
             DB::commit();
 
-            return redirect()->back()->withSuccess(__('Workout logged successfully.'));
+            // Not back(): the form is its own page, so back() would land on the
+            // form that was just submitted.
+            return redirect()
+                ->route('exercise.workouts.index')
+                ->withSuccess(__('Workout logged successfully.'));
         } catch (\Exception $e) {
             DB::rollback();
 
@@ -125,7 +160,9 @@ class WorkoutController extends Controller
 
             DB::commit();
 
-            return redirect()->back()->withSuccess(__('Workout updated successfully.'));
+            return redirect()
+                ->route('exercise.workouts.index')
+                ->withSuccess(__('Workout updated successfully.'));
         } catch (\Exception $e) {
             DB::rollback();
 
@@ -173,6 +210,20 @@ class WorkoutController extends Controller
      *
      * @return array<int, array<string, mixed>>
      */
+    /**
+     * The session timer's reading, handed over from the dashboard as ?duration=.
+     *
+     * Clamped rather than trusted: it is a URL parameter, and the form seeds a
+     * numeric field from it. A day is the ceiling — anything longer is a stale
+     * tab, not a session.
+     */
+    private function handedOverSeconds(Request $request): int
+    {
+        $seconds = (int) $request->query('duration', 0);
+
+        return max(0, min($seconds, 86400));
+    }
+
     private function availableTypes(Request $request): array
     {
         return ExerciseType::query()

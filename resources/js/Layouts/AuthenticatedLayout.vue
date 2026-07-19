@@ -387,11 +387,17 @@ watch(() => page.url, () => nextTick(measurePill));
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <!-- On the bar at every width, not folded into the burger
-                         below sm. Both are one-tap switches you flip and see the
-                         result of immediately; behind a menu each costs three
-                         taps to reach and one more to dismiss. -->
-                    <div class="flex items-center gap-2">
+                    <!-- Desktop only. These were on the bar at every width, on
+                         the argument that a one-tap switch costs three taps once
+                         it is behind a menu. True, but it is the wrong thing to
+                         optimise: locale and theme are picked once and then left
+                         alone for the life of the install, and paying two
+                         permanent slots for them crowded a 430px bar that also
+                         carries the wordmark, the workspace pill and the burger
+                         — five controls above a five-tab bottom bar. On a phone
+                         they live in the menu with the other settings; the desk
+                         has the room, so there they stay put. -->
+                    <div class="hidden items-center gap-2 md:flex">
                         <LocaleSwitcher />
                         <ThemeToggle />
                     </div>
@@ -506,6 +512,21 @@ watch(() => page.url, () => nextTick(measurePill));
                         </ResponsiveNavLink>
                     </div>
 
+                    <!-- Locale and theme, off the header bar and down here with
+                         the rest of the account settings. Labelled rather than
+                         bare: on the bar the two switches sat beside each other
+                         and were read as a pair of icons, but in a list a row
+                         needs to say what it is. -->
+                    <div class="mt-1 border-t border-border pt-1">
+                        <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+                            <span class="text-sm font-medium">{{ __('Language') }}</span>
+                            <LocaleSwitcher />
+                        </div>
+                        <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+                            <span class="text-sm font-medium">{{ __('Theme') }}</span>
+                            <ThemeToggle />
+                        </div>
+                    </div>
                 </div>
             </div>
 

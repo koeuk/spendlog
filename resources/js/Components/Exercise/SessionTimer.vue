@@ -201,7 +201,7 @@ const elapsed = computed(() => {
  * this carries the seconds over and lets the real form do the rest.
  */
 function logWorkout() {
-    router.get(route('exercise.workouts.index'), { duration: elapsed.value });
+    router.get(route('exercise.workouts.create'), { duration: elapsed.value });
 }
 </script>
 

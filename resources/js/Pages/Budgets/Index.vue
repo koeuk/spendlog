@@ -23,9 +23,8 @@ import {
     SelectValue,
 } from '@/Components/ui/select';
 import { ChevronLeft, ChevronRight, TriangleAlert } from 'lucide-vue-next';
+import ResponsiveDialog from '@/Components/ResponsiveDialog.vue';
 import {
-    Dialog,
-    DialogContent,
     DialogDescription,
     DialogFooter,
     DialogHeader,
@@ -565,78 +564,76 @@ function clearBudget() {
             @confirm="clearBudget"
         />
 
-        <Dialog v-model:open="showDialog">
-            <DialogContent class="sm:max-w-sm">
-                <form @submit.prevent="submit">
-                    <DialogHeader>
-                        <DialogTitle>
-                            {{ choosingCategory || form.category_uuid ? __('Category budget') : __('Overall budget') }}
-                        </DialogTitle>
-                        <DialogDescription>
-                            {{ formatMonth(month) }}
-                        </DialogDescription>
-                    </DialogHeader>
+        <ResponsiveDialog v-model:open="showDialog" content-class="sm:max-w-sm">
+            <form @submit.prevent="submit">
+                <DialogHeader>
+                    <DialogTitle>
+                        {{ choosingCategory || form.category_uuid ? __('Category budget') : __('Overall budget') }}
+                    </DialogTitle>
+                    <DialogDescription>
+                        {{ formatMonth(month) }}
+                    </DialogDescription>
+                </DialogHeader>
 
-                    <div class="py-4">
-                        <!-- Only when opened from the header: a row already
-                             names its own category. -->
-                        <div v-if="choosingCategory" class="mb-4">
-                            <Label for="category">{{ __('Category') }}</Label>
-                            <!-- can-create is off: budgets.store only accepts an
-                                 existing category_uuid, so offering to name a new
-                                 one would promise something the server rejects. -->
-                            <CategoryPicker
-                                :form="form"
-                                :categories="budgetableCategories"
-                                :can-create="false"
-                            />
-                        </div>
-
-                        <div class="flex items-center justify-between gap-2">
-                            <Label for="amount">{{ __('Amount') }}</Label>
-                            <CurrencyToggle v-model="form.currency" />
-                        </div>
-
-                        <Input
-                            id="amount"
-                            v-model="form.amount"
-                            class="mt-1"
-                            type="number"
-                            :step="form.currency === 'KHR' ? '100' : '0.01'"
-                            :min="form.currency === 'KHR' ? '100' : '0'"
-                            inputmode="decimal"
-                            :placeholder="form.currency === 'KHR' ? '0' : '0.00'"
+                <div class="py-4">
+                    <!-- Only when opened from the header: a row already
+                         names its own category. -->
+                    <div v-if="choosingCategory" class="mb-4">
+                        <Label for="category">{{ __('Category') }}</Label>
+                        <!-- can-create is off: budgets.store only accepts an
+                             existing category_uuid, so offering to name a new
+                             one would promise something the server rejects. -->
+                        <CategoryPicker
+                            :form="form"
+                            :categories="budgetableCategories"
+                            :can-create="false"
                         />
-
-                        <!-- Only stored amounts are USD, so say what a riel figure
-                             will become before it is saved rather than after. -->
-                        <p v-if="convertedPreview" class="mt-1 text-xs" :class="MUTED">
-                            {{ convertedPreview }}
-                        </p>
-
-                        <p v-if="form.errors.amount" class="mt-1 text-sm text-red-600 dark:text-red-400">
-                            {{ form.errors.amount }}
-                        </p>
-                        <p v-if="form.errors.month" class="mt-1 text-sm text-red-600 dark:text-red-400">
-                            {{ form.errors.month }}
-                        </p>
                     </div>
 
-                    <DialogFooter>
-                        <Button type="button" variant="outline" @click="showDialog = false">
-                            {{ __('Cancel') }}
-                        </Button>
-                        <!-- Without a category the request would set the overall
-                             budget, which is not what this dialog offered. -->
-                        <Button
-                            type="submit"
-                            :disabled="form.processing || (choosingCategory && !form.category_uuid)"
-                        >
-                            {{ __('Save') }}
-                        </Button>
-                    </DialogFooter>
-                </form>
-            </DialogContent>
-        </Dialog>
+                    <div class="flex items-center justify-between gap-2">
+                        <Label for="amount">{{ __('Amount') }}</Label>
+                        <CurrencyToggle v-model="form.currency" />
+                    </div>
+
+                    <Input
+                        id="amount"
+                        v-model="form.amount"
+                        class="mt-1"
+                        type="number"
+                        :step="form.currency === 'KHR' ? '100' : '0.01'"
+                        :min="form.currency === 'KHR' ? '100' : '0'"
+                        inputmode="decimal"
+                        :placeholder="form.currency === 'KHR' ? '0' : '0.00'"
+                    />
+
+                    <!-- Only stored amounts are USD, so say what a riel figure
+                         will become before it is saved rather than after. -->
+                    <p v-if="convertedPreview" class="mt-1 text-xs" :class="MUTED">
+                        {{ convertedPreview }}
+                    </p>
+
+                    <p v-if="form.errors.amount" class="mt-1 text-sm text-red-600 dark:text-red-400">
+                        {{ form.errors.amount }}
+                    </p>
+                    <p v-if="form.errors.month" class="mt-1 text-sm text-red-600 dark:text-red-400">
+                        {{ form.errors.month }}
+                    </p>
+                </div>
+
+                <DialogFooter>
+                    <Button type="button" variant="outline" @click="showDialog = false">
+                        {{ __('Cancel') }}
+                    </Button>
+                    <!-- Without a category the request would set the overall
+                         budget, which is not what this dialog offered. -->
+                    <Button
+                        type="submit"
+                        :disabled="form.processing || (choosingCategory && !form.category_uuid)"
+                    >
+                        {{ __('Save') }}
+                    </Button>
+                </DialogFooter>
+            </form>
+        </ResponsiveDialog>
     </AuthenticatedLayout>
 </template>
