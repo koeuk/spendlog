@@ -171,10 +171,13 @@ const convertedPreview = computed(() => {
                 <Label>{{ __('Date') }}</Label>
                 <Popover>
                     <PopoverTrigger as-child>
+                        <!-- Sized and rounded as a field, not a button: it sits
+                             in the same column as the inputs above it, and the
+                             button scale is a step shorter. -->
                         <Button
                             type="button"
                             variant="outline"
-                            class="mt-1 w-full justify-start font-normal"
+                            class="mt-1 h-10 w-full justify-start rounded-xl font-normal max-sm:h-11"
                         >
                             {{ spentOnLabel }}
                         </Button>

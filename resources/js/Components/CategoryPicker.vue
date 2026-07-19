@@ -1,9 +1,12 @@
 <script setup>
 import { computed, nextTick, ref } from 'vue';
+import { useMediaQuery } from '@vueuse/core';
 import { Check, ChevronDown, Plus } from 'lucide-vue-next';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/Components/ui/popover';
+import { Sheet, SheetContent, SheetTrigger } from '@/Components/ui/sheet';
+import { cn } from '@/lib/utils';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
 import { trans } from '@/lib/i18n';
 
@@ -30,6 +33,41 @@ const props = defineProps({
 const open = ref(false);
 const search = ref('');
 const searchInput = ref(null);
+
+/*
+ * A popover anchored to a full-width trigger has nowhere to go on a phone: it
+ * opened over the field it belongs to and ran past the action bar below. Below
+ * sm the same list is a bottom sheet instead — anchored to the thumb, sized to
+ * its content, dismissed by the overlay.
+ *
+ * The shells are swapped rather than the panel duplicated, so the list, the
+ * search box and the create affordance keep one definition. Both are reka
+ * Dialog/Popover roots taking `open`, and both triggers accept as-child, so the
+ * same markup slots into either. Same approach as SearchableSelect.
+ */
+const isMobile = useMediaQuery('(max-width: 639px)');
+
+const shell = computed(() => (isMobile.value ? Sheet : Popover));
+const shellTrigger = computed(() => (isMobile.value ? SheetTrigger : PopoverTrigger));
+const shellContent = computed(() => (isMobile.value ? SheetContent : PopoverContent));
+
+const shellContentProps = computed(() =>
+    isMobile.value
+        ? {
+              side: 'bottom',
+              // The panel has its own search row as a header; the built-in
+              // floating X would land on top of it.
+              showCloseButton: false,
+              class: cn(
+                  'gap-0 rounded-t-2xl p-0',
+                  // dvh, not vh: with the browser chrome shown, 80vh reaches
+                  // past the bottom of what is actually visible on iOS.
+                  'flex max-h-[80dvh] flex-col',
+                  'pb-[env(safe-area-inset-bottom)]',
+              ),
+          }
+        : { align: 'start', class: 'w-[--reka-popover-trigger-width] p-0' },
+);
 
 const selected = computed(() =>
     props.categories.find((c) => c.uuid === props.form.category_uuid) ?? null,
@@ -102,13 +140,13 @@ const label = computed(() => {
 
 <template>
     <div>
-        <Popover :open="open" @update:open="onOpen">
-            <PopoverTrigger as-child>
+        <component :is="shell" :open="open" @update:open="onOpen">
+            <component :is="shellTrigger" as-child>
                 <Button
                     id="category"
                     type="button"
                     variant="outline"
-                    class="mt-1 w-full justify-between font-normal"
+                    class="mt-1 h-10 w-full justify-between rounded-xl font-normal max-sm:h-11"
                     :aria-invalid="!!(form.errors.category_uuid || form.errors.new_category)"
                 >
                     <span class="flex min-w-0 items-center gap-2">
@@ -136,26 +174,26 @@ const label = computed(() => {
                     </span>
                     <ChevronDown class="size-4 shrink-0 opacity-50" />
                 </Button>
-            </PopoverTrigger>
+            </component>
 
-            <PopoverContent class="w-[--reka-popover-trigger-width] p-0" align="start">
-                <div class="border-b border-neutral-100 p-2 dark:border-neutral-800">
+            <component :is="shellContent" v-bind="shellContentProps">
+                <div class="shrink-0 border-b border-neutral-100 p-2 dark:border-neutral-800">
                     <Input
                         ref="searchInput"
                         v-model="search"
-                        class="h-8"
+                        class="max-sm:h-12 max-sm:text-base sm:h-8"
                         autocomplete="off"
                         :placeholder="canCreate ? trans('Search or type a new one…') : trans('Search…')"
                         @keydown.enter.prevent="creatable ? create() : matches[0] && choose(matches[0])"
                     />
                 </div>
 
-                <div class="max-h-56 overflow-y-auto p-1">
+                <div class="overflow-y-auto overscroll-contain p-1 max-sm:min-h-0 max-sm:flex-1 sm:max-h-56">
                     <button
                         v-for="category in matches"
                         :key="category.uuid"
                         type="button"
-                        class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                        class="flex w-full items-center gap-2 rounded-lg text-sm transition hover:bg-neutral-100 max-sm:min-h-11 max-sm:px-3 max-sm:py-2.5 sm:px-2 sm:py-1.5 dark:hover:bg-neutral-800"
                         @click="choose(category)"
                     >
                         <component
@@ -183,10 +221,10 @@ const label = computed(() => {
                     </p>
                 </div>
 
-                <div v-if="creatable" class="border-t border-neutral-100 p-1 dark:border-neutral-800">
+                <div v-if="creatable" class="shrink-0 border-t border-neutral-100 p-1 dark:border-neutral-800">
                     <button
                         type="button"
-                        class="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm font-medium transition hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                        class="flex w-full items-center gap-2 rounded-lg text-sm font-medium transition hover:bg-neutral-100 max-sm:min-h-11 max-sm:px-3 max-sm:py-2.5 sm:px-2 sm:py-2 dark:hover:bg-neutral-800"
                         @click="create"
                     >
                         <Plus class="size-4 shrink-0" />
@@ -195,8 +233,8 @@ const label = computed(() => {
                         </span>
                     </button>
                 </div>
-            </PopoverContent>
-        </Popover>
+            </component>
+        </component>
 
         <!-- Says out loud that submitting will add to the shared list, rather
              than surprising everyone with a new category later. -->
