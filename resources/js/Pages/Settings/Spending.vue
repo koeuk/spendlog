@@ -48,7 +48,7 @@ function submit() {
         :heading="trans('Spending')"
         :description="trans('An optional warning and a spending tip, shown on the dashboard.')"
     >
-        <form class="max-w-xl space-y-8" @submit.prevent="submit">
+        <form class="space-y-8" @submit.prevent="submit">
             <!-- Master switch. Off means neither message shows anywhere. -->
             <div class="flex items-start gap-3">
                 <Checkbox

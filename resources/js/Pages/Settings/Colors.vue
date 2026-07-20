@@ -137,7 +137,7 @@ const labelUnreadable = computed(
         :heading="trans('Colours')"
         :description="trans('The button and background colours everyone sees.')"
     >
-        <div class="max-w-xl space-y-8">
+        <div class="space-y-8">
             <!-- Button colour -->
             <div>
                 <Label>{{ __('Button colour') }}</Label>

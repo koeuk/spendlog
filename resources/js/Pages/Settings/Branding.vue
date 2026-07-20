@@ -81,7 +81,7 @@ function submit() {
         :heading="trans('Appearance')"
         :description="trans('The name and logo shown across the app.')"
     >
-        <form class="max-w-xl space-y-6" @submit.prevent="submit">
+        <form class="space-y-6" @submit.prevent="submit">
             <div>
                 <Label for="app_name">{{ __('App name') }}</Label>
                 <Input

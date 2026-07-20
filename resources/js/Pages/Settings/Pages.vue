@@ -17,7 +17,7 @@ defineProps({
         :heading="trans('Footer pages')"
         :description="trans('The About and Privacy pages linked at the bottom of every page.')"
     >
-        <div class="max-w-2xl space-y-6">
+        <div class="space-y-6">
             <PageEditorCard v-for="page in pages" :key="page.slug" :page="page" />
         </div>
     </SettingsLayout>
