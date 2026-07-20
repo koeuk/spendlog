@@ -13,6 +13,7 @@ import { useNavigating } from '@/composables/useNavigating';
 import { localized, trans } from '@/lib/i18n';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
 import { Button } from '@/Components/ui/button';
+import FloatingAddButton from '@/Components/FloatingAddButton.vue';
 
 const props = defineProps({
     days: { type: Array, required: true },
@@ -358,10 +359,14 @@ const filtered = computed(() =>
                         @update:model-value="applyUserFilter"
                     />
 
+                    <!-- Desktop only. On a phone this is the floating button
+                         above the tab bar, where a thumb already is — up here it
+                         was a reach to the far top corner on every add. -->
                     <Button
                         :as="Link"
                         :href="route('expenses.create', returnQuery)"
                         size="sm"
+                        class="max-sm:hidden"
                     >
                         {{ __('Add expense') }}
                     </Button>
@@ -590,6 +595,11 @@ const filtered = computed(() =>
                 </div>
             </div>
         </div>
+
+        <FloatingAddButton
+            :href="route('expenses.create', returnQuery)"
+            :label="__('Add expense')"
+        />
 
         <ConfirmDialog
             :open="confirming !== null"

@@ -5,6 +5,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import CategoryBadge from '@/Components/CategoryBadge.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import SearchInput from '@/Components/SearchInput.vue';
+import FloatingAddButton from '@/Components/FloatingAddButton.vue';
 import { ACTIVE, CARD } from '@/lib/appStyles';
 import { localized } from '@/lib/i18n';
 import { Button } from '@/Components/ui/button';
@@ -124,11 +125,13 @@ function destroy() {
                 <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-neutral-100">
                     {{ __('Categories') }}
                 </h2>
+                <!-- Desktop only; the phone gets the floating button below. -->
                 <Button
                     v-if="can.create"
                     :as="Link"
                     :href="route('categories.create')"
                     size="sm"
+                    class="max-sm:hidden"
                 >
                     {{ __('Add category') }}
                 </Button>
@@ -262,5 +265,10 @@ function destroy() {
             @confirm="destroy"
         />
 
+        <FloatingAddButton
+            v-if="can.create"
+            :href="route('categories.create')"
+            :label="__('Add category')"
+        />
     </AuthenticatedLayout>
 </template>
