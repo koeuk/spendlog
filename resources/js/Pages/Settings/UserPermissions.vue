@@ -41,6 +41,12 @@ function isChecked(value) {
 }
 
 const grantedCount = computed(() => form.permissions.length);
+
+// Per-group, for the count on each panel header. Reads form.permissions, so it
+// re-evaluates as boxes are ticked without needing a computed per group.
+function groupGrantedCount(items) {
+    return items.filter((item) => form.permissions.includes(item.value)).length;
+}
 const totalCount = computed(() =>
     Object.values(props.permission_groups).reduce((n, items) => n + items.length, 0),
 );
@@ -81,27 +87,59 @@ function submit() {
                 </span>
             </p>
 
-            <div v-for="(items, group) in permission_groups" :key="group" class="mb-6 last:mb-0">
-                <h4 class="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-400">
-                    {{ group }}
-                </h4>
+            <!--
+                Two columns of panels, not one long list.
 
-                <div class="space-y-3">
-                    <div v-for="item in items" :key="item.value" class="flex items-start gap-3">
-                        <Checkbox
-                            :id="`perm_${item.value}`"
-                            :model-value="isChecked(item.value)"
-                            class="mt-0.5"
-                            @update:model-value="toggle(item.value, $event)"
-                        />
-                        <div class="min-w-0">
-                            <Label
-                                :for="`perm_${item.value}`"
-                                class="cursor-pointer text-sm font-medium"
-                            >
-                                {{ item.label }}
-                            </Label>
-                            <p class="text-xs" :class="MUTED">{{ item.description }}</p>
+                Twenty-nine checkboxes in seven groups ran about 1900px, so the
+                last group sat three screens below the first and the only thing
+                separating one from the next was a line of small grey caps.
+                Boxing each group gives the header something to title, and the
+                second column halves the scroll.
+
+                CSS columns rather than a grid: the groups are 2 to 6 items, so
+                fixed grid cells would leave a tall gap under every short one.
+                Columns fill by height and balance themselves — with
+                break-inside-avoid, since a permission group split across a
+                column boundary would read as two unrelated half-groups.
+            -->
+            <div class="gap-4 lg:columns-2">
+                <div
+                    v-for="(items, group) in permission_groups"
+                    :key="group"
+                    class="mb-4 break-inside-avoid rounded-2xl border border-border bg-card/40 p-4"
+                >
+                    <!--
+                        A panel heading now, not a label floating above a list,
+                        so it carries the group's own count: with the groups
+                        boxed, "3 of 6" answers "did I miss one in here?" without
+                        counting ticks.
+                    -->
+                    <div class="mb-3 flex items-baseline justify-between gap-2">
+                        <h4 class="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                            {{ group }}
+                        </h4>
+                        <span class="text-[11px] font-medium tabular-nums" :class="MUTED">
+                            {{ groupGrantedCount(items) }}/{{ items.length }}
+                        </span>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div v-for="item in items" :key="item.value" class="flex items-start gap-3">
+                            <Checkbox
+                                :id="`perm_${item.value}`"
+                                :model-value="isChecked(item.value)"
+                                class="mt-0.5"
+                                @update:model-value="toggle(item.value, $event)"
+                            />
+                            <div class="min-w-0">
+                                <Label
+                                    :for="`perm_${item.value}`"
+                                    class="cursor-pointer text-sm font-medium"
+                                >
+                                    {{ item.label }}
+                                </Label>
+                                <p class="text-xs" :class="MUTED">{{ item.description }}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
