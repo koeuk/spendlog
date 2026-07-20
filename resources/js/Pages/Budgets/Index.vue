@@ -394,10 +394,13 @@ function clearBudget() {
                                      amount at today's rate, so it trails them
                                      rather than standing as a second total. -->
                                 <span class="ms-1 text-xs font-normal" :class="MUTED">
-                                    {{ riel(summary.overall.spent) }}<template
-                                        v-if="summary.overall.budget !== null"
-                                    >
-                                        {{ __('of :amount', { amount: riel(summary.overall.budget) }) }}</template>
+                                    <!-- The separating space is written out.
+                                         Left as indentation before the
+                                         interpolation it sat in a text node
+                                         beginning with a newline, which Vue's
+                                         condense mode drops — so this rendered
+                                         "៛467,403of ៛3,280,000". -->
+                                    {{ riel(summary.overall.spent) }}<template v-if="summary.overall.budget !== null">{{ ' ' }}{{ __('of :amount', { amount: riel(summary.overall.budget) }) }}</template>
                                 </span>
                             </span>
                             <span
@@ -509,10 +512,7 @@ function clearBudget() {
                                             {{ __('of :amount', { amount: money.format(category.budget) }) }}
                                         </span>
                                         <span class="ms-1 text-xs" :class="MUTED">
-                                            {{ riel(category.spent) }}<template
-                                                v-if="category.budget !== null"
-                                            >
-                                                {{ __('of :amount', { amount: riel(category.budget) }) }}</template>
+                                            {{ riel(category.spent) }}<template v-if="category.budget !== null">{{ ' ' }}{{ __('of :amount', { amount: riel(category.budget) }) }}</template>
                                         </span>
                                     </span>
                                     <span
