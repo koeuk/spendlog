@@ -8,7 +8,7 @@ import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
 import { CARD, CARD_TINT, EYEBROW, EYEBROW_ON_BRAND, FIGURE, FIGURE_ON_BRAND, MUTED, MUTED_ON_BRAND, PILL_ACTION } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
-import { ArrowRight, Lightbulb, Plus, TriangleAlert } from 'lucide-vue-next';
+import { ArrowRight, ChevronDown, Lightbulb, Plus, TriangleAlert } from 'lucide-vue-next';
 
 const props = defineProps({
     today: { type: Object, required: true },
@@ -35,6 +35,20 @@ const props = defineProps({
     // has the feature off or blank.
     guidance: { type: Object, default: null },
 });
+
+/*
+ * The guidance panel starts open.
+ *
+ * Collapsed would be the tidier default, but an admin turned this on to be
+ * read, and shipping it shut means most people never see the message at all —
+ * that is the admin's setting silently undone by ours. Open costs one tap to
+ * dismiss; closed costs the whole point of the feature.
+ *
+ * Not persisted: it reopens on the next visit, which is what a standing note
+ * should do. Remembering the collapse would make it a one-time dismissal, and
+ * that is a different feature with a different control.
+ */
+const guidanceOpen = ref(true);
 
 const money = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -222,31 +236,52 @@ const pace = computed(() => {
         <div class="space-y-3">
             <!-- Admin-authored guidance. Each line only renders if its text is
                  set, so an admin can show just one of the two. -->
-            <div
-                v-if="guidance"
-                :class="[CARD, 'anim space-y-3 p-6 sm:p-7']"
-                style="--d: 40ms"
-            >
-                <!-- The same glass as every other card, rather than the brand
-                     fill it used to wear. As a solid green slab it outranked the
-                     figures below it, which is backwards: this is a standing
-                     note, and the month's number is what the page is for.
+            <!-- Built to the FAQ recipe on the Help page: a card with
+                 overflow-hidden, a full-width button header, and a chevron that
+                 flips. Same shape means the collapse reads as the collapse the
+                 reader already knows, and the two stay in step if either
+                 changes.
 
-                     Set in the page's own text colours, so the two lines still
-                     separate the way they do everywhere else — the warning at
-                     full strength, the advice muted. Sized a step up from body
-                     copy because it is a sentence to be read, not a label. -->
-                <div v-if="guidance.warning" class="flex items-start gap-3">
-                    <TriangleAlert class="mt-0.5 size-5 shrink-0 text-foreground" />
-                    <p class="text-base font-medium leading-relaxed text-foreground sm:text-lg">
+                 Unlike the FAQ list this is a single panel, so the open state is
+                 a boolean rather than a Set of ids. -->
+            <div v-if="guidance" :class="[CARD, 'anim overflow-hidden']" style="--d: 40ms">
+                <button
+                    type="button"
+                    class="flex w-full items-center justify-between gap-4 px-5 py-4 text-start"
+                    :aria-expanded="guidanceOpen"
+                    @click="guidanceOpen = !guidanceOpen"
+                >
+                    <span class="flex items-center gap-3">
+                        <TriangleAlert class="size-5 shrink-0 text-foreground" />
+                        <span class="text-sm font-semibold text-gray-900 dark:text-neutral-100">
+                            {{ __('Spending guidance') }}
+                        </span>
+                    </span>
+                    <ChevronDown
+                        class="size-5 shrink-0 text-neutral-400 transition-transform duration-200"
+                        :class="guidanceOpen ? 'rotate-180' : ''"
+                    />
+                </button>
+
+                <!-- Each line only renders if its text is set, so an admin can
+                     show just one of the two.
+
+                     Set in the page's own text colours — the warning at full
+                     strength, the advice muted — and a step up from body copy,
+                     since these are sentences to be read rather than labels. -->
+                <div v-if="guidanceOpen" class="space-y-3 px-5 pb-5">
+                    <p
+                        v-if="guidance.warning"
+                        class="text-base font-medium leading-relaxed text-foreground sm:text-lg"
+                    >
                         {{ guidance.warning }}
                     </p>
-                </div>
-                <div v-if="guidance.advice" class="flex items-start gap-3">
-                    <Lightbulb class="mt-0.5 size-5 shrink-0" :class="MUTED" />
-                    <p class="text-base leading-relaxed" :class="MUTED">
-                        {{ guidance.advice }}
-                    </p>
+                    <div v-if="guidance.advice" class="flex items-start gap-3">
+                        <Lightbulb class="mt-0.5 size-5 shrink-0" :class="MUTED" />
+                        <p class="text-base leading-relaxed" :class="MUTED">
+                            {{ guidance.advice }}
+                        </p>
+                    </div>
                 </div>
             </div>
 
