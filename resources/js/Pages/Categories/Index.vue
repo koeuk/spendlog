@@ -140,7 +140,7 @@ function destroy() {
                             v-for="option in SORTS"
                             :key="option.key"
                             type="button"
-                            class="rounded px-2.5 py-1 text-xs font-medium transition"
+                            class="rounded px-2 py-0.5 text-[11px] font-medium transition"
                             :class="
                                 sort === option.key
                                     ? ACTIVE
@@ -227,14 +227,16 @@ function destroy() {
                                             :as="Link"
                                             :href="route('categories.edit', category.uuid)"
                                             variant="secondary"
-                                            size="sm"
+                                            size="xs"
+                                            class="rounded-xl max-sm:h-8"
                                         >
                                             {{ __('Edit') }}
                                         </Button>
                                         <Button
                                             v-if="can.delete"
                                             variant="destructive"
-                                            size="sm"
+                                            size="xs"
+                                            class="rounded-xl max-sm:h-8"
                                             :disabled="deleting === category.uuid"
                                             @click="confirmDestroy(category)"
                                         >
