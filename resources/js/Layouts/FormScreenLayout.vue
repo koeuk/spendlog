@@ -124,12 +124,16 @@ const branding = computed(
             </div>
         </template>
 
-        <!-- Narrower than the page column: a form stretched to 1152px puts the
-             label and its input at opposite ends of the screen. -->
-        <div class="mx-auto max-w-2xl">
-            <div :class="[CARD, 'p-6']">
-                <slot />
-            </div>
+        <!-- The full page column, like every other screen in the app. The card
+             was capped at 2xl before, which left a form sitting in a third of a
+             1440px window with two thirds of empty page beside it — the lone
+             narrow panel in an app whose lists all run the full width.
+
+             Reading length is a property of the fields, not of the card, so it
+             is handled where it belongs: the form's own grid keeps inputs to
+             sensible spans, rather than the shell squeezing everything. -->
+        <div :class="[CARD, 'p-6 sm:p-8']">
+            <slot />
         </div>
     </AuthenticatedLayout>
 </template>

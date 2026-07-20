@@ -60,7 +60,16 @@ function submit() {
                 {{ __('Categories are shared by everyone logging expenses.') }}
             </p>
 
-            <div class="grid gap-4">
+            <!--
+                One field per row, each the full width of the card.
+
+                A two-column split was tried and left a tall empty gap under Name:
+                the swatch and icon grids are much taller than a single input, so
+                the columns could never balance. Stacked, every row gets the whole
+                width — the icon grid spreads into more columns and needs fewer
+                rows, which is what the space was worth spending on.
+            -->
+            <div class="grid gap-6">
                 <LocaleTabs
                     :form="form"
                     field="name"

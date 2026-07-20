@@ -180,7 +180,9 @@ function submit() {
 </script>
 
 <template>
-    <form class="flex flex-1 flex-col space-y-5" @submit.prevent="submit">
+    <!-- Capped like the other forms: the card is page-width now, and these
+         are short single-line controls that read badly stretched across it. -->
+    <form class="flex max-w-3xl flex-1 flex-col space-y-5" @submit.prevent="submit">
         <!-- Date and duration have no fields of their own: the stopwatch sets
              both. The date is stamped when the clock starts, and the duration
              tracks the reading — hence the caption, which is the only thing
