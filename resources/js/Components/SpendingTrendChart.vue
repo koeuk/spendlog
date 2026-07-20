@@ -211,8 +211,22 @@ const tooltipTop = computed(() => {
 
 <template>
     <div>
-        <div class="flex flex-wrap items-start justify-between gap-3">
-            <div>
+        <!--
+            One flex row on a wide screen — heading left, all three controls
+            right — that breaks into two on a phone.
+
+            The period picker takes ms-auto rather than living inside the
+            control group, so on a phone it rides up beside the total instead of
+            sitting on a line of its own under it. The toggles below it are
+            w-full, which is what pushes them onto that second line; from sm: up
+            they shrink back to their content and rejoin the picker's row.
+        -->
+        <div class="flex flex-wrap items-start gap-3">
+            <!-- One auto margin, on the heading, does all the pushing. Putting
+                 it on the controls instead means two of them, and the browser
+                 splits the free space between them rather than handing it all
+                 to the first — which strands the period picker mid-row. -->
+            <div class="me-auto">
                 <p :class="EYEBROW">{{ __('Spending') }}</p>
                 <p class="mt-1.5 flex items-baseline gap-2">
                     <span :class="[FIGURE, 'text-2xl']">
@@ -224,67 +238,74 @@ const tooltipTop = computed(() => {
                 </p>
             </div>
 
-            <!-- Filters in one row above the plot: which period, then how it is drawn. -->
-            <div v-if="showControls" class="flex flex-wrap items-center gap-2">
-<!-- Same searchable picker as the report: 24 months is a list you
+            <template v-if="showControls">
+                <!-- Same searchable picker as the report: 24 months is a list you
                      scan, not one you read. It also hides itself for All time,
-                     where there is only one span to pick. -->
-                <PeriodPicker
-                    v-if="trend.options.length > 1"
-                    :options="trend.options"
-                    :model-value="trend.anchor"
-                    :disabled="loading"
-                    :label="__('Period')"
-                    class="[&>button]:h-8"
-                    @update:model-value="load(trend.granularity, $event)"
-                />
+                     where there is only one span to pick.
 
-                <div
-                    class="inline-flex rounded-full border border-neutral-200 bg-white/70 p-0.5 dark:border-neutral-700 dark:bg-neutral-800/70"
-                    role="group"
-                    :aria-label="__('Spending')"
-                >
-                    <button
-                        v-for="option in PERIODS"
-                        :key="option.key"
-                        type="button"
-                        class="rounded-full px-3 py-1 text-xs font-semibold transition-colors duration-200"
-                        :class="
-                            trend.granularity === option.key
-                                ? 'bg-primary text-primary-foreground'
-                                : 'text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100'
-                        "
-                        :aria-pressed="trend.granularity === option.key"
-                        @click="load(option.key)"
-                    >
-                        {{ __(option.label) }}
-                    </button>
+                     Wrapped rather than classed directly: its root is a Popover
+                     that renders no element, so ms-auto set on the component
+                     itself would go nowhere. -->
+                <div v-if="trend.options.length > 1" class="ms-auto">
+                    <PeriodPicker
+                        :options="trend.options"
+                        :model-value="trend.anchor"
+                        :disabled="loading"
+                        :label="__('Period')"
+                        @update:model-value="load(trend.granularity, $event)"
+                    />
                 </div>
 
                 <div
-                    class="inline-flex rounded-full border border-neutral-200 bg-white/70 p-0.5 dark:border-neutral-700 dark:bg-neutral-800/70"
-                    role="group"
-                    :aria-label="__('View')"
+                    class="flex w-full items-center justify-between gap-2 sm:ms-auto sm:w-auto sm:justify-start"
                 >
-                    <button
-                        v-for="option in VIEWS"
-                        :key="option.key"
-                        type="button"
-                        class="grid size-7 place-items-center rounded-full transition-colors duration-200"
-                        :class="
-                            view === option.key
-                                ? 'bg-primary text-primary-foreground'
-                                : 'text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100'
-                        "
-                        :aria-pressed="view === option.key"
-                        :aria-label="__(option.label)"
-                        :title="__(option.label)"
-                        @click="view = option.key"
+                    <div
+                        class="inline-flex rounded-full border border-neutral-200 bg-white/70 p-0.5 dark:border-neutral-700 dark:bg-neutral-800/70"
+                        role="group"
+                        :aria-label="__('Spending')"
                     >
-                        <component :is="option.icon" class="size-4" />
-                    </button>
+                        <button
+                            v-for="option in PERIODS"
+                            :key="option.key"
+                            type="button"
+                            class="rounded-full px-3 py-1 text-xs font-semibold transition-colors duration-200"
+                            :class="
+                                trend.granularity === option.key
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100'
+                            "
+                            :aria-pressed="trend.granularity === option.key"
+                            @click="load(option.key)"
+                        >
+                            {{ __(option.label) }}
+                        </button>
+                    </div>
+
+                    <div
+                        class="inline-flex rounded-full border border-neutral-200 bg-white/70 p-0.5 dark:border-neutral-700 dark:bg-neutral-800/70"
+                        role="group"
+                        :aria-label="__('View')"
+                    >
+                        <button
+                            v-for="option in VIEWS"
+                            :key="option.key"
+                            type="button"
+                            class="grid size-7 place-items-center rounded-full transition-colors duration-200"
+                            :class="
+                                view === option.key
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100'
+                            "
+                            :aria-pressed="view === option.key"
+                            :aria-label="__(option.label)"
+                            :title="__(option.label)"
+                            @click="view = option.key"
+                        >
+                            <component :is="option.icon" class="size-4" />
+                        </button>
+                    </div>
                 </div>
-            </div>
+            </template>
         </div>
 
         <!-- Plot -->

@@ -121,45 +121,18 @@ function destroy() {
 
     <AuthenticatedLayout>
         <template #header>
-            <div class="flex items-center justify-between gap-4">
+            <div class="flex items-center justify-between gap-3">
                 <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-neutral-100">
                     {{ __('Categories') }}
                 </h2>
-                <!-- Desktop only; the phone gets the floating button below. -->
-                <Button
-                    v-if="can.create"
-                    :as="Link"
-                    :href="route('categories.create')"
-                    size="sm"
-                    class="max-sm:hidden"
-                >
-                    {{ __('Add category') }}
-                </Button>
-            </div>
-        </template>
 
-        <div class="py-8">
-            <!-- Width and gutters come from the layout's one container, so the
-                 column never resizes when navigating between pages. -->
-            <div>
-                <!-- One row at every width. Stacked, the two-button toggle sat
-                     alone on a line of its own under a full-width field, which
-                     spent a whole row of a phone screen on 90px of control. -->
-                <div class="mb-4 flex items-center gap-2">
-                    <!-- min-w-0: without it the input's intrinsic width wins over
-                         flex-1 and pushes the toggle off the row. -->
-                    <SearchInput
-                        v-model="search"
-                        :placeholder="__('Search categories…')"
-                        class="min-w-0 flex-1 sm:max-w-sm"
-                        input-class="bg-card"
-                    />
-
-                    <!-- ms-auto, not justify-between on the row: the search box is
-                         capped at max-w-sm, so the gap has to be pushed from this
-                         side or the toggle just trails it. -->
+                <div class="flex items-center gap-2">
+                    <!-- Up here rather than beside the search box. On a phone the
+                         add button left this row empty when it moved to the
+                         floating one, while the search row carried a full-width
+                         field and a 90px toggle crammed onto one line. -->
                     <div
-                        class="inline-flex shrink-0 rounded-md border border-gray-200 bg-white p-0.5 ms-auto dark:border-neutral-700 dark:bg-neutral-800"
+                        class="inline-flex shrink-0 rounded-md border border-gray-200 bg-white p-0.5 dark:border-neutral-700 dark:bg-neutral-800"
                         role="group"
                         :aria-label="__('Sort categories')"
                     >
@@ -179,7 +152,37 @@ function destroy() {
                             {{ __(option.label) }}
                         </button>
                     </div>
+
+                    <!-- Desktop only; the phone gets the floating button below. -->
+                    <Button
+                        v-if="can.create"
+                        :as="Link"
+                        :href="route('categories.create')"
+                        size="sm"
+                        class="max-sm:hidden"
+                    >
+                        {{ __('Add category') }}
+                    </Button>
                 </div>
+            </div>
+        </template>
+
+        <!-- pt-2, not pt-8. The layout's header already carries pb-6, so the
+             old padding stacked into a 56px band of nothing between the title
+             and the first control. -->
+        <div class="pb-8 pt-2">
+            <!-- Width and gutters come from the layout's one container, so the
+                 column never resizes when navigating between pages. -->
+            <div>
+                <!-- The search box has the row to itself now that sorting sits
+                     in the header, so it takes the full width on a phone and
+                     stays capped on a desk. -->
+                <SearchInput
+                    v-model="search"
+                    :placeholder="__('Search categories…')"
+                    class="mb-4 block w-full sm:max-w-sm"
+                    input-class="bg-card"
+                />
 
                 <!--
                     The card is 28px-rounded, so a flush table crowds its corners.
