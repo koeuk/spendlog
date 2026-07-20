@@ -72,7 +72,7 @@ const statusLabel = (value) => props.statuses.find((s) => s.value === value)?.la
         :heading="trans('Help / FAQ')"
         :description="trans('Questions and answers shown to everyone on the help page.')"
     >
-        <div class="max-w-2xl space-y-4">
+        <div class="space-y-4">
             <div class="flex items-center justify-between">
                 <p class="text-xs" :class="MUTED">
                     {{ trans('Drafts stay hidden until you publish them.') }}

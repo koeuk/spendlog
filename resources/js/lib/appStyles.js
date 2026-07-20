@@ -66,13 +66,24 @@ export const CARD =
     `rounded-[28px] border border-border bg-card/70 backdrop-blur-xl backdrop-saturate-150 ${CARD_LIFT}`;
 
 /**
- * The tinted glass — same green wash as the login artwork panel, made liquid.
- * Rests on its edge and lifts on hover exactly like CARD; a hero that sat under
- * a permanent drop shadow would break the rule the rest of the page follows.
+ * The tinted glass — a wash of the admin's button colour, for the one figure on
+ * a page that matters more than the others. Rests on its edge and lifts on hover
+ * exactly like CARD; a hero that sat under a permanent drop shadow would break
+ * the rule the rest of the page follows.
+ *
+ * --primary, not the literal green it used to carry: the tint marks the hero,
+ * and a hero pinned to a hue the buttons around it no longer use reads as a
+ * leftover rather than an accent. Same reasoning as CARD_BRAND, at a tenth of
+ * the strength.
+ *
+ * A wash, so the text stays `foreground` and needs no contrast computation —
+ * unlike CARD_BRAND, whose full-strength fill forces every child onto
+ * --primary-foreground. Slightly stronger in dark mode, where the same alpha
+ * over near-black barely registers.
  */
 export const CARD_TINT =
-    `rounded-[28px] border border-[#4b9d5f]/20 bg-[#eaf5e6]/70 backdrop-blur-xl backdrop-saturate-150 ${CARD_LIFT} ` +
-    'dark:border-[#6cc182]/15 dark:bg-[#16281a]/60';
+    `rounded-[28px] border border-primary/20 bg-primary/[0.07] backdrop-blur-xl backdrop-saturate-150 ${CARD_LIFT} ` +
+    'dark:border-primary/15 dark:bg-primary/[0.12]';
 
 /**
  * CARD_TINT's alarm state — same glass, red — for a message the page needs read
