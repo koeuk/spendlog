@@ -314,11 +314,11 @@ const filtered = computed(() =>
                     <!-- Admin only: switch between own expenses and everyone's -->
                     <div
                         v-if="can.view_all"
-                        class="inline-flex rounded-md border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-800 p-0.5"
+                        class="inline-flex rounded-xl border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-800 p-0.5"
                     >
                         <button
                             type="button"
-                            class="rounded px-2.5 py-1 text-xs font-medium transition"
+                            class="rounded-lg px-2.5 py-1 text-xs font-medium transition"
                             :class="
                                 !viewingAll
                                     ? 'bg-gray-900 text-white'
@@ -330,7 +330,7 @@ const filtered = computed(() =>
                         </button>
                         <button
                             type="button"
-                            class="rounded px-2.5 py-1 text-xs font-medium transition"
+                            class="rounded-lg px-2.5 py-1 text-xs font-medium transition"
                             :class="
                                 viewingAll
                                     ? 'bg-gray-900 text-white'
