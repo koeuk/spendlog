@@ -370,9 +370,8 @@ function clearBudget() {
                             </Button>
                             <Button
                                 v-if="summary.overall.budget !== null"
-                                variant="ghost"
+                                variant="destructive"
                                 size="sm"
-                                class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
                                 @click="confirmClear(summary.overall, trans('Overall budget'))"
                             >
                                 {{ __('Clear') }}
@@ -446,7 +445,9 @@ function clearBudget() {
                         class="flex items-center justify-between gap-4 border-b border-gray-100 dark:border-neutral-800 px-5 py-3"
                     >
                         <h3 class="text-sm font-semibold text-gray-900 dark:text-neutral-100">{{ __('By category') }}</h3>
-                        <Button size="sm" @click="openAdd">{{ __('Set budget') }}</Button>
+                        <Button size="sm" class="rounded-lg" @click="openAdd">
+                            {{ __('Set budget') }}
+                        </Button>
                     </div>
 
                     <ul v-if="navigating" class="divide-y divide-gray-100 dark:divide-neutral-800" aria-busy="true">
@@ -483,7 +484,7 @@ function clearBudget() {
                                 />
                                 <div class="flex items-center gap-1">
                                     <Button
-                                        variant="ghost"
+                                        variant="secondary"
                                         size="sm"
                                         @click="openEdit(category, category.uuid)"
                                     >
@@ -491,9 +492,8 @@ function clearBudget() {
                                     </Button>
                                     <Button
                                         v-if="category.budget !== null"
-                                        variant="ghost"
+                                        variant="destructive"
                                         size="sm"
-                                        class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
                                         @click="confirmClear(category, category.name)"
                                     >
                                         {{ __('Clear') }}

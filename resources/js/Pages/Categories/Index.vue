@@ -226,16 +226,15 @@ function destroy() {
                                             v-if="can.update"
                                             :as="Link"
                                             :href="route('categories.edit', category.uuid)"
-                                            variant="ghost"
+                                            variant="secondary"
                                             size="sm"
                                         >
                                             {{ __('Edit') }}
                                         </Button>
                                         <Button
                                             v-if="can.delete"
-                                            variant="ghost"
+                                            variant="destructive"
                                             size="sm"
-                                            class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
                                             :disabled="deleting === category.uuid"
                                             @click="confirmDestroy(category)"
                                         >

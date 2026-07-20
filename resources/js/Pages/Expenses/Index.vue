@@ -9,6 +9,7 @@ import ExpenseListSkeleton from '@/Components/ExpenseListSkeleton.vue';
 import Pagination from '@/Components/Pagination.vue';
 import SearchInput from '@/Components/SearchInput.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
+import DateFilter from '@/Components/DateFilter.vue';
 import { useNavigating } from '@/composables/useNavigating';
 import { localized, trans } from '@/lib/i18n';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
@@ -385,12 +386,10 @@ const filtered = computed(() =>
                     A two-column grid on a phone, the same flex row as before
                     from sm: up.
 
-                    Stacked, these four controls spent most of the first screen
-                    on filters nobody had touched yet. Search and category keep
-                    the full width — one is typed into, the other holds the
-                    longest labels — while month and year pair off on one line,
-                    which is also what they are: two halves of a single date,
-                    not two unrelated dropdowns.
+                    Stacked, these controls spent most of the first screen on
+                    filters nobody had touched yet. Only search keeps the full
+                    width, since it is the one that is typed into; category and
+                    date pair off on the line below it.
 
                     Each select is placed by its own trigger-class, because
                     SearchableSelect's root is a Popover that renders no element
@@ -412,35 +411,24 @@ const filtered = computed(() =>
                         :empty-text="__('No category found.')"
                         align="start"
                         content-class="w-52"
-                        trigger-class="border-input dark:hover:bg-input/50 col-span-2 h-9 w-full rounded-md border bg-card px-2.5 py-2 text-sm shadow-xs sm:w-52"
+                        trigger-class="border-input dark:hover:bg-input/50 h-9 w-full min-w-0 rounded-xl border bg-card px-2.5 py-2 text-sm shadow-xs sm:w-52"
                         @update:model-value="applyCategoryFilter"
                     />
 
-                    <!-- Month and year are separate controls: either narrows on
-                         its own, and together they pin a single month. -->
-                    <SearchableSelect
-                        :options="monthOptions"
-                        :model-value="monthFilter"
-                        :label="__('Filter by month')"
-                        :search-placeholder="__('Search…')"
-                        :empty-text="__('Nothing found.')"
+                    <!-- Month and year behind one trigger. Still two filters —
+                         either narrows on its own, and together they pin a
+                         single month — but one control's worth of room. -->
+                    <DateFilter
+                        :month-options="monthOptions"
+                        :year-options="yearOptions"
+                        :month="monthFilter"
+                        :year="yearFilter"
+                        :label="__('All dates')"
                         align="start"
-                        content-class="w-44"
-                        trigger-class="border-input dark:hover:bg-input/50 h-9 w-full min-w-0 rounded-md border bg-card px-2.5 py-2 text-sm shadow-xs sm:w-40"
-                        @update:model-value="applyMonthFilter"
-                    />
-
-                    <SearchableSelect
-                        :options="yearOptions"
-                        :model-value="yearFilter"
-                        :label="__('Filter by year')"
-                        :search-placeholder="__('Search…')"
-                        :empty-text="__('Nothing found.')"
-                        match-value
-                        align="start"
-                        content-class="w-36"
-                        trigger-class="border-input dark:hover:bg-input/50 h-9 w-full min-w-0 rounded-md border bg-card px-2.5 py-2 text-sm shadow-xs sm:w-32"
-                        @update:model-value="applyYearFilter"
+                        content-class="w-72"
+                        trigger-class="border-input dark:hover:bg-input/50 h-9 w-full min-w-0 rounded-xl border bg-card px-2.5 py-2 text-sm shadow-xs sm:w-56"
+                        @update:month="applyMonthFilter"
+                        @update:year="applyYearFilter"
                     />
 
                     <!-- Spans both columns on a phone so it never sits half-width
@@ -571,16 +559,15 @@ const filtered = computed(() =>
                                 <Button
                                     :as="Link"
                                     :href="editHref(expense)"
-                                    variant="ghost"
+                                    variant="secondary"
                                     size="sm"
                                     @click.stop
                                 >
                                     {{ __('Edit') }}
                                 </Button>
                                 <Button
-                                    variant="ghost"
+                                    variant="destructive"
                                     size="sm"
-                                    class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
                                     :disabled="deleting === expense.uuid"
                                     @click.stop="confirmDestroy(expense)"
                                 >
