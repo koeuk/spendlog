@@ -89,7 +89,19 @@ function setScope(scope) {
 
 const search = ref(props.filters?.filter?.item ?? '');
 
-watch(search, (value) => navigate({ item: value }));
+// Clearing every filter at once sets this ref alongside the others, and the
+// watcher below would then fire a second request that merges the filters we
+// just dropped back in. The reset owns the navigation, so the watcher stands
+// down for that one change.
+let resetting = false;
+
+watch(search, (value) => {
+    if (resetting) {
+        return;
+    }
+
+    navigate({ item: value });
+});
 
 const categoryFilter = ref(props.filters?.filter?.category ?? '');
 
@@ -144,6 +156,44 @@ const userOptions = computed(() => [
 function applyUserFilter(uuid) {
     userFilter.value = uuid;
     navigate({ user: uuid });
+}
+
+// Only shown once there is something to clear — an always-visible Clear on an
+// untouched list is a button that does nothing.
+const hasActiveFilters = computed(
+    () =>
+        Boolean(search.value) ||
+        Boolean(categoryFilter.value) ||
+        Boolean(monthFilter.value) ||
+        Boolean(yearFilter.value) ||
+        Boolean(userFilter.value),
+);
+
+// Back to the unfiltered list. Scope is not a filter — it is which list you are
+// looking at — so "mine" or "everyone" survives the reset.
+function clearFilters() {
+    resetting = true;
+
+    search.value = '';
+    categoryFilter.value = '';
+    monthFilter.value = '';
+    yearFilter.value = '';
+    userFilter.value = '';
+
+    router.get(
+        route('expenses.index'),
+        viewingAll.value ? { scope: 'all' } : {},
+        {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            // The watcher runs after the ref settles, so it is only safe to
+            // re-arm once this navigation is on its way.
+            onFinish: () => {
+                resetting = false;
+            },
+        },
+    );
 }
 
 /**
@@ -342,7 +392,8 @@ const filtered = computed(() =>
                     <SearchInput
                         v-model="search"
                         :placeholder="__('Search expenses…')"
-                        class="col-span-2 min-w-0 rounded-md bg-card sm:max-w-sm sm:flex-1"
+                        class="col-span-2 min-w-0 sm:max-w-sm sm:flex-1"
+                        input-class="bg-card"
                     />
 
                     <SearchableSelect
@@ -383,6 +434,17 @@ const filtered = computed(() =>
                         trigger-class="border-input dark:hover:bg-input/50 h-9 w-full min-w-0 rounded-md border bg-card px-2.5 py-2 text-sm shadow-xs sm:w-32"
                         @update:model-value="applyYearFilter"
                     />
+
+                    <!-- Spans both columns on a phone so it never sits half-width
+                         beside a dropdown, and takes its natural width from sm: up. -->
+                    <Button
+                        v-if="hasActiveFilters"
+                        variant="outline"
+                        class="col-span-2 h-9 w-full sm:w-auto"
+                        @click="clearFilters"
+                    >
+                        {{ __('Clear') }}
+                    </Button>
                 </div>
 
                 <ExpenseListSkeleton v-if="navigating" />

@@ -10,6 +10,19 @@ const props = defineProps({
     // Long enough that a typist is not firing a request per keystroke, short
     // enough that the list still feels like it is following along.
     debounce: { type: Number, default: 300 },
+    /*
+     * Styling for the field itself.
+     *
+     * A class on the component lands on the positioning wrapper, which is the
+     * wrong element to paint: callers passing `rounded-md bg-card` gave the
+     * wrapper a 6px corner behind an input with a 12px one, so the background
+     * showed past the field's curve and the search icon — sitting 12px in, right
+     * in that gap — read as a separate little box wedged against the pill.
+     *
+     * So the wrapper takes layout (flex-1, min-w-0, max-w-*) through the normal
+     * fallthrough, and anything visual comes through here instead.
+     */
+    inputClass: { type: [String, Array, Object], default: '' },
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -54,7 +67,7 @@ function clear() {
             type="text"
             :placeholder="placeholder"
             autocomplete="off"
-            class="ps-9 pe-9"
+            :class="['w-full ps-9 pe-9', inputClass]"
             :aria-label="placeholder"
         />
         <button
