@@ -6,7 +6,7 @@ import SpendingTrendChart from '@/Components/SpendingTrendChart.vue';
 import PeriodPicker from '@/Components/PeriodPicker.vue';
 import Pagination from '@/Components/Pagination.vue';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
-import { ACTIVE, CARD, CARD_TINT, EXPORT_LINK, EYEBROW, FIGURE, MUTED, SEGMENT_OFF } from '@/lib/appStyles';
+import { ACTIVE, CARD, CARD_TINT, EXPORT_LINK, EYEBROW, EYEBROW_ON_BRAND, FIGURE, FIGURE_ON_BRAND, MUTED, MUTED_ON_BRAND, SEGMENT_OFF } from '@/lib/appStyles';
 import {
     ArrowDownRight,
     ArrowUpRight,
@@ -96,9 +96,17 @@ const change = computed(() => {
         up,
         icon: up ? ArrowUpRight : ArrowDownRight,
         text: `${up ? '+' : ''}${props.stats.change_percent}%`,
-        tone: up
-            ? 'text-red-600 dark:text-red-400'
-            : 'text-[#4b9d5f] dark:text-[#6cc182]',
+        /*
+         * On the brand fill, not on the page — so the red/green that says
+         * "worse/better" everywhere else cannot be used: a dark red on a deep
+         * green card is unreadable, and --primary-foreground is the only value
+         * computed to contrast with whatever fill an admin picked.
+         *
+         * The direction survives without it. The arrow points up or down and the
+         * figure carries its own sign, which is the whole of the message; the
+         * colour was only ever saying it a second time.
+         */
+        tone: 'text-primary-foreground',
     };
 });
 </script>
@@ -205,8 +213,8 @@ const change = computed(() => {
             -->
             <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <div :class="[CARD_TINT, 'anim p-4 sm:p-6']" style="--d: 60ms">
-                    <p :class="EYEBROW">{{ __('Total spent') }}</p>
-                    <p :class="[FIGURE, 'mt-2 text-2xl sm:text-3xl']">{{ money.format(stats.total) }}</p>
+                    <p :class="EYEBROW_ON_BRAND">{{ __('Total spent') }}</p>
+                    <p :class="[FIGURE_ON_BRAND, 'mt-2 text-2xl sm:text-3xl']">{{ money.format(stats.total) }}</p>
                     <!-- Wraps: the delta and its "vs last year" caption do not
                          share a line in a half-width card. -->
                     <p v-if="change" class="mt-2 flex flex-wrap items-center gap-x-1 gap-y-0.5 text-xs font-semibold" :class="change.tone">
@@ -218,7 +226,7 @@ const change = computed(() => {
                             of it. Saying so is the difference between a figure
                             the reader can trust and one that looks like a drop.
                         -->
-                        <span :class="[MUTED, 'font-medium']">
+                        <span :class="[MUTED_ON_BRAND, 'font-medium']">
                             {{
                                 stats.previous_is_partial
                                     ? __('vs :period so far', { period: stats.previous_label })
@@ -226,7 +234,7 @@ const change = computed(() => {
                             }}
                         </span>
                     </p>
-                    <p v-else :class="[MUTED, 'mt-2 text-xs font-medium']">
+                    <p v-else :class="[MUTED_ON_BRAND, 'mt-2 text-xs font-medium']">
                         {{ __('No earlier period to compare.') }}
                     </p>
                 </div>

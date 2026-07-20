@@ -66,24 +66,43 @@ export const CARD =
     `rounded-[28px] border border-border bg-card/70 backdrop-blur-xl backdrop-saturate-150 ${CARD_LIFT}`;
 
 /**
- * The tinted glass — a wash of the admin's button colour, for the one figure on
- * a page that matters more than the others. Rests on its edge and lifts on hover
- * exactly like CARD; a hero that sat under a permanent drop shadow would break
- * the rule the rest of the page follows.
+ * The hero card — the admin's button colour at full strength, for the one figure
+ * on a page that outranks the rest.
  *
- * --primary, not the literal green it used to carry: the tint marks the hero,
- * and a hero pinned to a hue the buttons around it no longer use reads as a
- * leftover rather than an accent. Same reasoning as CARD_BRAND, at a tenth of
- * the strength.
+ * This was a pale wash of a hardcoded green. Two things were wrong with it: it
+ * stayed green while the buttons around it moved to whatever an admin picked,
+ * and at 7% over a translucent backdrop the ambient wash showed straight
+ * through, so the card read as a faint gradient rather than a colour.
  *
- * A wash, so the text stays `foreground` and needs no contrast computation —
- * unlike CARD_BRAND, whose full-strength fill forces every child onto
- * --primary-foreground. Slightly stronger in dark mode, where the same alpha
- * over near-black barely registers.
+ * Opaque, so nothing bleeds through, and no backdrop blur — there is nothing
+ * behind an opaque fill to bend, and the filter would cost a compositor layer
+ * for no visible effect. Identical in construction to CARD_BRAND; the two are
+ * kept apart only because this one is a data surface and that one is the app
+ * speaking.
+ *
+ * Every child has to take --primary-foreground, or one of the ON_BRAND helpers
+ * below. The token is *computed* for contrast against whatever fill is chosen,
+ * so it is the only text colour that survives both a near-black default and a
+ * deep green. Anything spelled out — a muted grey, a red delta — is unreadable
+ * the moment the fill is dark.
  */
-export const CARD_TINT =
-    `rounded-[28px] border border-primary/20 bg-primary/[0.07] backdrop-blur-xl backdrop-saturate-150 ${CARD_LIFT} ` +
-    'dark:border-primary/15 dark:bg-primary/[0.12]';
+export const CARD_TINT = 'rounded-[28px] bg-primary text-primary-foreground';
+
+/**
+ * The muted and figure treatments, restated for a brand fill.
+ *
+ * Opacity rather than a second colour: --primary-foreground is the one value
+ * known to contrast with the fill, so the hierarchy has to be built by fading it
+ * rather than by reaching for a grey that was computed against the page
+ * background instead.
+ */
+export const EYEBROW_ON_BRAND =
+    'text-[11px] font-semibold uppercase tracking-[0.12em] text-primary-foreground/75';
+
+export const FIGURE_ON_BRAND =
+    'font-extrabold tracking-[-0.03em] tabular-nums text-primary-foreground';
+
+export const MUTED_ON_BRAND = 'text-primary-foreground/75';
 
 /**
  * CARD_TINT's alarm state — same glass, red — for a message the page needs read

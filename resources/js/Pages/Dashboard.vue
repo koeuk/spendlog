@@ -5,7 +5,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import BudgetProgress from '@/Components/BudgetProgress.vue';
 import SpendingTrendChart from '@/Components/SpendingTrendChart.vue';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
-import { CARD, CARD_BRAND, CARD_TINT, EYEBROW, FIGURE, MUTED, PILL_ACTION } from '@/lib/appStyles';
+import { CARD, CARD_BRAND, CARD_TINT, EYEBROW, EYEBROW_ON_BRAND, FIGURE, FIGURE_ON_BRAND, MUTED, MUTED_ON_BRAND, PILL_ACTION } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 import { ArrowRight, Lightbulb, Plus, TriangleAlert } from 'lucide-vue-next';
@@ -250,15 +250,15 @@ const pace = computed(() => {
             <!-- Hero: the month, and how much room is left in it -->
             <div class="grid gap-3 lg:grid-cols-3">
                 <div :class="[CARD_TINT, 'anim p-6 sm:p-8 lg:col-span-2']" style="--d: 60ms">
-                    <p :class="EYEBROW">{{ __('This month') }}</p>
+                    <p :class="EYEBROW_ON_BRAND">{{ __('This month') }}</p>
 
                     <div class="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                        <span :class="[FIGURE, 'text-[2.6rem] leading-none sm:text-5xl']">
+                        <span :class="[FIGURE_ON_BRAND, 'text-[2.6rem] leading-none sm:text-5xl']">
                             {{ money.format(overall.spent) }}
                         </span>
                         <span
                             v-if="overall.budget !== null"
-                            class="text-sm font-medium text-neutral-500 dark:text-neutral-400"
+                            class="text-sm font-medium text-primary-foreground/75"
                         >
                             {{ __('of :amount', { amount: money.format(overall.budget) }) }}
                         </span>
@@ -283,7 +283,18 @@ const pace = computed(() => {
                             hierarchy now matches what the card is for.
                         -->
                         <div class="mt-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                            <span class="text-base font-bold" :class="statusText[overall.status]">
+                            <!--
+                                Not statusText here, unlike the per-category rows
+                                below. This sits on the brand fill, and the status
+                                palette cannot be trusted against a colour an
+                                admin picked: "ok" green on a green card is
+                                barely there, and an admin who picks red would
+                                lose "over budget" entirely. The bar above keeps
+                                its status colour — it has its own light track,
+                                so it reads on any fill — and the words say the
+                                same thing in text.
+                            -->
+                            <span class="text-base font-bold text-primary-foreground">
                                 {{
                                     overall.remaining < 0
                                         ? __(':amount over budget', {
@@ -294,14 +305,14 @@ const pace = computed(() => {
                                           })
                                 }}
                             </span>
-                            <span :class="[MUTED, 'text-xs font-semibold tabular-nums']">
+                            <span :class="[MUTED_ON_BRAND, 'text-xs font-semibold tabular-nums']">
                                 {{ overall.percent }}%
                             </span>
                         </div>
 
                         <!-- The tick above, said in words. Without this the
                              marker is a line on a bar that nobody can read. -->
-                        <p v-if="pace" :class="[MUTED, 'mt-1.5 text-xs font-medium']">
+                        <p v-if="pace" :class="[MUTED_ON_BRAND, 'mt-1.5 text-xs font-medium']">
                             {{ __('Day :day of :days', { day: pace.day, days: pace.daysInMonth }) }}
                             <span aria-hidden="true" class="px-1">·</span>
                             {{

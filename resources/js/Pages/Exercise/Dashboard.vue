@@ -9,7 +9,7 @@ import SessionTimer from '@/Components/Exercise/SessionTimer.vue';
 import ExerciseBadge from '@/Components/Exercise/ExerciseBadge.vue';
 import VolumeTrendChart from '@/Components/Exercise/VolumeTrendChart.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
-import { CARD, CARD_TINT, EYEBROW, FIGURE, MUTED, PILL_ACTION } from '@/lib/appStyles';
+import { CARD, CARD_TINT, EYEBROW, EYEBROW_ON_BRAND, FIGURE, FIGURE_ON_BRAND, MUTED, MUTED_ON_BRAND, PILL_ACTION } from '@/lib/appStyles';
 import { exerciseColor, formatDuration, formatWeight } from '@/lib/exerciseStyles';
 import { trans } from '@/lib/i18n';
 
@@ -135,15 +135,17 @@ const cards = computed(() => [
             <!-- Streak first: it is the one figure that changes behaviour, and
                  it is about today rather than the month being browsed. -->
             <div :class="[CARD_TINT, 'anim flex items-center gap-4 p-6']" style="--d: 0ms">
-                <span class="grid size-12 shrink-0 place-items-center rounded-full bg-primary/15">
-                    <Flame class="size-6 text-primary" aria-hidden="true" />
+                <!-- Both on the fill now, so both take the foreground token:
+                     a primary-coloured flame on a primary card is invisible. -->
+                <span class="grid size-12 shrink-0 place-items-center rounded-full bg-primary-foreground/15">
+                    <Flame class="size-6 text-primary-foreground" aria-hidden="true" />
                 </span>
 
                 <div>
-                    <p :class="EYEBROW">{{ __('Current streak') }}</p>
-                    <p class="mt-0.5 text-3xl" :class="FIGURE">
+                    <p :class="EYEBROW_ON_BRAND">{{ __('Current streak') }}</p>
+                    <p class="mt-0.5 text-3xl" :class="FIGURE_ON_BRAND">
                         {{ streak }}
-                        <span class="text-base font-bold" :class="MUTED">
+                        <span class="text-base font-bold" :class="MUTED_ON_BRAND">
                             {{ streak === 1 ? __('day') : __('days') }}
                         </span>
                     </p>
