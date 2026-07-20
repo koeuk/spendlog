@@ -5,7 +5,14 @@ import { Check, ChevronDown, Plus } from 'lucide-vue-next';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/Components/ui/popover';
-import { Sheet, SheetContent, SheetTrigger } from '@/Components/ui/sheet';
+import { VisuallyHidden } from 'reka-ui';
+import {
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetTitle,
+    SheetTrigger,
+} from '@/Components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
 import { trans } from '@/lib/i18n';
@@ -177,6 +184,18 @@ const label = computed(() => {
             </component>
 
             <component :is="shellContent" v-bind="shellContentProps">
+                <!-- The sheet is a dialog, so it owes a name and a description:
+                     reka warns without them and a screen reader announces an
+                     unnamed panel. Hidden rather than shown — the search row is
+                     this panel's header. The popover is labelled by its trigger
+                     and needs neither. -->
+                <VisuallyHidden v-if="isMobile">
+                    <SheetTitle>{{ __('Category') }}</SheetTitle>
+                    <SheetDescription>
+                        {{ canCreate ? __('Search the list, or type a name to create a category.') : __('Search the list to pick a category.') }}
+                    </SheetDescription>
+                </VisuallyHidden>
+
                 <div class="shrink-0 border-b border-neutral-100 p-2 dark:border-neutral-800">
                     <Input
                         ref="searchInput"

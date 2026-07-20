@@ -132,7 +132,7 @@ function destroy() {
                          floating one, while the search row carried a full-width
                          field and a 90px toggle crammed onto one line. -->
                     <div
-                        class="inline-flex shrink-0 rounded-md border border-gray-200 bg-white p-0.5 dark:border-neutral-700 dark:bg-neutral-800"
+                        class="inline-flex h-9 shrink-0 rounded-xl border border-gray-200 bg-white p-1 dark:border-neutral-700 dark:bg-neutral-800"
                         role="group"
                         :aria-label="__('Sort categories')"
                     >
@@ -140,7 +140,7 @@ function destroy() {
                             v-for="option in SORTS"
                             :key="option.key"
                             type="button"
-                            class="flex h-[26px] items-center rounded-md px-2.5 text-xs font-medium transition"
+                            class="flex items-center rounded-lg px-3.5 text-sm font-medium transition"
                             :class="
                                 sort === option.key
                                     ? ACTIVE
@@ -194,7 +194,7 @@ function destroy() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>{{ __('Name') }}</TableHead>
-                                <TableHead class="text-right">{{ __('Expenses') }}</TableHead>
+                                <TableHead class="text-center">{{ __('Expenses') }}</TableHead>
                                 <TableHead v-if="canManageAny" class="w-32 text-right">
                                     {{ __('Actions') }}
                                 </TableHead>
@@ -217,7 +217,7 @@ function destroy() {
                                         :icon="category.icon"
                                     />
                                 </TableCell>
-                                <TableCell class="text-right text-gray-500 dark:text-neutral-400">
+                                <TableCell class="text-center text-base font-semibold text-gray-700 dark:text-neutral-200">
                                     {{ category.expenses_count }}
                                 </TableCell>
                                 <TableCell v-if="canManageAny" class="text-right">

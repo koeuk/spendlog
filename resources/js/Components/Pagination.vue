@@ -68,9 +68,9 @@ function setPerPage(size) {
 
 <template>
     <div
-        class="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-100 px-4 py-3 sm:px-7 dark:border-neutral-800"
+        class="flex flex-nowrap items-center justify-between gap-2 border-t border-neutral-100 px-4 py-3 sm:gap-3 sm:px-7 dark:border-neutral-800"
     >
-        <div class="flex items-center gap-2">
+        <div class="flex shrink-0 items-center gap-2">
             <!--
                 The app's own select rather than a native one: a native <select>
                 hands its list to the OS, which draws it in the system theme —
@@ -91,12 +91,15 @@ function setPerPage(size) {
             <span :class="[MUTED, 'text-xs font-medium']">{{ __('per page') }}</span>
         </div>
 
-        <div class="flex items-center gap-3">
-            <span :class="[MUTED, 'text-xs font-medium tabular-nums']">
-                {{ __('Showing :from–:to of :total', range) }}
+        <div class="flex min-w-0 shrink items-center gap-2 sm:gap-3">
+            <!-- The row has to stay on one line on a phone, and "Showing" is the
+                 one word here carrying no number — it goes first. -->
+            <span :class="[MUTED, 'truncate text-xs font-medium tabular-nums']">
+                <span class="max-sm:hidden">{{ __('Showing :from–:to of :total', range) }}</span>
+                <span class="sm:hidden">{{ __(':from–:to of :total', range) }}</span>
             </span>
 
-            <div v-if="hasPages" class="flex items-center gap-1">
+            <div v-if="hasPages" class="flex shrink-0 items-center gap-1">
                 <button
                     type="button"
                     :class="[
@@ -110,7 +113,7 @@ function setPerPage(size) {
                     <ChevronLeft class="size-4" />
                 </button>
 
-                <span :class="[MUTED, 'min-w-16 text-center text-xs font-medium tabular-nums']">
+                <span :class="[MUTED, 'min-w-12 text-center text-xs font-medium tabular-nums sm:min-w-16']">
                     {{ meta.current_page }} / {{ meta.last_page }}
                 </span>
 

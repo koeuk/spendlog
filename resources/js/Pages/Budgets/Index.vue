@@ -367,8 +367,8 @@ function clearBudget() {
                         <div class="flex gap-1">
                             <Button
                                 variant="outline"
-                                size="sm"
-                                class="rounded-xl"
+                                size="xs"
+                                class="rounded-xl max-sm:h-8"
                                 @click="openEdit(summary.overall, null)"
                             >
                                 {{ summary.overall.budget !== null ? __('Edit') : __('Set a budget') }}
@@ -376,8 +376,8 @@ function clearBudget() {
                             <Button
                                 v-if="summary.overall.budget !== null"
                                 variant="destructive"
-                                size="sm"
-                                class="rounded-xl"
+                                size="xs"
+                                class="rounded-xl max-sm:h-8"
                                 @click="confirmClear(summary.overall, trans('Overall budget'))"
                             >
                                 {{ __('Clear') }}
@@ -451,7 +451,7 @@ function clearBudget() {
                         class="flex items-center justify-between gap-4 border-b border-gray-100 dark:border-neutral-800 px-5 py-3"
                     >
                         <h3 class="text-sm font-semibold text-gray-900 dark:text-neutral-100">{{ __('By category') }}</h3>
-                        <Button size="sm" class="rounded-xl" @click="openAdd">
+                        <Button size="xs" class="rounded-xl max-sm:h-8" @click="openAdd">
                             {{ __('Set budget') }}
                         </Button>
                     </div>
@@ -491,8 +491,8 @@ function clearBudget() {
                                 <div class="flex items-center gap-1">
                                     <Button
                                         variant="secondary"
-                                        size="sm"
-                                        class="rounded-xl"
+                                        size="xs"
+                                        class="rounded-xl max-sm:h-8"
                                         @click="openEdit(category, category.uuid)"
                                     >
                                         {{ category.budget !== null ? __('Edit') : __('Set') }}
@@ -500,8 +500,8 @@ function clearBudget() {
                                     <Button
                                         v-if="category.budget !== null"
                                         variant="destructive"
-                                        size="sm"
-                                        class="rounded-xl"
+                                        size="xs"
+                                        class="rounded-xl max-sm:h-8"
                                         @click="confirmClear(category, category.name)"
                                     >
                                         {{ __('Clear') }}
@@ -633,7 +633,7 @@ function clearBudget() {
                     <Button
                         type="button"
                         variant="outline"
-                        class="max-sm:hidden"
+                        class="rounded-xl max-sm:hidden"
                         @click="showDialog = false"
                     >
                         {{ __('Cancel') }}
@@ -642,6 +642,7 @@ function clearBudget() {
                          budget, which is not what this dialog offered. -->
                     <Button
                         type="submit"
+                        class="rounded-xl"
                         :disabled="form.processing || (choosingCategory && !form.category_uuid)"
                     >
                         {{ __('Save') }}

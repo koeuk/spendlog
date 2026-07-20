@@ -164,6 +164,7 @@
     "Per page": "ក្នុងមួយទំព័រ",
     "per page": "ក្នុងមួយទំព័រ",
     "Showing :from–:to of :total": "កំពុងបង្ហាញ :from–:to ក្នុងចំណោម :total",
+    ":from–:to of :total": ":from–:to ក្នុងចំណោម :total",
     "Account": "គណនី",
     "Settings": "ការកំណត់",
     "Delete Account": "លុបគណនី",

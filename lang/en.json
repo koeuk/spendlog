@@ -164,6 +164,7 @@
     "Per page": "Per page",
     "per page": "per page",
     "Showing :from–:to of :total": "Showing :from–:to of :total",
+    ":from–:to of :total": ":from–:to of :total",
     "Account": "Account",
     "Settings": "Settings",
     "Delete Account": "Delete Account",

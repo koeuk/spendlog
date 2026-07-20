@@ -93,14 +93,14 @@ function submit() {
                         :as="Link"
                         :href="backHref"
                         variant="outline"
-                        class="w-full max-sm:h-12 sm:w-auto"
+                        class="w-full rounded-xl max-sm:h-12 sm:w-auto"
                     >
                         {{ __('Cancel') }}
                     </Button>
                 </template>
 
                 <template #submit>
-                    <Button type="submit" :disabled="form.processing" class="w-full max-sm:h-12 sm:w-auto">
+                    <Button type="submit" :disabled="form.processing" class="w-full rounded-xl max-sm:h-12 sm:w-auto">
                         {{ form.processing ? __('Saving…') : __('Save') }}
                     </Button>
                 </template>

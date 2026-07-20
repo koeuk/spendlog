@@ -315,11 +315,11 @@ const filtered = computed(() =>
                     <!-- Admin only: switch between own expenses and everyone's -->
                     <div
                         v-if="can.view_all"
-                        class="inline-flex rounded-xl border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-800 p-0.5"
+                        class="inline-flex h-9 rounded-xl border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-800 p-1"
                     >
                         <button
                             type="button"
-                            class="rounded-lg px-2.5 py-1 text-xs font-medium transition"
+                            class="flex items-center rounded-lg px-3.5 text-sm font-medium transition"
                             :class="
                                 !viewingAll
                                     ? 'bg-gray-900 text-white'
@@ -331,7 +331,7 @@ const filtered = computed(() =>
                         </button>
                         <button
                             type="button"
-                            class="rounded-lg px-2.5 py-1 text-xs font-medium transition"
+                            class="flex items-center rounded-lg px-3.5 text-sm font-medium transition"
                             :class="
                                 viewingAll
                                     ? 'bg-gray-900 text-white'
@@ -560,14 +560,16 @@ const filtered = computed(() =>
                                     :as="Link"
                                     :href="editHref(expense)"
                                     variant="secondary"
-                                    size="sm"
+                                    size="xs"
+                                    class="rounded-xl max-sm:h-8"
                                     @click.stop
                                 >
                                     {{ __('Edit') }}
                                 </Button>
                                 <Button
                                     variant="destructive"
-                                    size="sm"
+                                    size="xs"
+                                    class="rounded-xl max-sm:h-8"
                                     :disabled="deleting === expense.uuid"
                                     @click.stop="confirmDestroy(expense)"
                                 >
