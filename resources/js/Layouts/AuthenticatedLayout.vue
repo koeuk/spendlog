@@ -27,7 +27,7 @@ import { useFlashToasts } from '@/composables/useFlashToasts';
 import { useOverBudget } from '@/composables/useOverBudget';
 import { useTheme } from '@/composables/useTheme';
 import { useBrandColors } from '@/composables/useBrandColors';
-import { APP_PAGE, CARD } from '@/lib/appStyles';
+import { APP_PAGE } from '@/lib/appStyles';
 import {
     ChartColumn,
     Check,
@@ -36,7 +36,6 @@ import {
     Ellipsis,
     LayoutDashboard,
     ListChecks,
-    Menu,
     PiggyBank,
     Receipt,
     Shapes,
@@ -62,8 +61,6 @@ defineProps({
     hideNavOnMobile: { type: Boolean, default: false },
 });
 
-const showingNavigationDropdown = ref(false);
-
 /*
  * The bar only earns its glass once there is content behind it to bend. At the
  * top of the page it stays invisible so the header reads as part of the page.
@@ -74,6 +71,39 @@ const showingNavigationDropdown = ref(false);
  */
 const { y: scrollY } = useWindowScroll();
 const scrolled = computed(() => scrollY.value > 8);
+
+/*
+ * The bar gets out of the way going down and comes back coming up.
+ *
+ * Phones only, and the tab bar is why: it holds every page in the module at the
+ * bottom of the screen, so a hidden bar costs a swipe on the workspace pill and
+ * nothing at all on navigation. From md: up the bar *is* the navigation — there
+ * is no tab bar there — so it stays put.
+ *
+ * Reading the direction rather than the position: a bar that hides below a
+ * fixed offset and never returns makes the user scroll to the top of a long
+ * list to reach it.
+ */
+// Below this the bar is always shown: near the top there is nothing gained by
+// hiding it, and it stops the first flick of a short page from taking it away.
+const REVEAL_ABOVE = 80;
+// Ignore anything smaller. Momentum scrolling reports jitter in both directions
+// at rest, and without a floor the bar flickers when the page settles.
+const DIRECTION_NOISE = 6;
+
+const barHidden = ref(false);
+let lastY = 0;
+
+watch(scrollY, (y) => {
+    const delta = y - lastY;
+
+    if (Math.abs(delta) < DIRECTION_NOISE) {
+        return;
+    }
+
+    barHidden.value = y > REVEAL_ABOVE && delta > 0;
+    lastY = y;
+});
 
 const { isDark } = useTheme();
 
@@ -328,9 +358,10 @@ watch(() => page.url, () => (showMoreSheet.value = false));
                  standing with nothing to hold, the wrapper still draws its
                  scrolled border as a hairline across the top of the page. -->
             <div
-                class="sticky top-0 z-40 -mx-3 px-3 transition-[background-color,border-color,box-shadow,backdrop-filter] duration-300 ease-out lg:-mx-4 lg:px-4"
+                class="sticky top-0 z-40 -mx-3 px-3 transition-[background-color,border-color,box-shadow,backdrop-filter,transform] duration-300 ease-out motion-reduce:transition-none lg:-mx-4 lg:px-4"
                 :class="[
                     hideNavOnMobile ? 'max-md:hidden' : '',
+                    barHidden ? 'max-md:-translate-y-full' : '',
                     scrolled
                         ? 'rounded-b-[28px] border-b border-neutral-200/70 bg-white/70 shadow-[0_8px_24px_-12px_rgba(15,23,42,0.15)] backdrop-blur-xl backdrop-saturate-150 dark:border-white/10 dark:bg-neutral-900/60 dark:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.6)]'
                         : 'border-b border-transparent',
@@ -452,17 +483,15 @@ watch(() => page.url, () => (showMoreSheet.value = false));
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <!-- Desktop only. These were on the bar at every width, on
-                         the argument that a one-tap switch costs three taps once
-                         it is behind a menu. True, but it is the wrong thing to
-                         optimise: locale and theme are picked once and then left
-                         alone for the life of the install, and paying two
-                         permanent slots for them crowded a 430px bar that also
-                         carries the wordmark, the workspace pill and the burger
-                         — five controls above a five-tab bottom bar. On a phone
-                         they live in the menu with the other settings; the desk
-                         has the room, so there they stay put. -->
-                    <div class="hidden items-center gap-2 md:flex">
+                    <!-- On the bar at every width. These were desktop-only while
+                         the burger was here: two permanent slots for switches
+                         that get picked once was a poor trade against a 430px
+                         bar already carrying the wordmark, the workspace pill
+                         and the burger. With the burger gone the count is the
+                         same as it was, the menu that held them is gone with it,
+                         and a one-tap switch beats the same switch three taps
+                         into a sheet. -->
+                    <div class="flex items-center gap-2">
                         <LocaleSwitcher />
                         <ThemeToggle />
                     </div>
@@ -512,88 +541,14 @@ watch(() => page.url, () => (showMoreSheet.value = false));
                         </Dropdown>
                     </div>
 
-                    <button
-                        type="button"
-                        class="grid size-10 place-items-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900 md:hidden dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
-                        :aria-expanded="showingNavigationDropdown"
-                        :aria-label="showingNavigationDropdown ? 'Close menu' : 'Open menu'"
-                        @click="showingNavigationDropdown = !showingNavigationDropdown"
-                    >
-                        <component :is="showingNavigationDropdown ? X : Menu" class="size-5" />
-                    </button>
+                    <!-- No burger. It opened a panel holding the account block,
+                         Settings, Help, Log Out, locale and theme — the same
+                         list, item for item, that the More sheet raises from the
+                         bottom of the screen, and the tab bar below already
+                         carries the pages. Two controls onto one menu, one of
+                         them at the far corner from the thumb. -->
                 </div>
             </nav>
-
-            <!--
-                Mobile menu
-
-                It scrolls itself, and it has to: this sits inside the sticky
-                block above, and a sticky element pinned at top-0 does not scroll
-                its own overflow with the page. Expanded — links, workspace, the
-                user block, then locale and theme — it runs about 594px on top of
-                the 80px bar, so below roughly 675px of viewport the tail of the
-                menu was not merely below the fold but unreachable: Log Out and
-                the theme toggle could not be scrolled to at all. Measured
-                overflowing by 8px at 375x667 and by 106px at 320x568.
-
-                svh rather than vh so a mobile browser's collapsing address bar
-                cannot bring the problem back, and the 6rem allows for the bar
-                plus the container's bottom gutter. overscroll-contain keeps a
-                flick at the menu's end from scrolling the page behind it.
-            -->
-            <div
-                v-show="showingNavigationDropdown"
-                :class="[
-                    CARD,
-                    'anim mb-3 max-h-[calc(100svh-6rem)] overflow-y-auto overscroll-contain p-2 md:hidden',
-                ]"
-            >
-                <!-- No page links here, and no Workspace section either. Both
-                     were removed for the same reason: the tab bar at the bottom
-                     of the screen already carries every page in this module, and
-                     the workspace pill in the header carries the switch. Listing
-                     either again a thumb's width away is a second control that
-                     does the same thing, and a second place to keep in sync. -->
-
-                <div>
-                    <div class="px-4 py-2">
-                        <p class="text-sm font-semibold">
-                            {{ $page.props.auth.user.name }}
-                        </p>
-                        <p class="text-xs text-neutral-500 dark:text-neutral-400">
-                            {{ $page.props.auth.user.email }}
-                        </p>
-                    </div>
-
-                    <div class="flex flex-col gap-0.5">
-                        <ResponsiveNavLink :href="route('settings')">
-                            {{ __('Settings') }}
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink :href="route('help')">
-                            {{ __('Help') }}
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink :href="route('logout')" method="post" as="button">
-                            {{ __('Log Out') }}
-                        </ResponsiveNavLink>
-                    </div>
-
-                    <!-- Locale and theme, off the header bar and down here with
-                         the rest of the account settings. Labelled rather than
-                         bare: on the bar the two switches sat beside each other
-                         and were read as a pair of icons, but in a list a row
-                         needs to say what it is. -->
-                    <div class="mt-1 border-t border-border pt-1">
-                        <div class="flex items-center justify-between gap-3 px-4 py-2.5">
-                            <span class="text-sm font-medium">{{ __('Language') }}</span>
-                            <LocaleSwitcher />
-                        </div>
-                        <div class="flex items-center justify-between gap-3 px-4 py-2.5">
-                            <span class="text-sm font-medium">{{ __('Theme') }}</span>
-                            <ThemeToggle />
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             <!-- Inside the sticky block, so it travels with the nav instead of
                  being left at the top of the page on the first scroll.
