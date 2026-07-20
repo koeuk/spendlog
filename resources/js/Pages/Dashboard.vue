@@ -5,7 +5,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import BudgetProgress from '@/Components/BudgetProgress.vue';
 import SpendingTrendChart from '@/Components/SpendingTrendChart.vue';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
-import { CARD, CARD_BRAND, CARD_TINT, EYEBROW, EYEBROW_ON_BRAND, FIGURE, FIGURE_ON_BRAND, MUTED, MUTED_ON_BRAND, PILL_ACTION } from '@/lib/appStyles';
+import { CARD, CARD_TINT, EYEBROW, EYEBROW_ON_BRAND, FIGURE, FIGURE_ON_BRAND, MUTED, MUTED_ON_BRAND, PILL_ACTION } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 import { ArrowRight, Lightbulb, Plus, TriangleAlert } from 'lucide-vue-next';
@@ -224,24 +224,27 @@ const pace = computed(() => {
                  set, so an admin can show just one of the two. -->
             <div
                 v-if="guidance"
-                :class="[CARD_BRAND, 'anim space-y-3 p-6 sm:p-7']"
+                :class="[CARD, 'anim space-y-3 p-6 sm:p-7']"
                 style="--d: 40ms"
             >
-                <!-- Everything here inherits --primary-foreground from
-                     CARD_BRAND. Spelling a colour out would pin it to today's
-                     fill, and the admin can change that fill to anything. The
-                     two lines separate on weight and opacity instead: the
-                     warning at full strength, the advice stepped back to 80%,
-                     which is the same "this one recedes" MUTED does on a card. -->
+                <!-- The same glass as every other card, rather than the brand
+                     fill it used to wear. As a solid green slab it outranked the
+                     figures below it, which is backwards: this is a standing
+                     note, and the month's number is what the page is for.
+
+                     Set in the page's own text colours, so the two lines still
+                     separate the way they do everywhere else — the warning at
+                     full strength, the advice muted. Sized a step up from body
+                     copy because it is a sentence to be read, not a label. -->
                 <div v-if="guidance.warning" class="flex items-start gap-3">
-                    <TriangleAlert class="mt-0.5 size-5 shrink-0" />
-                    <p class="text-sm font-medium leading-relaxed">
+                    <TriangleAlert class="mt-0.5 size-5 shrink-0 text-foreground" />
+                    <p class="text-base font-medium leading-relaxed text-foreground sm:text-lg">
                         {{ guidance.warning }}
                     </p>
                 </div>
-                <div v-if="guidance.advice" class="flex items-start gap-3 opacity-80">
-                    <Lightbulb class="mt-0.5 size-5 shrink-0" />
-                    <p class="text-sm leading-relaxed">
+                <div v-if="guidance.advice" class="flex items-start gap-3">
+                    <Lightbulb class="mt-0.5 size-5 shrink-0" :class="MUTED" />
+                    <p class="text-base leading-relaxed" :class="MUTED">
                         {{ guidance.advice }}
                     </p>
                 </div>
