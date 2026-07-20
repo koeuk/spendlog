@@ -14,7 +14,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/Components/ui/dropdown-menu';
-import { MUTED } from '@/lib/appStyles';
+import { MUTED, SETTINGS_ACTION } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
 
 const props = defineProps({
@@ -67,7 +67,7 @@ function hasActions(user) {
         :description="trans('Who can sign in, and what they can do.')"
     >
         <template #actions>
-            <Button v-if="can.create" :as="Link" :href="route('users.create')" size="sm">
+            <Button v-if="can.create" :as="Link" :href="route('users.create')" size="sm" :class="SETTINGS_ACTION">
                 <Plus class="size-4" />
                 {{ __('Add user') }}
             </Button>

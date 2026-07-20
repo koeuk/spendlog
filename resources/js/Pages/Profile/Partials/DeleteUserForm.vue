@@ -4,6 +4,7 @@ import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
+import { FORM_ACTION } from '@/lib/appStyles';
 import { useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
@@ -51,6 +52,7 @@ const closeModal = () => {
         <Button
             variant="destructive"
             size="sm"
+            :class="FORM_ACTION"
             @click="confirmingUserDeletion = true"
         >
             {{ __('Delete Account') }}

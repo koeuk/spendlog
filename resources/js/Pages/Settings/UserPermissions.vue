@@ -7,7 +7,7 @@ import FormActions from '@/Components/FormActions.vue';
 import { Button } from '@/Components/ui/button';
 import { Checkbox } from '@/Components/ui/checkbox';
 import { Label } from '@/Components/ui/label';
-import { CARD_LIFT, MUTED } from '@/lib/appStyles';
+import { CARD_LIFT, FORM_ACTION, MUTED } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
 
 /**
@@ -200,13 +200,13 @@ function submit() {
 
             <FormActions>
                 <template #cancel>
-                    <Button :as="Link" :href="backHref" variant="outline" class="w-full max-sm:h-12 sm:w-auto">
+                    <Button :as="Link" :href="backHref" variant="outline" :class="FORM_ACTION">
                         {{ __('Cancel') }}
                     </Button>
                 </template>
 
                 <template #submit>
-                    <Button type="submit" :disabled="form.processing" class="w-full max-sm:h-12 sm:w-auto">
+                    <Button type="submit" :disabled="form.processing" :class="FORM_ACTION">
                         {{ form.processing ? __('Saving…') : __('Save') }}
                     </Button>
                 </template>

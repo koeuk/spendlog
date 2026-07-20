@@ -8,7 +8,7 @@ import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
 import { Textarea } from '@/Components/ui/textarea';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
-import { MUTED } from '@/lib/appStyles';
+import { FORM_ACTION, MUTED } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
 
 const props = defineProps({
@@ -163,7 +163,7 @@ function submit() {
             </div>
 
             <div>
-                <Button type="submit" :disabled="form.processing">
+                <Button type="submit" :disabled="form.processing" :class="FORM_ACTION">
                     {{ form.processing ? __('Saving…') : __('Save') }}
                 </Button>
             </div>

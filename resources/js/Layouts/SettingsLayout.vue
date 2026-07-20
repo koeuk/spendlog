@@ -26,6 +26,21 @@ import { trans } from '@/lib/i18n';
 defineProps({
     heading: { type: String, required: true },
     description: { type: String, default: '' },
+    /**
+     * Drop the panel's own card on a phone, for pages whose content is already
+     * cards.
+     *
+     * Most settings pages put plain form fields in this panel, and the card is
+     * what holds them together. The few that render a list of cards instead
+     * (Footer pages, FAQs) end up with a card inside a card — two borders and
+     * two blurs a few pixels apart, which at 430px reads as a rendering fault
+     * rather than as a hierarchy.
+     *
+     * Phones only. From sm: up the panel is inset from a wide page and the
+     * nesting looks intentional, which is where the outer card earns the
+     * grouping it provides.
+     */
+    flush: { type: Boolean, default: false },
 });
 
 const page = usePage();
@@ -242,7 +257,11 @@ watch(
 </script>
 
 <template>
-    <AuthenticatedLayout>
+    <!-- No brand bar on a phone. Settings is somewhere you go to change one
+         thing and leave, and the bar's own contents — the workspace switcher,
+         the burger — are the least of what you came for. The More tab that got
+         you here still holds everything the burger did. -->
+    <AuthenticatedLayout hide-nav-on-mobile>
         <template #header>
             <div>
                 <p :class="EYEBROW">{{ __('Account') }}</p>
@@ -316,7 +335,21 @@ watch(
             </aside>
 
             <div class="min-w-0 flex-1 space-y-3">
-                <div :class="[CARD, 'anim p-6 sm:p-8']" style="--d: 60ms">
+                <!-- The card is still applied and then undone below sm, rather
+                     than composed per breakpoint: CARD is one string of six
+                     utilities, and splitting it into sm:-prefixed copies here
+                     is a second definition of the surface to keep in step with
+                     appStyles. -->
+                <div
+                    :class="[
+                        CARD,
+                        'anim p-6 sm:p-8',
+                        flush
+                            ? 'max-sm:rounded-none max-sm:border-0 max-sm:bg-transparent max-sm:p-0 max-sm:shadow-none max-sm:backdrop-blur-none'
+                            : '',
+                    ]"
+                    style="--d: 60ms"
+                >
                     <header class="flex flex-wrap items-start justify-between gap-3">
                         <div>
                             <h2 class="text-lg font-bold tracking-[-0.02em]">

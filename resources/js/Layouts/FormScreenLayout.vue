@@ -56,7 +56,15 @@ const branding = computed(
     <div v-if="isMobile" :class="APP_PAGE">
         <AmbientBackdrop v-if="!branding.plain_background" />
 
-        <div class="mx-auto flex min-h-screen max-w-2xl flex-col px-3">
+        <!--
+            screen-push is on the column, not on the page root: the root holds
+            AmbientBackdrop, which is fixed, and a transformed ancestor makes a
+            fixed child position against it instead of the viewport — the
+            backdrop would travel with the form and leave a bare strip down the
+            edge. The backdrop stays put and the screen slides over it, which is
+            the effect anyway.
+        -->
+        <div class="screen-push mx-auto flex min-h-screen max-w-2xl flex-col px-3">
             <!--
                 The bar spans the screen rather than floating as a card: this is
                 chrome, not content, and it is the only chrome here.

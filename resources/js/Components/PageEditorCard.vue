@@ -6,7 +6,7 @@ import { Checkbox } from '@/Components/ui/checkbox';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
 import { Textarea } from '@/Components/ui/textarea';
-import { CARD, MUTED } from '@/lib/appStyles';
+import { CARD, FORM_ACTION, MUTED } from '@/lib/appStyles';
 
 const props = defineProps({
     // { slug, name, title: {en, km}, body: {en, km}, published }
@@ -59,7 +59,10 @@ function submit() {
             </template>
         </LocaleTabs>
 
-        <div class="flex items-center justify-between gap-4">
+        <!-- Save drops below the Published toggle on a phone rather than sharing
+             the row with it: side by side, the toggle's two lines of help text
+             squeezed the button down to about a third of the width. -->
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex items-start gap-3">
                 <Checkbox
                     :id="`${page.slug}_published`"
@@ -77,7 +80,7 @@ function submit() {
                 </div>
             </div>
 
-            <Button type="submit" :disabled="form.processing">
+            <Button type="submit" :disabled="form.processing" :class="FORM_ACTION">
                 {{ form.processing ? __('Saving…') : __('Save') }}
             </Button>
         </div>

@@ -3,7 +3,7 @@ import { Link, useForm, usePage } from '@inertiajs/vue3';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
-import { MUTED } from '@/lib/appStyles';
+import { FORM_ACTION, MUTED } from '@/lib/appStyles';
 
 defineProps({
     mustVerifyEmail: { type: Boolean },
@@ -107,8 +107,14 @@ const form = useForm({
             </p>
         </div>
 
-        <div class="flex items-center gap-3 pt-1">
-            <Button type="submit" :disabled="form.processing">
+        <!-- Stacks on a phone so Save can span the card; back to a row from sm:
+             up, where a full-width button in a 640px column would be a stripe. -->
+        <div class="flex flex-col items-stretch gap-3 pt-1 sm:flex-row sm:items-center">
+            <Button
+                type="submit"
+                :disabled="form.processing"
+                :class="FORM_ACTION"
+            >
                 {{ form.processing ? __('Saving…') : __('Save') }}
             </Button>
 
@@ -124,7 +130,7 @@ const form = useForm({
             >
                 <p
                     v-if="form.recentlySuccessful"
-                    class="text-sm"
+                    class="text-sm max-sm:text-center"
                     :class="MUTED"
                     role="status"
                     aria-live="polite"

@@ -8,7 +8,7 @@ import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
 import { Textarea } from '@/Components/ui/textarea';
 import { NativeSelect, NativeSelectOption } from '@/Components/ui/native-select';
-import { MUTED } from '@/lib/appStyles';
+import { FORM_ACTION, MUTED } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
 
 /**
@@ -115,13 +115,13 @@ function submit() {
 
             <FormActions>
                 <template #cancel>
-                    <Button :as="Link" :href="backHref" variant="outline" class="w-full max-sm:h-12 sm:w-auto">
+                    <Button :as="Link" :href="backHref" variant="outline" :class="FORM_ACTION">
                         {{ __('Cancel') }}
                     </Button>
                 </template>
 
                 <template #submit>
-                    <Button type="submit" :disabled="form.processing" class="w-full max-sm:h-12 sm:w-auto">
+                    <Button type="submit" :disabled="form.processing" :class="FORM_ACTION">
                         {{ form.processing ? __('Saving…') : __('Save') }}
                     </Button>
                 </template>

@@ -183,6 +183,40 @@ export const EYEBROW =
 export const FIGURE =
     'font-extrabold tracking-[-0.03em] tabular-nums text-foreground';
 
+/**
+ * A settings form's submit / cancel button.
+ *
+ * Full width on a phone, back to its content width from sm: up. A settings card
+ * at 430px is a single column, so a button sized to the word "Save" leaves most
+ * of the row as dead space that reads as part of the control and is not; from
+ * 640px the card is wide enough that the same button spanning it reads as a
+ * stripe instead. The breakpoint is where the card stops being the screen.
+ *
+ * The 12px radius is softer than the button's own 6px default, so a corner
+ * spanning the full width of a 28px card does not sit square against it. It
+ * holds at every width rather than reverting from sm: up: settings buttons
+ * changing shape at the breakpoint is a difference nobody asked for, and the
+ * header actions (SETTINGS_ACTION) are the same radius at every width too.
+ *
+ * h-12 rather than the size variant's own 44px phone floor: this is the action
+ * the page exists for, and it is the one control on the card that should be
+ * hard to miss.
+ *
+ * Spelled out in full: Tailwind scans source text, so a class assembled at
+ * runtime would never be generated. The Button component merges this through
+ * cn(), so the radius here wins over the one baked into the size variant.
+ */
+export const FORM_ACTION = 'w-full max-sm:h-12 rounded-xl sm:w-auto';
+
+/**
+ * FORM_ACTION's compact sibling — the "Add entry" / "Add user" button beside a
+ * settings heading.
+ *
+ * Same radius, no width: this one sits in a row next to text and has to stay
+ * its own size at every width, so it takes the corner and nothing else.
+ */
+export const SETTINGS_ACTION = 'rounded-xl';
+
 /** Compact pill button, e.g. "Add expense" in a page header. */
 export const PILL_ACTION =
     'h-10 rounded-full px-4 text-sm font-semibold active:translate-y-0 active:scale-[0.99]';

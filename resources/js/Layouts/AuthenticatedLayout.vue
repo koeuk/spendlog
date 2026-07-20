@@ -22,6 +22,7 @@ import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import LocaleSwitcher from '@/Components/LocaleSwitcher.vue';
 import ThemeToggle from '@/Components/ThemeToggle.vue';
 import { Toaster } from '@/Components/ui/sonner';
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/Components/ui/sheet';
 import { useFlashToasts } from '@/composables/useFlashToasts';
 import { useOverBudget } from '@/composables/useOverBudget';
 import { useTheme } from '@/composables/useTheme';
@@ -32,6 +33,7 @@ import {
     Check,
     ChevronDown,
     Dumbbell,
+    Ellipsis,
     LayoutDashboard,
     ListChecks,
     Menu,
@@ -43,6 +45,22 @@ import {
     X,
 } from 'lucide-vue-next';
 import { Link, usePage } from '@inertiajs/vue3';
+
+/**
+ * Drop the brand bar on a phone, for pages that are a detour rather than a
+ * destination.
+ *
+ * Nothing is lost by it below md: every page in the module is on the tab bar
+ * under the thumb, and the burger's own contents are already duplicated in the
+ * More sheet at the other end of the screen. What the bar costs there is the
+ * top 80px of a screen the user opened to read something specific.
+ *
+ * Phones only. From md: up the tab bar is gone and the burger is the only way
+ * through, so the bar stays whatever this says.
+ */
+defineProps({
+    hideNavOnMobile: { type: Boolean, default: false },
+});
 
 const showingNavigationDropdown = ref(false);
 
@@ -152,6 +170,45 @@ const showSwitcher = computed(() => availableModules.value.length > 1);
 const links = computed(() => activeModule.value.links.filter((link) => can(link.permission)));
 
 /*
+ * The phone tab bar keeps four pages and hands the rest to a More sheet.
+ *
+ * Desktop is untouched — it renders `links` whole, where there is room for the
+ * lot. The bar is the constrained surface: at 430px five tabs plus the account
+ * menu already truncate their labels, and Khmer runs longer than English, so the
+ * fifth slot was the first to break. Four is what fits without truncating in
+ * either locale.
+ *
+ * Split by position rather than by naming an overflow tab in MODULES, so a
+ * module that grows a sixth page overflows on its own instead of needing the
+ * bar rebalanced by hand. Exercise has three links and so overflows nothing —
+ * its More sheet is account settings only, which is still worth having, since
+ * that content otherwise lives behind the header burger alone.
+ */
+const PHONE_TABS = 4;
+
+const phoneLinks = computed(() => links.value.slice(0, PHONE_TABS));
+const overflowLinks = computed(() => links.value.slice(PHONE_TABS));
+
+const showMoreSheet = ref(false);
+
+/*
+ * Lit while you are on a page that lives inside the sheet, so More carries the
+ * active state its own tab would have had.
+ *
+ * Settings counts, and is matched on the URL rather than on route names: the
+ * names never moved when the pages did, so the tree is profile.*, password.*,
+ * users.*, branding.*, colors.*, spending.*, exercise-settings.*, faqs.* and
+ * pages.* with nothing in common to match on — a list this file would have to
+ * be told about again every time a settings page is added. The URLs all sit
+ * under /settings, which is the one thing they do share.
+ */
+const inSettings = computed(() => page.url.split('?')[0].startsWith('/settings'));
+
+const moreActive = computed(
+    () => inSettings.value || overflowLinks.value.some((link) => route().current(link.active)),
+);
+
+/*
  * The sliding nav pill.
  *
  * Measured from the DOM rather than computed from the links, because the pill
@@ -235,6 +292,10 @@ onBeforeUnmount(() => observer?.disconnect());
 // Inertia swaps the page without remounting the layout, so the active link
 // changes with no lifecycle hook to hang this on.
 watch(() => page.url, () => nextTick(measurePill));
+
+// Inertia navigates in place, so a link tapped inside the sheet would leave it
+// open over the page it just went to.
+watch(() => page.url, () => (showMoreSheet.value = false));
 </script>
 
 <template>
@@ -263,13 +324,17 @@ watch(() => page.url, () => nextTick(measurePill));
                 border, shadow and blur animate, so the page never reflows and
                 the links never shift under the pointer.
             -->
+            <!-- The whole sticky block goes, not the <nav> inside it: left
+                 standing with nothing to hold, the wrapper still draws its
+                 scrolled border as a hairline across the top of the page. -->
             <div
                 class="sticky top-0 z-40 -mx-3 px-3 transition-[background-color,border-color,box-shadow,backdrop-filter] duration-300 ease-out lg:-mx-4 lg:px-4"
-                :class="
+                :class="[
+                    hideNavOnMobile ? 'max-md:hidden' : '',
                     scrolled
                         ? 'rounded-b-[28px] border-b border-neutral-200/70 bg-white/70 shadow-[0_8px_24px_-12px_rgba(15,23,42,0.15)] backdrop-blur-xl backdrop-saturate-150 dark:border-white/10 dark:bg-neutral-900/60 dark:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.6)]'
-                        : 'border-b border-transparent'
-                "
+                        : 'border-b border-transparent',
+                ]"
             >
             <!--
                 Tighter gaps below sm. At 320px the row measured 353px wide and
@@ -604,7 +669,15 @@ watch(() => page.url, () => nextTick(measurePill));
             <!-- /sticky bar — the mobile menu lives inside it so an open menu
                  scrolls with the bar rather than being left behind. -->
 
-            <header v-if="$slots.header" class="anim pb-6 pt-2" style="--d: 40ms">
+            <!-- pt-2 assumes the bar above it. With the bar gone the heading
+                 starts against the top edge of the viewport, so the space the
+                 bar was providing has to come from here instead. -->
+            <header
+                v-if="$slots.header"
+                class="anim pb-6 pt-2"
+                :class="hideNavOnMobile ? 'max-md:pt-6' : ''"
+                style="--d: 40ms"
+            >
                 <slot name="header" />
             </header>
 
@@ -652,7 +725,7 @@ watch(() => page.url, () => nextTick(measurePill));
                         every item has the same shape.
                     -->
                     <Link
-                        v-for="link in links"
+                        v-for="link in phoneLinks"
                         :key="link.route"
                         :href="route(link.route)"
                         :aria-current="route().current(link.active) ? 'page' : undefined"
@@ -670,9 +743,115 @@ watch(() => page.url, () => nextTick(measurePill));
                             {{ __(link.label) }}
                         </span>
                     </Link>
+
+                    <!-- Built to the same recipe as the tabs beside it, down to
+                         the flex-1 and the 10px label, so the row stays five
+                         even columns and the odd one out is not obvious. -->
+                    <button
+                        type="button"
+                        class="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[18px] px-1 py-2 transition-colors duration-200"
+                        :class="
+                            moreActive
+                                ? 'bg-primary text-primary-foreground'
+                                : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
+                        "
+                        :aria-expanded="showMoreSheet"
+                        @click="showMoreSheet = true"
+                    >
+                        <Ellipsis class="size-5 shrink-0" aria-hidden="true" />
+                        <span class="w-full truncate text-center text-[10px] font-semibold leading-none">
+                            {{ __('More') }}
+                        </span>
+                    </button>
                 </div>
             </div>
         </nav>
+
+        <!--
+            The More sheet.
+
+            Everything the bar could not fit, in one panel that rises under the
+            thumb: the module's overflow pages first, then the account. It is
+            deliberately the same content the header burger holds — the burger is
+            at the top of the screen and this is at the bottom, and on a phone
+            that difference is the whole point.
+
+            The name and email are the sheet's title and description rather than
+            plain text, so the panel announces whose account it is on open
+            instead of being an unlabelled dialog.
+        -->
+        <Sheet v-model:open="showMoreSheet">
+            <SheetContent
+                side="bottom"
+                class="gap-0 rounded-t-[24px] p-0 pb-[max(1rem,env(safe-area-inset-bottom))] md:hidden"
+            >
+                <div class="px-5 pb-2 pt-5">
+                    <SheetTitle class="text-sm font-semibold">
+                        {{ $page.props.auth.user.name }}
+                    </SheetTitle>
+                    <SheetDescription class="text-xs text-neutral-500 dark:text-neutral-400">
+                        {{ $page.props.auth.user.email }}
+                    </SheetDescription>
+                </div>
+
+                <!-- Scrolls itself: with a long module and a short phone the
+                     tail of the list would otherwise sit below the fold with no
+                     way to reach it, the sheet being pinned to the bottom edge. -->
+                <div class="max-h-[70svh] overflow-y-auto overscroll-contain px-2 pb-2">
+                    <!-- Overflow pages carry their tab icon, so a page reached
+                         from here looks the same as it did on the bar. -->
+                    <div v-if="overflowLinks.length" class="flex flex-col gap-0.5">
+                        <ResponsiveNavLink
+                            v-for="link in overflowLinks"
+                            :key="link.route"
+                            :href="route(link.route)"
+                            :active="route().current(link.active)"
+                        >
+                            <span class="flex items-center gap-3">
+                                <component :is="link.icon" class="size-4 shrink-0" aria-hidden="true" />
+                                {{ __(link.label) }}
+                            </span>
+                        </ResponsiveNavLink>
+                    </div>
+
+                    <div
+                        class="flex flex-col gap-0.5"
+                        :class="overflowLinks.length && 'mt-1 border-t border-border pt-1'"
+                    >
+                        <!-- The other way into the module, matching the desktop
+                             account menu. Hidden while you are already inside it. -->
+                        <ResponsiveNavLink
+                            v-if="showSwitcher && activeModule.key !== 'exercise'"
+                            :href="route('exercise.dashboard')"
+                        >
+                            {{ __('Exercise') }}
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink :href="route('settings')">
+                            {{ __('Settings') }}
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink :href="route('help')">
+                            {{ __('Help') }}
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink :href="route('logout')" method="post" as="button">
+                            {{ __('Log Out') }}
+                        </ResponsiveNavLink>
+                    </div>
+
+                    <!-- Labelled rows, as in the burger menu: a bare pair of
+                         switches in a list of words reads as decoration. -->
+                    <div class="mt-1 border-t border-border pt-1">
+                        <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+                            <span class="text-sm font-medium">{{ __('Language') }}</span>
+                            <LocaleSwitcher />
+                        </div>
+                        <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+                            <span class="text-sm font-medium">{{ __('Theme') }}</span>
+                            <ThemeToggle />
+                        </div>
+                    </div>
+                </div>
+            </SheetContent>
+        </Sheet>
 
         <Toaster
             :theme="isDark ? 'dark' : 'light'"

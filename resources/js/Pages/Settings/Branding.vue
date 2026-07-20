@@ -6,6 +6,7 @@ import SettingsLayout from '@/Layouts/SettingsLayout.vue';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
+import { FORM_ACTION } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
 
 const props = defineProps({
@@ -224,8 +225,10 @@ function submit() {
             </div>
 
 
-            <div class="flex items-center gap-3">
-                <Button type="submit" :disabled="form.processing">
+            <!-- Stacks on a phone so Save can span the card; back to a row from
+                 sm: up, where a full-width button would read as a stripe. -->
+            <div class="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+                <Button type="submit" :disabled="form.processing" :class="FORM_ACTION">
                     {{ form.processing ? __('Saving…') : __('Save') }}
                 </Button>
                 <span v-if="form.progress" class="text-xs text-gray-500 dark:text-neutral-400">

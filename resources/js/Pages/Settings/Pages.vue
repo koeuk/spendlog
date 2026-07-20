@@ -13,7 +13,10 @@ defineProps({
 <template>
     <Head title="Pages" />
 
+    <!-- flush: the panel holds a card per page, so on a phone its own card
+         would be a border a few pixels outside theirs. -->
     <SettingsLayout
+        flush
         :heading="trans('Footer pages')"
         :description="trans('The About and Privacy pages linked at the bottom of every page.')"
     >

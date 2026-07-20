@@ -1,7 +1,8 @@
 <script setup>
 import { Head, useForm } from '@inertiajs/vue3';
 import SettingsLayout from '@/Layouts/SettingsLayout.vue';
-import { MUTED, PILL_ACTION, SEGMENT, SEGMENT_ON, SEGMENT_OFF } from '@/lib/appStyles';
+import { Button } from '@/Components/ui/button';
+import { FORM_ACTION, MUTED, SEGMENT, SEGMENT_ON, SEGMENT_OFF } from '@/lib/appStyles';
 
 const props = defineProps({
     exercise: { type: Object, required: true },
@@ -49,15 +50,13 @@ function submit() {
                 </p>
             </div>
 
-            <div class="flex justify-end">
-                <button
-                    type="submit"
-                    class="bg-primary text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
-                    :class="PILL_ACTION"
-                    :disabled="form.processing"
-                >
-                    {{ __('Save') }}
-                </button>
+            <!-- Was a hand-rolled PILL_ACTION button, the rounded-full shape the
+                 page headers use for "Add expense". Every other settings form
+                 saves with the shared Button, so this one does too. -->
+            <div class="flex sm:justify-end">
+                <Button type="submit" :disabled="form.processing" :class="FORM_ACTION">
+                    {{ form.processing ? __('Saving…') : __('Save') }}
+                </Button>
             </div>
         </form>
     </SettingsLayout>

@@ -4,7 +4,7 @@ import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import SettingsLayout from '@/Layouts/SettingsLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import { Button } from '@/Components/ui/button';
-import { CARD, MUTED } from '@/lib/appStyles';
+import { CARD, MUTED, SETTINGS_ACTION } from '@/lib/appStyles';
 import { trans, localized } from '@/lib/i18n';
 import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from 'lucide-vue-next';
 
@@ -68,7 +68,9 @@ const statusLabel = (value) => props.statuses.find((s) => s.value === value)?.la
 <template>
     <Head title="FAQ" />
 
+    <!-- flush: the panel holds a card per question — see Pages.vue. -->
     <SettingsLayout
+        flush
         :heading="trans('Help / FAQ')"
         :description="trans('Questions and answers shown to everyone on the help page.')"
     >
@@ -77,7 +79,7 @@ const statusLabel = (value) => props.statuses.find((s) => s.value === value)?.la
                 <p class="text-xs" :class="MUTED">
                     {{ trans('Drafts stay hidden until you publish them.') }}
                 </p>
-                <Button :as="Link" :href="route('faqs.create')" size="sm">
+                <Button :as="Link" :href="route('faqs.create')" size="sm" :class="SETTINGS_ACTION">
                     <Plus class="mr-1 size-4" />
                     {{ __('Add entry') }}
                 </Button>

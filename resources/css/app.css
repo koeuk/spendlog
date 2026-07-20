@@ -159,6 +159,41 @@
 }
 
 /*
+ * The pushed form screen arriving, on phones only.
+ *
+ * FormScreenLayout says these are pushed over the tab bar the way a native app
+ * pushes a detail screen; this is that push. Without it a full-screen route
+ * change is a hard cut, and a hard cut from a list to a form reads as a new
+ * page rather than as a step deeper into the one you were on.
+ *
+ * Entry only. Inertia has torn the old page out of the DOM before the new one
+ * mounts, so there is nothing left to slide out behind this — an exit half
+ * would need the View Transitions API and a fallback for the browsers without
+ * it, which is a lot of machinery for the half nobody watches.
+ *
+ * Short, and lighter on the travel than the eye expects: the distance sells the
+ * direction, the fade does the rest, and anything longer is felt as lag on a
+ * screen the user is trying to type into. Only transform and opacity, so it
+ * composites on the GPU and never lays out the sticky header again.
+ */
+@layer components {
+    .screen-push {
+        animation: screen-push 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+}
+
+@keyframes screen-push {
+    from {
+        opacity: 0;
+        transform: translateX(24px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/*
  * The over-budget mark: a slow breath, plus a ring leaving it.
  *
  * Deliberately slow and small. This sits on every page for as long as the month
@@ -339,6 +374,11 @@
 
 @media (prefers-reduced-motion: reduce) {
     .anim {
+        animation: none;
+    }
+
+    /* The screen still arrives, it just does not travel to get there. */
+    .screen-push {
         animation: none;
     }
 

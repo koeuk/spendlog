@@ -1,8 +1,9 @@
 <script setup>
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
+import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
+import { FORM_ACTION } from '@/lib/appStyles';
 import { useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
@@ -76,8 +77,13 @@ const updatePassword = () => {
                 />
             </div>
 
-            <div class="flex items-center gap-4">
-                <PrimaryButton :disabled="form.processing">Save</PrimaryButton>
+            <div class="flex flex-col items-stretch gap-4 sm:flex-row sm:items-center">
+                <!-- Was PrimaryButton, the stock Breeze one: a gray-800,
+                     uppercase, indigo-focus-ring button that predates the design
+                     and matched nothing else on the page. -->
+                <Button type="submit" :disabled="form.processing" :class="FORM_ACTION">
+                    {{ form.processing ? __('Saving…') : __('Save') }}
+                </Button>
 
                 <Transition
                     enter-active-class="transition ease-in-out"
