@@ -12,6 +12,6 @@ import { trans } from '@/lib/i18n';
         :heading="trans('Password')"
         :description="trans('Use a long, random password to keep your account secure.')"
     >
-        <UpdatePasswordForm class="max-w-xl" />
+        <UpdatePasswordForm />
     </SettingsLayout>
 </template>
