@@ -318,7 +318,10 @@ function clearBudget() {
             </div>
         </template>
 
-        <div class="py-8">
+        <!-- pt-2, not pt-8. The layout's header already carries pb-6, so the
+             old padding stacked into a 56px band of nothing between the title
+             and the first control. -->
+        <div class="pb-8 pt-2">
             <!-- Width and gutters come from the layout's one container, so the
                  column never resizes when navigating between pages. -->
             <div class="space-y-4">
