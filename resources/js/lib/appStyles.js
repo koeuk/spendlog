@@ -36,7 +36,10 @@ export const APP_PAGE =
  * snapping off a linear ramp. 300ms in, and a slightly longer 400ms out — a
  * lift that leaves as fast as it arrives feels snatched away.
  */
-const CARD_LIFT =
+// Exported as well as composed into CARD: panels that are not cards — the
+// permission groups, say — still want the same lift, and duplicating the shadow
+// would let the two drift apart.
+export const CARD_LIFT =
     'transition-shadow duration-[400ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:duration-300 ' +
     'hover:shadow-[0_8px_18px_-8px_rgba(15,23,42,0.14),0_2px_6px_-3px_rgba(15,23,42,0.08)] ' +
     'dark:hover:shadow-[0_8px_18px_-8px_rgba(0,0,0,0.6),0_2px_6px_-3px_rgba(0,0,0,0.45)]';
