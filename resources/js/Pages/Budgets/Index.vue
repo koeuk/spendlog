@@ -365,13 +365,19 @@ function clearBudget() {
                             </p>
                         </div>
                         <div class="flex gap-1">
-                            <Button variant="outline" size="sm" @click="openEdit(summary.overall, null)">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                class="rounded-xl"
+                                @click="openEdit(summary.overall, null)"
+                            >
                                 {{ summary.overall.budget !== null ? __('Edit') : __('Set a budget') }}
                             </Button>
                             <Button
                                 v-if="summary.overall.budget !== null"
                                 variant="destructive"
                                 size="sm"
+                                class="rounded-xl"
                                 @click="confirmClear(summary.overall, trans('Overall budget'))"
                             >
                                 {{ __('Clear') }}
@@ -486,6 +492,7 @@ function clearBudget() {
                                     <Button
                                         variant="secondary"
                                         size="sm"
+                                        class="rounded-xl"
                                         @click="openEdit(category, category.uuid)"
                                     >
                                         {{ category.budget !== null ? __('Edit') : __('Set') }}
@@ -494,6 +501,7 @@ function clearBudget() {
                                         v-if="category.budget !== null"
                                         variant="destructive"
                                         size="sm"
+                                        class="rounded-xl"
                                         @click="confirmClear(category, category.name)"
                                     >
                                         {{ __('Clear') }}
@@ -618,7 +626,16 @@ function clearBudget() {
                 </div>
 
                 <DialogFooter>
-                    <Button type="button" variant="outline" @click="showDialog = false">
+                    <!-- Desktop only. The sheet this becomes on a phone already
+                         closes by its X, by the backdrop and by swiping down, so
+                         a third way to back out just pushes Save further from
+                         the thumb. -->
+                    <Button
+                        type="button"
+                        variant="outline"
+                        class="max-sm:hidden"
+                        @click="showDialog = false"
+                    >
                         {{ __('Cancel') }}
                     </Button>
                     <!-- Without a category the request would set the overall
