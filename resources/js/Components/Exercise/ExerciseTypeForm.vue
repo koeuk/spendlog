@@ -55,7 +55,7 @@ function submit() {
 <template>
     <!-- Capped like the other forms: the card is page-width now, and these
          are short single-line controls that read badly stretched across it. -->
-    <form class="flex max-w-3xl flex-1 flex-col space-y-4" @submit.prevent="submit">
+    <form class="flex flex-1 flex-col space-y-4" @submit.prevent="submit">
         <!-- One field per locale would grow a column per language. The tabs keep
              it to one, and every locale stays in form.name so a single submit
              still sends the JSON. -->
