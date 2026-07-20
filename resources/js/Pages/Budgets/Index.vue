@@ -445,7 +445,7 @@ function clearBudget() {
                         class="flex items-center justify-between gap-4 border-b border-gray-100 dark:border-neutral-800 px-5 py-3"
                     >
                         <h3 class="text-sm font-semibold text-gray-900 dark:text-neutral-100">{{ __('By category') }}</h3>
-                        <Button size="sm" class="rounded-lg" @click="openAdd">
+                        <Button size="sm" class="rounded-xl" @click="openAdd">
                             {{ __('Set budget') }}
                         </Button>
                     </div>
