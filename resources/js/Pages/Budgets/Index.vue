@@ -371,7 +371,7 @@ function clearBudget() {
                 </div>
 
                 <!-- Overall -->
-                <div :class="[CARD, 'p-5']">
+                <div :class="[CARD, 'p-6']">
                     <div class="flex items-start justify-between gap-4">
                         <div>
                             <h3 class="text-sm font-semibold text-gray-900 dark:text-neutral-100">

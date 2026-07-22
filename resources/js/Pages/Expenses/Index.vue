@@ -380,10 +380,11 @@ const filtered = computed(() =>
              and the first control. -->
         <div class="pb-8 pt-2">
             <!-- One card holds the whole manager — filters on top, the day
-                 groups under them — matching the Categories page. The gap
-                 between groups is tighter than the page-level one they used to
-                 have: inside one surface they read as sections, not islands. -->
-            <div :class="[CARD, 'space-y-2 overflow-hidden p-2 sm:p-3']">
+                 groups under them — matching the Categories page. The groups
+                 are flat sections split by hairlines, not nested cards: a card
+                 per day inside the card spent more height on borders and
+                 padding than on the rows themselves. -->
+            <div :class="[CARD, 'overflow-hidden p-2 sm:p-3']">
                 <!--
                     A two-column grid on a phone, the same flex row as before
                     from sm: up.
@@ -473,7 +474,7 @@ const filtered = computed(() =>
                 <div
                     v-for="day in navigating ? [] : days"
                     :key="day.date"
-                    :class="[CARD, 'overflow-hidden']"
+                    class="border-t border-gray-100 dark:border-neutral-800"
                 >
                     <div
                         class="flex items-center justify-between border-b border-gray-100 dark:border-neutral-800 px-4 py-3"
@@ -583,11 +584,9 @@ const filtered = computed(() =>
                     </ul>
                 </div>
 
-                <!-- Its own card, so the pager sits on a surface like the day
-                     groups above it rather than floating on the page. -->
-                <div v-if="!navigating" :class="[CARD, 'overflow-hidden']">
-                    <Pagination :meta="pagination" />
-                </div>
+                <!-- Flat like the day groups above it; the component draws its
+                     own top hairline. -->
+                <Pagination v-if="!navigating" :meta="pagination" />
             </div>
         </div>
 
