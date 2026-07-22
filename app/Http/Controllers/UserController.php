@@ -64,6 +64,9 @@ class UserController extends Controller
                     'suspend' => $me->can('suspend', $user),
                     'change_role' => $me->can('changeRole', $user),
                     'manage_permissions' => $me->can('managePermissions', $user),
+                    // State and permission together: the button only exists
+                    // where there is an unverified email to verify.
+                    'verify' => ! $user->hasVerifiedEmail() && $me->can('verify', $user),
                 ],
             ]);
 
@@ -295,6 +298,27 @@ class UserController extends Controller
 
             return back()->withError(__('Something went wrong. Please try again.'));
         }
+    }
+
+    /**
+     * Mark the account's email verified by hand.
+     *
+     * For accounts an admin created for someone else: the verification mail
+     * sits in an inbox the admin cannot reach, and this is the way past it.
+     */
+    public function verify(User $user): RedirectResponse
+    {
+        Gate::authorize('verify', $user);
+
+        // Nothing to do — another admin got there first, or the user clicked
+        // their link. Not an error worth flashing.
+        if ($user->hasVerifiedEmail()) {
+            return back();
+        }
+
+        $user->markEmailAsVerified();
+
+        return back()->withSuccess(__(':name is now verified.', ['name' => $user->name]));
     }
 
     /**

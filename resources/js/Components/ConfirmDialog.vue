@@ -29,6 +29,10 @@ defineProps({
     // cannot be fired twice.
     processing: { type: Boolean, default: false },
     processingLabel: { type: String, default: '' },
+    // The confirm button's look. Destructive by default — deleting is what
+    // this dialog was built for — but a confirmation can also guard something
+    // constructive (verifying an email), where a red button says the wrong thing.
+    variant: { type: String, default: 'destructive' },
 });
 
 const emit = defineEmits(['update:open', 'confirm']);
@@ -112,7 +116,7 @@ function focusCancel(event) {
                         the request actually succeeds.
                     -->
                     <Button
-                        variant="destructive"
+                        :variant="variant"
                         size="sm"
                         :disabled="processing"
                         @click="emit('confirm')"

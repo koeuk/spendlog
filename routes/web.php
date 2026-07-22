@@ -109,6 +109,7 @@ Route::middleware('auth')->group(function () {
         Route::patch('/users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::put('/users/{user}/permissions', [UserController::class, 'updatePermissions'])->name('users.permissions');
         Route::patch('/users/{user}/status', [UserController::class, 'changeStatus'])->name('users.status');
+        Route::patch('/users/{user}/verify', [UserController::class, 'verify'])->name('users.verify');
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 
         Route::get('/colors', [SettingsController::class, 'colors'])->name('colors.edit');

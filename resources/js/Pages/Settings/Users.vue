@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { KeyRound, MoreHorizontal, Pencil, Plus, ShieldCheck, Trash2 } from 'lucide-vue-next';
+import { KeyRound, MailCheck, MoreHorizontal, Pencil, Plus, ShieldCheck, Trash2 } from 'lucide-vue-next';
 import SettingsLayout from '@/Layouts/SettingsLayout.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import Pagination from '@/Components/Pagination.vue';
@@ -47,12 +47,35 @@ function destroy() {
     });
 }
 
+// The row awaiting verify confirmation, mirroring `confirming` for delete —
+// holding the row lets the prompt name whose email is about to be trusted.
+const verifying = ref(null);
+
+function verify() {
+    const user = verifying.value;
+
+    if (!user) {
+        return;
+    }
+
+    busy.value = user.uuid;
+
+    router.patch(route('users.verify', user.uuid), {}, {
+        preserveScroll: true,
+        // Closed on success, not on click, so a failed request keeps the
+        // prompt up instead of vanishing with the row unchanged.
+        onSuccess: () => (verifying.value = null),
+        onFinish: () => (busy.value = null),
+    });
+}
+
 // An empty menu is worse than no menu — the policy can hide every entry.
 function hasActions(user) {
     return (
         user.can.update ||
         user.can.manage_permissions ||
         user.can.suspend ||
+        user.can.verify ||
         user.can.delete
     );
 }
@@ -163,6 +186,17 @@ function hasActions(user) {
                                         {{ __('Change status') }}
                                     </DropdownMenuItem>
 
+                                    <!-- Only offered while the row still says
+                                         "unverified" — can.verify carries the
+                                         state as well as the permission. -->
+                                    <DropdownMenuItem
+                                        v-if="user.can.verify"
+                                        @select="verifying = user"
+                                    >
+                                        <MailCheck class="size-4" />
+                                        {{ __('Verify email') }}
+                                    </DropdownMenuItem>
+
                                     <template v-if="user.can.delete">
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem
@@ -213,6 +247,24 @@ function hasActions(user) {
             :processing="busy !== null"
             @confirm="destroy"
             @update:open="(v) => !v && (confirming = null)"
+        />
+
+        <ConfirmDialog
+            :open="verifying !== null"
+            :title="__('Verify this email?')"
+            :description="
+                verifying
+                    ? __(':email will be marked as verified without the confirmation link. Only do this for an address you trust.', {
+                          email: verifying.email,
+                      })
+                    : ''
+            "
+            :confirm-label="__('Verify')"
+            :processing="busy !== null"
+            :processing-label="__('Verifying…')"
+            variant="default"
+            @confirm="verify"
+            @update:open="(v) => !v && (verifying = null)"
         />
 
     </SettingsLayout>

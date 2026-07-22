@@ -41,6 +41,20 @@ class UserPolicy
     }
 
     /**
+     * Marking an email verified by hand. Same reach as update: it unblocks an
+     * account an admin already vouched for by creating it, and grants nothing
+     * the update screen could not.
+     */
+    public function verify(User $user, User $target): bool
+    {
+        if ($this->isOutOfReach($target)) {
+            return false;
+        }
+
+        return $user->hasPermissionTo(Permission::UsersManage->value);
+    }
+
+    /**
      * Granting permissions is the one act that can hand out more of itself, so
      * it asks for the Admin role rather than a permission. Gated on
      * `users.manage` it would propagate: a non-admin granted that permission
