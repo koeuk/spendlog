@@ -41,8 +41,8 @@ export const APP_PAGE =
 // would let the two drift apart.
 export const CARD_LIFT =
     'transition-shadow duration-[400ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:duration-300 ' +
-    'hover:shadow-[0_8px_18px_-8px_rgba(15,23,42,0.14),0_2px_6px_-3px_rgba(15,23,42,0.08)] ' +
-    'dark:hover:shadow-[0_8px_18px_-8px_rgba(0,0,0,0.6),0_2px_6px_-3px_rgba(0,0,0,0.45)]';
+    'hover:shadow-[0_16px_36px_-16px_rgba(15,23,42,0.10),0_4px_12px_-6px_rgba(15,23,42,0.05)] ' +
+    'dark:hover:shadow-[0_16px_36px_-16px_rgba(0,0,0,0.45),0_4px_12px_-6px_rgba(0,0,0,0.3)]';
 
 /**
  * The glass surface.

@@ -67,6 +67,9 @@ class PageController extends Controller
         if (! $page->published) {
             return Inertia::render('Pages/Show', [
                 'page' => [
+                    // The slug is fixed and public (it is the URL), so the view
+                    // can pick its icon from it even for a draft.
+                    'slug' => $page->slug,
                     'title' => self::LABELS[$page->slug] ?? $page->slug,
                     'body' => __('This page has not been published yet. Please check back soon.'),
                 ],
@@ -75,6 +78,7 @@ class PageController extends Controller
 
         return Inertia::render('Pages/Show', [
             'page' => [
+                'slug' => $page->slug,
                 // Resolved to the reader's locale, falling back to English.
                 'title' => $page->title,
                 'body' => $page->body,
