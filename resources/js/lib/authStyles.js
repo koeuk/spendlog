@@ -20,6 +20,18 @@ export const AUTH_PAGE = 'bg-white text-neutral-900 dark:bg-neutral-950 dark:tex
 /** Muted body copy under a heading. */
 export const AUTH_MUTED = 'text-neutral-500 dark:text-neutral-400';
 
+/**
+ * The coloured header the mobile auth screens sit under.
+ *
+ * A literal green, not bg-primary. The token defaults to near-black and only
+ * becomes a colour once an admin picks one, so keying the header to it gives a
+ * black slab on a fresh install — and these are the screens a fresh install is
+ * seen on first, before anyone has been able to reach the branding page. The
+ * value is the green already used by AUTH_BANNER, so the auth flow stays one
+ * palette.
+ */
+export const AUTH_HEADER = 'bg-[#2f6b3d] text-white dark:bg-[#16281a]';
+
 /** The green accent used for the cross-links (Register now / Log in). */
 export const AUTH_LINK =
     'font-semibold text-[#4b9d5f] underline-offset-4 hover:underline dark:text-[#6cc182]';

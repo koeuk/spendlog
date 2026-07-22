@@ -215,5 +215,10 @@
     ":amount under an even pace": "តិចជាងល្បឿនស្មើ :amount",
     ":amount ahead of an even pace": "លើសល្បឿនស្មើ :amount",
     "of a :amount daily pace": "ក្នុងល្បឿនប្រចាំថ្ងៃ :amount",
-    "Primary": "មេនុយមេ"
+    "Primary": "មេនុយមេ",
+    "Continue with Google": "បន្តជាមួយ Google",
+    "or": "ឬ",
+    "Google sign-in is not available.": "ការចូលដោយ Google មិនអាចប្រើបានទេ។",
+    "Could not sign you in with Google. Please try again.": "មិនអាចចូលដោយ Google បានទេ។ សូមព្យាយាមម្តងទៀត។",
+    "Your Google account did not share an email address.": "គណនី Google របស់អ្នកមិនបានចែករំលែកអាសយដ្ឋានអ៊ីមែលទេ។"
 }

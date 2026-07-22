@@ -215,5 +215,10 @@
     ":amount under an even pace": ":amount under an even pace",
     ":amount ahead of an even pace": ":amount ahead of an even pace",
     "of a :amount daily pace": "of a :amount daily pace",
-    "Primary": "Primary"
+    "Primary": "Primary",
+    "Continue with Google": "Continue with Google",
+    "or": "or",
+    "Google sign-in is not available.": "Google sign-in is not available.",
+    "Could not sign you in with Google. Please try again.": "Could not sign you in with Google. Please try again.",
+    "Your Google account did not share an email address.": "Your Google account did not share an email address."
 }

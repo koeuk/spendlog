@@ -18,6 +18,19 @@ return [
         'key' => env('POSTMARK_API_KEY'),
     ],
 
+    /*
+     * Google sign-in. Absent credentials the button is hidden rather than
+     * offered and then failing at the provider — see HandleInertiaRequests.
+     *
+     * The redirect defaults to the app's own callback route, so a deployment
+     * only has to set the two secrets it gets from the Google console.
+     */
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI', env('APP_URL').'/auth/google/callback'),
+    ],
+
     'resend' => [
         'key' => env('RESEND_API_KEY'),
     ],

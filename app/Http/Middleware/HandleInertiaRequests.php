@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Enums\Locale;
 use App\Enums\Permission;
+use App\Http\Controllers\Auth\GoogleController;
 use App\Models\AppSetting;
 use App\Models\Page;
 use App\Services\BudgetSummary;
@@ -71,6 +72,10 @@ class HandleInertiaRequests extends Middleware
             // alongside the currency for the same reason: it is needed wherever
             // a weight is entered or displayed, and current() is cached.
             'default_weight_unit' => fn () => AppSetting::current()->defaultWeightUnit()->value,
+            // The auth screens hide the Google button without credentials, so a
+            // deployment that has not set them up does not offer a door that
+            // dead-ends at the provider's error page.
+            'google_login' => fn () => GoogleController::configured(),
             'locale' => fn () => app()->getLocale(),
             'locales' => fn () => collect(Locale::cases())
                 ->map(fn (Locale $locale) => [
