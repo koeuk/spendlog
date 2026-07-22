@@ -10,6 +10,16 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * The UI kit is written with data-open:/data-closed: animation classes, but
+ * reka-ui marks state as data-state="open|closed" — and Tailwind's built-in
+ * data-open: variant matches a bare [data-open] attribute that never appears.
+ * Without these two lines every dialog and popover "animation" silently never
+ * runs; the components pop in and out unstyled.
+ */
+@custom-variant data-open (&[data-state='open']);
+@custom-variant data-closed (&[data-state='closed']);
+
 :root {
     --background: 0 0% 100%;
     --foreground: 0 0% 3.9%;
