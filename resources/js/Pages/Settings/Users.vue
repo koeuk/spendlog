@@ -263,6 +263,7 @@ function hasActions(user) {
             :processing="busy !== null"
             :processing-label="__('Verifying…')"
             variant="default"
+            :icon="MailCheck"
             @confirm="verify"
             @update:open="(v) => !v && (verifying = null)"
         />

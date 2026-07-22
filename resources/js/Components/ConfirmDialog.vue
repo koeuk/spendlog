@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import {
     AlertDialogCancel,
     AlertDialogContent,
@@ -9,6 +9,7 @@ import {
     AlertDialogRoot,
     AlertDialogTitle,
 } from 'reka-ui';
+import { CircleAlert, TriangleAlert } from 'lucide-vue-next';
 import { Button } from '@/Components/ui/button';
 
 /**
@@ -19,7 +20,7 @@ import { Button } from '@/Components/ui/button';
  * stray click next to a destructive prompt should not dismiss it, which a plain
  * Dialog allows.
  */
-defineProps({
+const props = defineProps({
     open: { type: Boolean, default: false },
     title: { type: String, required: true },
     description: { type: String, default: '' },
@@ -33,7 +34,15 @@ defineProps({
     // this dialog was built for — but a confirmation can also guard something
     // constructive (verifying an email), where a red button says the wrong thing.
     variant: { type: String, default: 'destructive' },
+    // Optional lucide component for the badge beside the title. Left unset,
+    // the variant picks one: a warning triangle for destructive prompts, a
+    // neutral alert circle otherwise.
+    icon: { type: [Object, Function], default: null },
 });
+
+const badgeIcon = computed(
+    () => props.icon ?? (props.variant === 'destructive' ? TriangleAlert : CircleAlert),
+);
 
 const emit = defineEmits(['update:open', 'confirm']);
 
@@ -86,16 +95,32 @@ function focusCancel(event) {
                 @open-auto-focus="focusCancel"
                 @interact-outside="pulse"
             >
-                <div class="space-y-1.5">
-                    <AlertDialogTitle class="text-base font-bold tracking-[-0.02em]">
-                        {{ title }}
-                    </AlertDialogTitle>
-                    <AlertDialogDescription
-                        v-if="description"
-                        class="text-sm text-neutral-500 dark:text-neutral-400"
+                <div class="flex items-start gap-3">
+                    <!-- Tinted to match the confirm button, so the badge and
+                         the action it warns about read as one thing. -->
+                    <span
+                        class="grid size-10 shrink-0 place-items-center rounded-full"
+                        :class="
+                            variant === 'destructive'
+                                ? 'bg-red-500/10 text-red-600 dark:bg-red-400/10 dark:text-red-400'
+                                : 'bg-primary/10 text-primary'
+                        "
+                        aria-hidden="true"
                     >
-                        {{ description }}
-                    </AlertDialogDescription>
+                        <component :is="badgeIcon" class="size-5" />
+                    </span>
+
+                    <div class="min-w-0 space-y-1.5 pt-0.5">
+                        <AlertDialogTitle class="text-base font-bold tracking-[-0.02em]">
+                            {{ title }}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription
+                            v-if="description"
+                            class="text-sm text-neutral-500 dark:text-neutral-400"
+                        >
+                            {{ description }}
+                        </AlertDialogDescription>
+                    </div>
                 </div>
 
                 <!-- For confirmations that need input before the action can run
