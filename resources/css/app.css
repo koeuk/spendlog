@@ -178,25 +178,27 @@ html.solid-cards [class~='bg-card/70'] {
 }
 
 /*
- * The ambient wash, breathing.
+ * The ambient wash, flowing — the ABA-style aurora.
  *
- * Each blob drifts and swells on its own clock — durations and negative delays
- * are set per element with --wash-duration / --wash-delay, so the three never
- * line up and the field feels alive rather than looping. Transform only: the
- * blobs are huge blurred layers, and translate/scale composites on the GPU
- * where animating position or filter would repaint them every frame.
+ * Each blob rides a closed loop (a soft ellipse traced by four waypoints, so
+ * 100% lands exactly back on 0% and the cycle never hitches) while swelling
+ * and shrinking on the way round. One runs clockwise, the other counter, on
+ * different clocks set per element with --wash-duration / --wash-delay — the
+ * colours visibly glide over and past each other instead of holding position.
  *
- * Slow on purpose. The wash is the room, and rooms do not dance — at 30-40s a
- * cycle the motion is sensed at the edge of vision, never watched.
+ * Transform only: the blobs are huge blurred layers, and translate/scale
+ * composites on the GPU where animating position or filter would repaint
+ * them every frame. linear timing, because easing a closed loop makes it
+ * pulse at the seams; the waypoints themselves provide the sway.
  */
 @layer components {
     .wash-blob {
-        animation: wash-drift var(--wash-duration, 32s) ease-in-out infinite alternate both;
+        animation: wash-flow var(--wash-duration, 22s) linear infinite both;
         animation-delay: var(--wash-delay, 0s);
     }
 
     .wash-blob-reverse {
-        animation-name: wash-drift-reverse;
+        animation-name: wash-flow-reverse;
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -207,21 +209,39 @@ html.solid-cards [class~='bg-card/70'] {
     }
 }
 
-@keyframes wash-drift {
-    from {
+@keyframes wash-flow {
+    0% {
         transform: translate3d(0, 0, 0) scale(1);
     }
-    to {
-        transform: translate3d(4rem, -2.5rem, 0) scale(1.12);
+    25% {
+        transform: translate3d(14rem, 8rem, 0) scale(1.25);
+    }
+    50% {
+        transform: translate3d(22rem, -5rem, 0) scale(1.1);
+    }
+    75% {
+        transform: translate3d(8rem, -12rem, 0) scale(0.85);
+    }
+    100% {
+        transform: translate3d(0, 0, 0) scale(1);
     }
 }
 
-@keyframes wash-drift-reverse {
-    from {
-        transform: translate3d(0, 0, 0) scale(1.08);
+@keyframes wash-flow-reverse {
+    0% {
+        transform: translate3d(0, 0, 0) scale(1.1);
     }
-    to {
-        transform: translate3d(-3.5rem, 3rem, 0) scale(0.96);
+    25% {
+        transform: translate3d(-12rem, 10rem, 0) scale(0.88);
+    }
+    50% {
+        transform: translate3d(-20rem, -3rem, 0) scale(1.22);
+    }
+    75% {
+        transform: translate3d(-6rem, -11rem, 0) scale(1.02);
+    }
+    100% {
+        transform: translate3d(0, 0, 0) scale(1.1);
     }
 }
 
