@@ -221,11 +221,12 @@ class AppSetting extends Model
     {
         $branded = $this->button_color !== self::DEFAULT_BUTTON_COLOR;
 
-        // The silver preset alone renders cards opaque: with the wash off, the
-        // 70% card glass has nothing to frost and would tint silver rather than
-        // read as the white the preset promises. A root class does that (see
-        // app.css / useBrandColors); this is the flag that toggles it.
-        $whiteCards = $this->body_color === BodyColor::Silver->value;
+        // Every chosen background renders cards opaque white, not just Silver:
+        // the backdrop re-tints its wash from the chosen colour, and a 70%
+        // card glass over that wash would frost the colour into every card —
+        // the cards must stay white on the coloured room. A root class does
+        // the pinning (see app.css / useBrandColors); this is the flag.
+        $whiteCards = $this->plainBackground();
 
         return [
             'primary' => $branded ? Color::toHslTriplet($this->button_color) : null,
@@ -244,9 +245,9 @@ class AppSetting extends Model
              * same hue, contrast-checked, so they move together.
              */
             'palette' => $this->plainBackground()
-                // Silver is the grey-page preset: a soft silver body with pure
-                // white cards, rather than the tonal near-white cards the tinted
-                // presets derive from their own hue.
+                // whiteCards pins the card surface to pure white for every
+                // preset — the derived theme colours the page, borders and
+                // muted text, while the cards stay white on top of it.
                 ? Palette::from($this->body_color, whiteCards: $whiteCards)
                 : null,
             'solidCards' => $whiteCards,

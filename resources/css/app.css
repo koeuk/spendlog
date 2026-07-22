@@ -177,6 +177,54 @@ html.solid-cards [class~='bg-card/70'] {
     }
 }
 
+/*
+ * The ambient wash, breathing.
+ *
+ * Each blob drifts and swells on its own clock — durations and negative delays
+ * are set per element with --wash-duration / --wash-delay, so the three never
+ * line up and the field feels alive rather than looping. Transform only: the
+ * blobs are huge blurred layers, and translate/scale composites on the GPU
+ * where animating position or filter would repaint them every frame.
+ *
+ * Slow on purpose. The wash is the room, and rooms do not dance — at 30-40s a
+ * cycle the motion is sensed at the edge of vision, never watched.
+ */
+@layer components {
+    .wash-blob {
+        animation: wash-drift var(--wash-duration, 32s) ease-in-out infinite alternate both;
+        animation-delay: var(--wash-delay, 0s);
+    }
+
+    .wash-blob-reverse {
+        animation-name: wash-drift-reverse;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .wash-blob,
+        .wash-blob-reverse {
+            animation: none;
+        }
+    }
+}
+
+@keyframes wash-drift {
+    from {
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+    to {
+        transform: translate3d(4rem, -2.5rem, 0) scale(1.12);
+    }
+}
+
+@keyframes wash-drift-reverse {
+    from {
+        transform: translate3d(0, 0, 0) scale(1.08);
+    }
+    to {
+        transform: translate3d(-3.5rem, 3rem, 0) scale(0.96);
+    }
+}
+
 @keyframes rise {
     from {
         opacity: 0;

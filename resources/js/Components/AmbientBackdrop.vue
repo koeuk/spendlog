@@ -96,29 +96,29 @@ const blobs = computed(() => {
                  and dark sets because inline backgrounds cannot carry dark:
                  variants. -->
             <div
-                class="absolute -left-32 -top-40 size-[640px] rounded-full opacity-70 blur-3xl dark:hidden"
-                :style="{ backgroundColor: blobs[0].light }"
+                class="wash-blob absolute -left-32 -top-40 size-[640px] rounded-full opacity-70 blur-3xl dark:hidden"
+                :style="{ backgroundColor: blobs[0].light, '--wash-duration': '32s' }"
             />
             <div
-                class="absolute -right-40 top-24 size-[560px] rounded-full opacity-60 blur-3xl dark:hidden"
-                :style="{ backgroundColor: blobs[1].light }"
+                class="wash-blob wash-blob-reverse absolute -right-40 top-24 size-[560px] rounded-full opacity-60 blur-3xl dark:hidden"
+                :style="{ backgroundColor: blobs[1].light, '--wash-duration': '40s', '--wash-delay': '-13s' }"
             />
             <div
-                class="absolute -bottom-48 left-1/3 size-[600px] rounded-full opacity-60 blur-3xl dark:hidden"
-                :style="{ backgroundColor: blobs[2].light }"
+                class="wash-blob absolute -bottom-48 left-1/3 size-[600px] rounded-full opacity-60 blur-3xl dark:hidden"
+                :style="{ backgroundColor: blobs[2].light, '--wash-duration': '36s', '--wash-delay': '-24s' }"
             />
 
             <div
-                class="absolute -left-32 -top-40 hidden size-[640px] rounded-full opacity-40 blur-3xl dark:block"
-                :style="{ backgroundColor: blobs[0].dark }"
+                class="wash-blob absolute -left-32 -top-40 hidden size-[640px] rounded-full opacity-40 blur-3xl dark:block"
+                :style="{ backgroundColor: blobs[0].dark, '--wash-duration': '32s' }"
             />
             <div
-                class="absolute -right-40 top-24 hidden size-[560px] rounded-full opacity-35 blur-3xl dark:block"
-                :style="{ backgroundColor: blobs[1].dark }"
+                class="wash-blob wash-blob-reverse absolute -right-40 top-24 hidden size-[560px] rounded-full opacity-35 blur-3xl dark:block"
+                :style="{ backgroundColor: blobs[1].dark, '--wash-duration': '40s', '--wash-delay': '-13s' }"
             />
             <div
-                class="absolute -bottom-48 left-1/3 hidden size-[600px] rounded-full opacity-35 blur-3xl dark:block"
-                :style="{ backgroundColor: blobs[2].dark }"
+                class="wash-blob absolute -bottom-48 left-1/3 hidden size-[600px] rounded-full opacity-35 blur-3xl dark:block"
+                :style="{ backgroundColor: blobs[2].dark, '--wash-duration': '36s', '--wash-delay': '-24s' }"
             />
         </template>
 
@@ -126,13 +126,16 @@ const blobs = computed(() => {
             <!-- Same green family as the auth artwork, so the app reads as one product.
                  Kept faint — the wash should be sensed behind the glass, not seen. -->
             <div
-                class="absolute -left-32 -top-40 size-[640px] rounded-full bg-[#dcefd6] opacity-40 blur-3xl dark:bg-[#12301c] dark:opacity-30"
+                class="wash-blob absolute -left-32 -top-40 size-[640px] rounded-full bg-[#dcefd6] opacity-40 blur-3xl dark:bg-[#12301c] dark:opacity-30"
+                style="--wash-duration: 32s"
             />
             <div
-                class="absolute -right-40 top-24 size-[560px] rounded-full bg-[#e6f0ff] opacity-35 blur-3xl dark:bg-[#101b2e] dark:opacity-30"
+                class="wash-blob wash-blob-reverse absolute -right-40 top-24 size-[560px] rounded-full bg-[#e6f0ff] opacity-35 blur-3xl dark:bg-[#101b2e] dark:opacity-30"
+                style="--wash-duration: 40s; --wash-delay: -13s"
             />
             <div
-                class="absolute -bottom-48 left-1/3 size-[600px] rounded-full bg-[#fdeee0] opacity-35 blur-3xl dark:bg-[#2a1c12] dark:opacity-25"
+                class="wash-blob absolute -bottom-48 left-1/3 size-[600px] rounded-full bg-[#fdeee0] opacity-35 blur-3xl dark:bg-[#2a1c12] dark:opacity-25"
+                style="--wash-duration: 36s; --wash-delay: -24s"
             />
 
             <!-- A 70% white veil over the blobs: the page reads as white with only
