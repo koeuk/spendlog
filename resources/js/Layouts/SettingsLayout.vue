@@ -343,7 +343,7 @@ watch(
                 <div
                     :class="[
                         CARD,
-                        'anim p-6 sm:p-8',
+                        'anim p-5 sm:p-6',
                         flush
                             ? 'max-sm:rounded-none max-sm:border-0 max-sm:bg-transparent max-sm:p-0 max-sm:shadow-none max-sm:backdrop-blur-none'
                             : '',
@@ -364,7 +364,7 @@ watch(
                         <slot name="actions" />
                     </header>
 
-                    <div class="mt-6">
+                    <div class="mt-4">
                         <slot />
                     </div>
                 </div>

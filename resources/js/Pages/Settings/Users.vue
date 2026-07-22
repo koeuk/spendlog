@@ -183,7 +183,12 @@ function hasActions(user) {
                     </tr>
                 </tbody>
             </table>
+        </div>
 
+        <!-- Flush to the card's edges: cancels the panel's p-6/p-8 so the
+             pager's hairline runs the full card width and the card ends at the
+             pager instead of a band of padding under it. -->
+        <div class="-mx-6 py-6 sm:-mx-8 sm:-mb-8">
             <Pagination :meta="pagination" />
         </div>
 
