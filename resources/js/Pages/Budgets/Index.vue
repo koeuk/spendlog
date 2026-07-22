@@ -55,6 +55,27 @@ const visibleCategories = computed(() =>
     ),
 );
 
+// Narrows the by-category list to one category. Client-side: every row for
+// the month is already on the page, so there is nothing to fetch.
+const categoryFilter = ref('');
+
+// '' is the "no filter" option, mirroring the selects on the Expenses page.
+const categoryFilterOptions = computed(() => [
+    { value: '', label: trans('All categories') },
+    ...visibleCategories.value.map((category) => ({
+        value: category.uuid,
+        label: category.name,
+    })),
+]);
+
+const filteredCategories = computed(() =>
+    categoryFilter.value
+        ? visibleCategories.value.filter(
+              (category) => category.uuid === categoryFilter.value,
+          )
+        : visibleCategories.value,
+);
+
 function visit(month) {
     router.get(route('budgets.index', { month }), {}, {
         preserveScroll: true,
@@ -258,23 +279,19 @@ function clearBudget() {
                     stepping would be a dozen round trips.
                 -->
                 <!--
-                    min-w-0 so the pill is allowed to shrink at all: as a flex
-                    child it defaults to its min-content width, and the two
-                    triggers inside were fixed-width, which put the whole pill at
-                    294px against the 296px a 320px viewport leaves. It fitted by
-                    2px in English and would not have in a locale with a longer
-                    month name. Below sm the triggers share the space instead of
-                    each demanding its own; from sm they are fixed again.
+                    Four separate controls rather than one shared pill: each
+                    arrow and each select stands on its own surface. min-w-0 on
+                    the row so it can still shrink on a narrow viewport, with
+                    the selects sharing the leftover space below sm and taking
+                    fixed widths from sm up.
                 -->
-                <div
-                    class="flex min-w-0 max-w-full items-center gap-1 rounded-full border border-neutral-200/80 bg-white/60 p-1 backdrop-blur-xl backdrop-saturate-150 dark:border-white/10 dark:bg-neutral-900/50"
-                >
+                <div class="flex min-w-0 max-w-full items-center gap-2">
                     <Link
                         :href="route('budgets.index', { month: prev_month })"
                         preserve-scroll
                         :class="[
                             TAP_TARGET,
-                            'grid size-8 place-items-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100',
+                            'grid size-9 shrink-0 place-items-center rounded-full border border-neutral-200/80 bg-white/60 text-neutral-500 backdrop-blur-xl backdrop-saturate-150 transition hover:bg-neutral-100 hover:text-neutral-900 dark:border-white/10 dark:bg-neutral-900/50 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100',
                         ]"
                         :aria-label="__('Previous month')"
                     >
@@ -286,7 +303,7 @@ function clearBudget() {
                         :options="months"
                         :label="__('Month')"
                         :searchable="false"
-                        trigger-class="h-8 min-w-0 flex-1 rounded-full border-0 bg-transparent px-3 text-sm font-semibold max-sm:h-11 sm:w-[7.5rem] sm:flex-none"
+                        trigger-class="h-9 min-w-0 flex-1 rounded-full border border-neutral-200/80 bg-white/60 px-3.5 text-sm font-semibold backdrop-blur-xl backdrop-saturate-150 max-sm:h-11 sm:w-[7.5rem] sm:flex-none dark:border-white/10 dark:bg-neutral-900/50"
                         content-class="w-44"
                         align="start"
                         @update:model-value="goToMonth"
@@ -297,7 +314,7 @@ function clearBudget() {
                         :options="yearOptions"
                         :label="__('Year')"
                         :searchable="false"
-                        trigger-class="h-8 min-w-0 shrink rounded-full border-0 bg-transparent px-3 text-sm font-semibold tabular-nums max-sm:h-11 sm:w-[5.5rem] sm:shrink-0"
+                        trigger-class="h-9 min-w-0 shrink rounded-full border border-neutral-200/80 bg-white/60 px-3.5 text-sm font-semibold tabular-nums backdrop-blur-xl backdrop-saturate-150 max-sm:h-11 sm:w-[5.5rem] sm:shrink-0 dark:border-white/10 dark:bg-neutral-900/50"
                         content-class="w-32"
                         align="start"
                         @update:model-value="goToYear"
@@ -308,7 +325,7 @@ function clearBudget() {
                         preserve-scroll
                         :class="[
                             TAP_TARGET,
-                            'grid size-8 place-items-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100',
+                            'grid size-9 shrink-0 place-items-center rounded-full border border-neutral-200/80 bg-white/60 text-neutral-500 backdrop-blur-xl backdrop-saturate-150 transition hover:bg-neutral-100 hover:text-neutral-900 dark:border-white/10 dark:bg-neutral-900/50 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100',
                         ]"
                         :aria-label="__('Next month')"
                     >
@@ -451,9 +468,22 @@ function clearBudget() {
                         class="flex items-center justify-between gap-4 border-b border-gray-100 dark:border-neutral-800 px-5 py-3"
                     >
                         <h3 class="text-sm font-semibold text-gray-900 dark:text-neutral-100">{{ __('By category') }}</h3>
-                        <Button size="xs" class="rounded-xl max-sm:h-8" @click="openAdd">
-                            {{ __('Set budget') }}
-                        </Button>
+                        <div class="flex min-w-0 items-center gap-2">
+                            <SearchableSelect
+                                :options="categoryFilterOptions"
+                                :model-value="categoryFilter"
+                                :label="__('Filter by category')"
+                                :search-placeholder="__('Search categories…')"
+                                :empty-text="__('No category found.')"
+                                align="end"
+                                content-class="w-52"
+                                trigger-class="border-input dark:hover:bg-input/50 h-8 w-36 min-w-0 rounded-xl border bg-card px-2.5 text-sm shadow-xs sm:w-48"
+                                @update:model-value="categoryFilter = $event"
+                            />
+                            <Button size="xs" class="shrink-0 rounded-xl max-sm:h-8" @click="openAdd">
+                                {{ __('Set budget') }}
+                            </Button>
+                        </div>
                     </div>
 
                     <ul v-if="navigating" class="divide-y divide-gray-100 dark:divide-neutral-800" aria-busy="true">
@@ -470,15 +500,22 @@ function clearBudget() {
                     </ul>
 
                     <p
-                        v-else-if="visibleCategories.length === 0"
+                        v-else-if="filteredCategories.length === 0"
                         class="px-5 py-8 text-center text-sm text-gray-400 dark:text-neutral-500"
                     >
-                        {{ __('Nothing spent this month yet.') }}
+                        <!-- Two different absences: a filter that matched nothing
+                             (the chosen category can drop out when the month
+                             changes) versus a month with nothing in it. -->
+                        {{
+                            categoryFilter
+                                ? __('No categories match your search.')
+                                : __('Nothing spent this month yet.')
+                        }}
                     </p>
 
                     <ul v-else class="divide-y divide-gray-100 dark:divide-neutral-800">
                         <li
-                            v-for="category in visibleCategories"
+                            v-for="category in filteredCategories"
                             :key="category.uuid"
                             class="px-5 py-4"
                         >

@@ -66,7 +66,7 @@ const brandInitial = computed(() => (branding.value.name || 'S').charAt(0).toUpp
                      over name — since the heading and description are hidden
                      below lg and the sheet carries the form straight away. On a
                      desk the block is left-aligned and the heading returns. -->
-                <div class="px-6 pb-16 pt-20 max-lg:text-center lg:mx-auto lg:mb-10 lg:w-full lg:max-w-[420px] lg:p-0">
+                <div class="px-6 pb-16 pt-20 max-lg:text-center lg:mx-auto lg:mb-10 lg:w-full lg:max-w-[480px] lg:p-0">
                     <Link
                         href="/"
                         class="anim inline-flex items-center gap-2 text-sm font-bold tracking-tight max-lg:flex-col max-lg:gap-3 max-lg:text-xl"
@@ -93,8 +93,13 @@ const brandInitial = computed(() => (branding.value.name || 'S').charAt(0).toUpp
                     <!-- Heading and description are the desk story only: on the
                          phone the centred branding above stands alone, so both
                          are hidden rather than leaving a subtitle with no title. -->
+                    <!-- lg:whitespace-nowrap keeps it to one line: the Khmer
+                         heading is much longer than the English and wrapped
+                         inside the centred column. text-4xl, not 5xl, is the
+                         size at which that longer string still clears the column
+                         rather than running into the artwork on a laptop. -->
                     <h1
-                        class="anim mt-8 text-[2.6rem] font-extrabold leading-[1.05] tracking-[-0.03em] max-lg:hidden lg:mt-10 lg:text-5xl"
+                        class="anim mt-8 text-[2.6rem] font-extrabold leading-[1.05] tracking-[-0.03em] max-lg:hidden lg:mt-10 lg:whitespace-nowrap lg:text-4xl"
                         style="--d: 60ms"
                     >
                         {{ heading }}
@@ -122,7 +127,7 @@ const brandInitial = computed(() => (branding.value.name || 'S').charAt(0).toUpp
                     <!-- Centred in the column on a desk, matching the header
                          block above so the branding, heading and form share one
                          centred column rather than hugging the left edge. -->
-                    <div class="mx-auto w-full max-w-[420px]">
+                    <div class="mx-auto w-full max-w-[420px] lg:max-w-[480px]">
                         <slot />
                     </div>
                 </div>

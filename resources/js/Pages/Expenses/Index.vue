@@ -379,9 +379,11 @@ const filtered = computed(() =>
              old padding stacked into a 56px band of nothing between the title
              and the first control. -->
         <div class="pb-8 pt-2">
-            <!-- Width and gutters come from the layout's one container, so the
-                 column never resizes when navigating between pages. -->
-            <div class="space-y-4">
+            <!-- One card holds the whole manager — filters on top, the day
+                 groups under them — matching the Categories page. The gap
+                 between groups is tighter than the page-level one they used to
+                 have: inside one surface they read as sections, not islands. -->
+            <div :class="[CARD, 'space-y-2 overflow-hidden p-2 sm:p-3']">
                 <!--
                     A two-column grid on a phone, the same flex row as before
                     from sm: up.
@@ -395,12 +397,11 @@ const filtered = computed(() =>
                     SearchableSelect's root is a Popover that renders no element
                     and would drop a class set on the component.
                 -->
-                <div class="grid grid-cols-2 gap-2 sm:flex sm:flex-row sm:items-center">
+                <div class="grid grid-cols-2 gap-2 p-1 pb-2 sm:flex sm:flex-row sm:items-center sm:p-2 sm:pb-3">
                     <SearchInput
                         v-model="search"
                         :placeholder="__('Search expenses…')"
                         class="col-span-2 min-w-0 sm:max-w-sm sm:flex-1"
-                        input-class="bg-card"
                     />
 
                     <SearchableSelect
@@ -445,9 +446,11 @@ const filtered = computed(() =>
 
                 <ExpenseListSkeleton v-if="navigating" />
 
+                <!-- Plain padding, no nested card: the message already sits on
+                     the manager's surface. -->
                 <div
                     v-else-if="isEmpty"
-                    :class="[CARD, 'p-10 text-center']"
+                    class="p-10 text-center"
                 >
                     <p class="text-sm text-gray-600 dark:text-neutral-400">
                         {{

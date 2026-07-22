@@ -126,44 +126,16 @@ function destroy() {
                     {{ __('Categories') }}
                 </h2>
 
-                <div class="flex items-center gap-2">
-                    <!-- Up here rather than beside the search box. On a phone the
-                         add button left this row empty when it moved to the
-                         floating one, while the search row carried a full-width
-                         field and a 90px toggle crammed onto one line. -->
-                    <div
-                        class="inline-flex h-9 shrink-0 rounded-xl border border-gray-200 bg-white p-1 dark:border-neutral-700 dark:bg-neutral-800"
-                        role="group"
-                        :aria-label="__('Sort categories')"
-                    >
-                        <button
-                            v-for="option in SORTS"
-                            :key="option.key"
-                            type="button"
-                            class="flex items-center rounded-lg px-3.5 text-sm font-medium transition"
-                            :class="
-                                sort === option.key
-                                    ? ACTIVE
-                                    : 'text-gray-600 hover:bg-gray-50 dark:text-neutral-400 dark:hover:bg-neutral-700'
-                            "
-                            :aria-pressed="sort === option.key"
-                            @click="applySort(option.key)"
-                        >
-                            {{ __(option.label) }}
-                        </button>
-                    </div>
-
-                    <!-- Desktop only; the phone gets the floating button below. -->
-                    <Button
-                        v-if="can.create"
-                        :as="Link"
-                        :href="route('categories.create')"
-                        size="sm"
-                        class="max-sm:hidden"
-                    >
-                        {{ __('Add category') }}
-                    </Button>
-                </div>
+                <!-- Desktop only; the phone gets the floating button below. -->
+                <Button
+                    v-if="can.create"
+                    :as="Link"
+                    :href="route('categories.create')"
+                    size="sm"
+                    class="max-sm:hidden"
+                >
+                    {{ __('Add category') }}
+                </Button>
             </div>
         </template>
 
@@ -174,22 +146,45 @@ function destroy() {
             <!-- Width and gutters come from the layout's one container, so the
                  column never resizes when navigating between pages. -->
             <div>
-                <!-- The search box has the row to itself now that sorting sits
-                     in the header, so it takes the full width on a phone and
-                     stays capped on a desk. -->
-                <SearchInput
-                    v-model="search"
-                    :placeholder="__('Search categories…')"
-                    class="mb-4 block w-full sm:max-w-sm"
-                    input-class="bg-card"
-                />
-
                 <!--
                     The card is 28px-rounded, so a flush table crowds its corners.
                     Padding here plus roomier cells keeps the content clear of the
                     curve without the rows losing their full-width dividers.
                 -->
                 <div :class="[CARD, 'overflow-hidden p-2 sm:p-3']">
+                    <!-- Search and sort share the card's toolbar row on a desk;
+                         on a phone the toggle drops under the full-width box so
+                         neither gets crushed. -->
+                    <div class="flex flex-col gap-2 p-1 pb-3 sm:flex-row sm:items-center sm:justify-between sm:p-2 sm:pb-4">
+                        <SearchInput
+                            v-model="search"
+                            :placeholder="__('Search categories…')"
+                            class="block w-full sm:max-w-sm"
+                        />
+
+                        <div
+                            class="inline-flex h-9 shrink-0 self-start rounded-xl border border-gray-200 bg-white p-1 dark:border-neutral-700 dark:bg-neutral-800"
+                            role="group"
+                            :aria-label="__('Sort categories')"
+                        >
+                            <button
+                                v-for="option in SORTS"
+                                :key="option.key"
+                                type="button"
+                                class="flex items-center rounded-lg px-3.5 text-sm font-medium transition"
+                                :class="
+                                    sort === option.key
+                                        ? ACTIVE
+                                        : 'text-gray-600 hover:bg-gray-50 dark:text-neutral-400 dark:hover:bg-neutral-700'
+                                "
+                                :aria-pressed="sort === option.key"
+                                @click="applySort(option.key)"
+                            >
+                                {{ __(option.label) }}
+                            </button>
+                        </div>
+                    </div>
+
                     <Table class="[&_td]:px-3 [&_th]:px-3 [&_tr:last-child]:border-0">
                         <TableHeader>
                             <TableRow>

@@ -130,18 +130,7 @@ const convertedPreview = computed(() => {
 </script>
 
 <template>
-    <!--
-        Capped, and left-aligned rather than centred.
-
-        The card runs the page width now, but these are single-line controls
-        whose reasoning below is about relative width — Price earning a row of
-        its own, Category and Date sharing one. Stretched to 1152px that logic
-        stops meaning anything: every field is roomy, and the label sits a screen
-        away from the value it names. The limit lives here, on the fields, rather
-        than on the shell, so a form with something genuinely wide in it can
-        still use the whole card.
-    -->
-    <div class="grid max-w-3xl gap-4">
+    <div class="grid gap-4">
         <LocaleTabs
             :form="form"
             field="item"
