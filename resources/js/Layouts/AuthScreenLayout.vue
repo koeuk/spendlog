@@ -66,7 +66,7 @@ const brandInitial = computed(() => (branding.value.name || 'S').charAt(0).toUpp
                      over name — since the heading and description are hidden
                      below lg and the sheet carries the form straight away. On a
                      desk the block is left-aligned and the heading returns. -->
-                <div class="px-6 pb-16 pt-20 max-lg:text-center lg:mb-10 lg:p-0">
+                <div class="px-6 pb-16 pt-20 max-lg:text-center lg:mx-auto lg:mb-10 lg:w-full lg:max-w-[420px] lg:p-0">
                     <Link
                         href="/"
                         class="anim inline-flex items-center gap-2 text-sm font-bold tracking-tight max-lg:flex-col max-lg:gap-3 max-lg:text-xl"
@@ -119,7 +119,10 @@ const brandInitial = computed(() => (branding.value.name || 'S').charAt(0).toUpp
                     class="anim flex-1 rounded-t-[32px] bg-white px-6 pb-10 pt-8 max-lg:-mt-8 dark:bg-neutral-950 lg:flex-none lg:rounded-none lg:bg-transparent lg:p-0 lg:dark:bg-transparent"
                     style="--d: 160ms"
                 >
-                    <div class="mx-auto w-full max-w-[380px] lg:mx-0">
+                    <!-- Centred in the column on a desk, matching the header
+                         block above so the branding, heading and form share one
+                         centred column rather than hugging the left edge. -->
+                    <div class="mx-auto w-full max-w-[420px]">
                         <slot />
                     </div>
                 </div>
