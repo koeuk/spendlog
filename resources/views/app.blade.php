@@ -65,6 +65,12 @@
                             }
                         }
                     }
+
+                    // The silver preset's opaque cards. Light mode only, like the
+                    // palette — dark mode keeps its own surfaces — and toggled
+                    // before paint so the cards never flash translucent first.
+                    // useBrandColors mirrors this on Inertia visits.
+                    document.documentElement.classList.toggle('solid-cards', !!t.solidCards && !dark);
                 } catch (e) {}
             })();
         </script>

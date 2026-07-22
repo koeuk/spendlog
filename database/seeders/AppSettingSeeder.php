@@ -36,9 +36,9 @@ class AppSettingSeeder extends Seeder
         // nav pill and segmented control has to pick the colour up from the
         // token instead of a hardcoded near-black.
         $settings->button_color = ButtonColor::Green->value;
-        // Left at the default on purpose — that value is the sentinel for "keep
-        // the ambient wash", and any other colour renders the page flat.
-        $settings->body_color = BodyColor::White->value;
+        // The Silver default: a flat soft-silver page with white cards. White is
+        // now the opt-in that keeps the ambient wash instead.
+        $settings->body_color = BodyColor::Silver->value;
 
         $settings->khr_per_usd = 4100;
         $settings->default_currency = Currency::Usd->value;

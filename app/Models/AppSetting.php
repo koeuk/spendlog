@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\BodyColor;
 use App\Enums\Currency;
 use App\Enums\WeightUnit;
 use App\Support\Color;
@@ -39,10 +40,12 @@ class AppSetting extends Model
     public const DEFAULT_BUTTON_COLOR = '#171717';
 
     /**
-     * Also a sentinel: at the default the page keeps its ambient wash, and any
-     * other colour renders flat. See plainBackground().
+     * The soft silver default (BodyColor::Silver): a flat page with pure white
+     * cards, the look the app ships with. The ambient wash is no longer the
+     * default — it belongs to the White background now. See plainBackground().
+     * Must match the column default in the migration.
      */
-    public const DEFAULT_BODY_COLOR = '#ffffff';
+    public const DEFAULT_BODY_COLOR = '#f4f5f7';
 
     /**
      * Riel per one US dollar, used when a price is entered in KHR.
@@ -212,11 +215,17 @@ class AppSetting extends Model
      * at the default background too — the stock tokens already are that theme,
      * and re-deriving them would only round-trip the same values.
      *
-     * @return array{primary: string|null, primaryForeground: string|null, palette: array<string, string>|null}
+     * @return array{primary: string|null, primaryForeground: string|null, palette: array<string, string>|null, solidCards: bool}
      */
     public function cssVariables(): array
     {
         $branded = $this->button_color !== self::DEFAULT_BUTTON_COLOR;
+
+        // The silver preset alone renders cards opaque: with the wash off, the
+        // 70% card glass has nothing to frost and would tint silver rather than
+        // read as the white the preset promises. A root class does that (see
+        // app.css / useBrandColors); this is the flag that toggles it.
+        $whiteCards = $this->body_color === BodyColor::Silver->value;
 
         return [
             'primary' => $branded ? Color::toHslTriplet($this->button_color) : null,
@@ -235,8 +244,12 @@ class AppSetting extends Model
              * same hue, contrast-checked, so they move together.
              */
             'palette' => $this->plainBackground()
-                ? Palette::from($this->body_color)
+                // Silver is the grey-page preset: a soft silver body with pure
+                // white cards, rather than the tonal near-white cards the tinted
+                // presets derive from their own hue.
+                ? Palette::from($this->body_color, whiteCards: $whiteCards)
                 : null,
+            'solidCards' => $whiteCards,
         ];
     }
 
@@ -244,14 +257,15 @@ class AppSetting extends Model
      * Whether the page should render its background flat.
      *
      * The ambient wash is three big blurred colour circles laid over the page.
-     * It is what the default look is built on — but it sits *on top* of the
-     * background, so a chosen colour comes through tinted and gradient-y rather
-     * than as the colour that was picked. Choosing a colour therefore turns the
-     * wash off: you get the colour you chose, flat.
+     * It sits *on top* of the background, so any colour under it comes through
+     * tinted and gradient-y rather than as the colour picked — so the wash
+     * belongs to the White background alone, the one look built for it. Every
+     * other background, including the Silver default, renders flat: the derived
+     * theme is applied and the wash is dropped.
      */
     public function plainBackground(): bool
     {
-        return $this->body_color !== self::DEFAULT_BODY_COLOR;
+        return $this->body_color !== BodyColor::White->value;
     }
 
     /**

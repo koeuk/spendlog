@@ -61,9 +61,16 @@ final class Palette
     /**
      * Every design token, as bare HSL triplets ready for a custom property.
      *
+     * $whiteCards pins the card surface to pure white instead of stepping it a
+     * whisper off the page. The tinted presets want a card tinted with the same
+     * hue — a tonal theme — but the neutral silver preset wants the opposite: a
+     * grey page with white cards clearly floating on it, the way a settings
+     * screen groups its rows. There the derived 0.02 step is far too quiet, so
+     * the card is set to white and the muted surface steps down off it.
+     *
      * @return array<string, string>
      */
-    public static function from(string $hex): array
+    public static function from(string $hex, bool $whiteCards = false): array
     {
         [$h, $s, $l] = self::hsl($hex);
 
@@ -82,8 +89,16 @@ final class Palette
         // Near the top there is nowhere lighter to go, so the stack descends.
         $direction = $l > 96.0 ? -1 : 1;
 
-        $card = self::step($h, $saturation, $l, self::hexOf(self::triplet($h, $s, $l)), self::CARD_SEPARATION, $direction);
-        $muted = self::step($h, $saturation, self::lightnessOf($card), self::hexOf($card), self::STACK_SEPARATION, $direction);
+        if ($whiteCards) {
+            // Pure white, and muted steps *down* off it — there is nowhere
+            // lighter to go — so secondary/accent chips read as a light grey on
+            // the white card rather than trying to climb past white and failing.
+            $card = self::triplet($h, 0.0, 100.0);
+            $muted = self::step($h, $saturation, 100.0, self::hexOf($card), self::STACK_SEPARATION, -1);
+        } else {
+            $card = self::step($h, $saturation, $l, self::hexOf(self::triplet($h, $s, $l)), self::CARD_SEPARATION, $direction);
+            $muted = self::step($h, $saturation, self::lightnessOf($card), self::hexOf($card), self::STACK_SEPARATION, $direction);
+        }
 
         $background = self::triplet($h, $s, $l);
         $foreground = self::textOn($h, $s, $background, self::AAA);

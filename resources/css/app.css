@@ -147,6 +147,26 @@
 }
 
 /*
+ * The silver preset's opaque cards.
+ *
+ * Every card surface is bg-card/70 — a 70% glass that frosts the ambient wash
+ * behind it. The silver preset turns that wash off (plainBackground), so there
+ * is nothing left to frost and the translucency only tints the white card
+ * silver. Under .solid-cards — set for that preset alone, light mode only, by
+ * the pre-paint script and useBrandColors — the fill goes fully opaque, so
+ * --card's pure white reads as white.
+ *
+ * Unlayered on purpose: Tailwind's utilities sit in a cascade layer, and an
+ * unlayered rule beats a layered one whatever the specificity — so this wins
+ * over bg-card/70 with no !important and no specificity war. The attribute
+ * selector matches the literal `bg-card/70` class token without escaping the
+ * slash.
+ */
+html.solid-cards [class~='bg-card/70'] {
+    background-color: hsl(var(--card));
+}
+
+/*
  * Staggered entrance used across the auth screens and the app shell.
  * Set the offset per element with style="--d: 120ms".
  */

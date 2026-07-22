@@ -33,7 +33,9 @@ return new class extends Migration
             $table->string('favicon_path')->nullable();
             // neutral-900 — today's --primary in light mode.
             $table->string('button_color', 7)->default('#171717');
-            $table->string('body_color', 7)->default(BodyColor::White->value);
+            // Silver: a flat soft-silver page with white cards, the default look.
+            // White (the ambient wash) is now an opt-in choice.
+            $table->string('body_color', 7)->default(BodyColor::Silver->value);
 
             /*
              * Admin-authored spending guidance shown on the dashboard.

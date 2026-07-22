@@ -55,6 +55,11 @@ function apply() {
      * theme rather than the stock white.
      */
     applyPalette(isDark.value ? null : (window.__brandPalette ?? null));
+
+    // The silver preset's opaque cards ride with the palette: light-mode only,
+    // and restored from the same stash when toggling back to light. Without this
+    // a dark→light flip would leave the cards translucent until the next visit.
+    root.classList.toggle('solid-cards', !!window.__solidCards && !isDark.value);
 }
 
 function setTheme(next) {

@@ -65,6 +65,12 @@ export function applyBrandColors(css, isDark) {
     }
 
     applyPalette(isDark ? null : css.palette);
+
+    // The silver preset's opaque cards — see app.css. Light mode only, and
+    // stashed so a dark→light toggle can put it back, the same way the palette
+    // is. Mirrors the pre-paint script in app.blade.php; change one, change both.
+    window.__solidCards = !!css.solidCards;
+    root.classList.toggle('solid-cards', window.__solidCards && !isDark);
 }
 
 /**

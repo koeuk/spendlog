@@ -76,7 +76,8 @@ class ColorsTest extends TestCase
                 ->has('colors.body_color')
                 ->has('body_presets', count(BodyColor::cases()))
                 ->has('button_presets', count(ButtonColor::cases()))
-                ->where('body_presets.0.value', BodyColor::White->value)
+                // Silver leads the row — it is the default.
+                ->where('body_presets.0.value', BodyColor::Silver->value)
                 // The page marks the default rather than making the admin guess.
                 ->where('button_presets.0.is_default', true)
             );
@@ -114,12 +115,14 @@ class ColorsTest extends TestCase
     }
 
     /**
-     * Ten offered backgrounds, and every one has to derive a theme whose text is
-     * readable — the swatch is the promise.
+     * Eleven offered backgrounds, and every one has to derive a theme whose text
+     * is readable — the swatch is the promise. Silver derives with white cards
+     * (see Palette::from's whiteCards path); supports() checks the derived card,
+     * so its readability is covered here like the rest.
      */
     public function test_every_background_preset_derives_a_readable_theme(): void
     {
-        $this->assertCount(10, BodyColor::cases());
+        $this->assertCount(11, BodyColor::cases());
 
         foreach (BodyColor::cases() as $preset) {
             $this->assertTrue(
@@ -141,7 +144,7 @@ class ColorsTest extends TestCase
                 ->assertSessionHasErrors('body_color');
         }
 
-        $this->assertSame(BodyColor::White->value, AppSetting::current()->body_color);
+        $this->assertSame(BodyColor::Silver->value, AppSetting::current()->body_color);
     }
 
     /**
@@ -213,11 +216,18 @@ class ColorsTest extends TestCase
     }
 
     /**
-     * The ambient wash sits over the page, so it would tint a chosen colour into
-     * a gradient. Choosing one turns it off; the default keeps it.
+     * The ambient wash sits over the page, so it would tint a colour into a
+     * gradient — so it belongs to the White background alone. The Silver default
+     * and every other choice render flat.
      */
-    public function test_the_wash_is_dropped_once_a_background_colour_is_chosen(): void
+    public function test_the_wash_belongs_to_the_white_background(): void
     {
+        // The default is Silver, which is flat.
+        $this->assertTrue(AppSetting::current()->plainBackground());
+
+        $this->actingAs($this->admin())
+            ->post('/settings/colors', $this->payload(['body_color' => BodyColor::White->value]));
+
         $this->assertFalse(AppSetting::current()->plainBackground());
 
         $this->actingAs($this->admin())
@@ -318,9 +328,13 @@ class ColorsTest extends TestCase
 
         $this->assertNull($vars['primary']);
         $this->assertNull($vars['primaryForeground']);
-        // And at the default background there is nothing to derive either: the
-        // stock tokens already are that theme.
-        $this->assertNull($vars['palette']);
+
+        // The underived, stock-token theme is now the White background — the
+        // Silver default derives its own palette. The default button leaves
+        // White's stock tokens alone all the same.
+        $white = AppSetting::current();
+        $white->body_color = BodyColor::White->value;
+        $this->assertNull($white->cssVariables()['palette']);
     }
 
     /**
@@ -339,8 +353,29 @@ class ColorsTest extends TestCase
         $this->assertSame('0 0% 98%', $vars['primaryForeground']);
     }
 
-    public function test_the_rendered_page_leaves_the_stock_theme_alone_at_the_defaults(): void
+    /**
+     * The Silver default is not the stock theme: it derives a flat silver page
+     * with pure white cards, and flags the opaque-card class that renders them.
+     */
+    public function test_the_silver_default_derives_white_cards(): void
     {
+        $vars = AppSetting::current()->cssVariables();
+
+        $this->assertNotNull($vars['palette']);
+        $this->assertSame('0% 100%', substr($vars['palette']['card'], strpos($vars['palette']['card'], ' ') + 1));
+        $this->assertTrue($vars['solidCards']);
+    }
+
+    public function test_the_white_background_leaves_the_stock_theme_alone(): void
+    {
+        // White is now the stock-theme choice — the Silver default derives a
+        // palette, so the untouched case is reached by picking White. The button
+        // stays at its default too, or it would write a --primary of its own.
+        $this->actingAs($this->admin())->post('/settings/colors', $this->payload([
+            'button_color' => '#171717',
+            'body_color' => BodyColor::White->value,
+        ]));
+
         $html = $this->actingAs($this->admin())->get('/dashboard')->getContent();
 
         // Nothing to override: the stock tokens already are this theme.

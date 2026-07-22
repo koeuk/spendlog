@@ -15,6 +15,14 @@ namespace App\Enums;
  */
 enum BodyColor: string
 {
+    // The default background, and first in the list because of it: a soft, thin
+    // silver the theme renders with pure white cards floating on it — the
+    // grey-page, white-card look. Neutral, not tinted like the rest. See the
+    // whiteCards path in Palette, the Silver checks in AppSetting, and the
+    // .solid-cards rule in app.css.
+    case Silver = '#f4f5f7';
+    // The ambient-wash look: the soft green blobs are what White means. It is the
+    // one background that keeps the wash — every other, Silver included, is flat.
     case White = '#ffffff';
     case Cream = '#faf8f4';
     case Sand = '#f7f4ee';
@@ -29,6 +37,7 @@ enum BodyColor: string
     public function label(): string
     {
         return match ($this) {
+            self::Silver => 'Silver',
             self::White => 'White',
             self::Cream => 'Cream',
             self::Sand => 'Sand',
