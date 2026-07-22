@@ -47,14 +47,16 @@ const { isDark } = useTheme();
 useBrandColors(isDark);
 
 const branding = computed(
-    () => page.props.branding ?? { name: 'SpendLog', logo: null, plain_background: false },
+    () => page.props.branding ?? { name: 'SpendLog', logo: null, plain_background: false, body_color: null },
 );
 </script>
 
 <template>
     <!-- Phone: the pushed screen. -->
     <div v-if="isMobile" :class="APP_PAGE">
-        <AmbientBackdrop v-if="!branding.plain_background" />
+        <!-- Same rule as AuthenticatedLayout: a chosen background re-tints the
+             wash rather than dropping it. -->
+        <AmbientBackdrop :tint="branding.plain_background ? branding.body_color : null" />
 
         <!--
             screen-push is on the column, not on the page root: the root holds

@@ -147,9 +147,11 @@ class HandleInertiaRequests extends Middleware
             'copyright' => $settings->copyrightHolder(),
             'logo' => $settings->logoUrl(),
             'favicon' => $settings->faviconUrl(),
-            // The layout drops the ambient wash when a background colour has been
-            // chosen, so the colour renders flat instead of tinted by it.
+            // With a background colour chosen the layout re-tints the ambient
+            // wash from it instead of dropping it — body_color is the hue the
+            // backdrop derives its blobs from.
             'plain_background' => $settings->plainBackground(),
+            'body_color' => $settings->body_color,
             // app.blade.php applies these before first paint, but that script only
             // runs on a full page load. An Inertia visit re-renders Vue without it,
             // so saving a colour would leave the page on the old one until a hard

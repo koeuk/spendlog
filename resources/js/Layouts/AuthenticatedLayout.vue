@@ -330,10 +330,11 @@ watch(() => page.url, () => (showMoreSheet.value = false));
 
 <template>
     <div :class="APP_PAGE">
-        <!-- Off once a background colour is chosen: the wash lies over the
-             page, so it would tint the chosen colour into a gradient rather
-             than leave it as the colour that was picked. -->
-        <AmbientBackdrop v-if="!branding.plain_background" />
+        <!-- With a background colour chosen, the wash re-tints itself from it —
+             a two-colour gradient in the preset's hue at full strength — so
+             clicking a swatch turns the whole room that colour. White keeps
+             the stock wash. -->
+        <AmbientBackdrop :tint="branding.plain_background ? branding.body_color : null" />
 
         <!-- flex column at full viewport height so the footer can be pushed to
              the bottom on short pages (main grows) rather than floating mid-page. -->
