@@ -1,6 +1,5 @@
 <script setup>
 import { useForm } from '@inertiajs/vue3';
-import LocaleTabs from '@/Components/LocaleTabs.vue';
 import { Button } from '@/Components/ui/button';
 import { Checkbox } from '@/Components/ui/checkbox';
 import { Input } from '@/Components/ui/input';
@@ -9,14 +8,15 @@ import { Textarea } from '@/Components/ui/textarea';
 import { CARD, FORM_ACTION, MUTED } from '@/lib/appStyles';
 
 const props = defineProps({
-    // { slug, name, title: {en, km}, body: {en, km}, published }
+    // { slug, name, title, body, published }
     page: { type: Object, required: true },
 });
 
-// Its own form so saving one page never touches another on the screen.
+// Its own form so saving one page never touches another on the screen. Title and
+// body are single values, stored under the fallback locale server-side.
 const form = useForm({
-    title: { en: props.page.title?.en ?? '', km: props.page.title?.km ?? '' },
-    body: { en: props.page.body?.en ?? '', km: props.page.body?.km ?? '' },
+    title: props.page.title ?? '',
+    body: props.page.body ?? '',
     published: props.page.published,
 });
 
@@ -29,35 +29,35 @@ function submit() {
     <form :class="[CARD, 'space-y-5 p-5']" @submit.prevent="submit">
         <h3 class="text-sm font-semibold text-gray-900 dark:text-neutral-100">{{ page.name }}</h3>
 
-        <LocaleTabs :form="form" field="title">
-            <template #label>
-                <Label class="text-xs" :class="MUTED">{{ __('Title') }}</Label>
-            </template>
-            <template #default="{ locale, isRequired }">
-                <Input
-                    :id="`${page.slug}_title_${locale}`"
-                    v-model="form.title[locale]"
-                    autocomplete="off"
-                    :required="isRequired && form.published"
-                    :aria-invalid="!!form.errors[`title.${locale}`]"
-                />
-            </template>
-        </LocaleTabs>
+        <div>
+            <Label :for="`${page.slug}_title`" class="text-xs" :class="MUTED">{{ __('Title') }}</Label>
+            <Input
+                :id="`${page.slug}_title`"
+                v-model="form.title"
+                class="mt-1"
+                autocomplete="off"
+                :required="form.published"
+                :aria-invalid="!!form.errors.title"
+            />
+            <p v-if="form.errors.title" class="mt-1 text-sm text-red-600 dark:text-red-400">
+                {{ form.errors.title }}
+            </p>
+        </div>
 
-        <LocaleTabs :form="form" field="body">
-            <template #label>
-                <Label class="text-xs" :class="MUTED">{{ __('Body') }}</Label>
-            </template>
-            <template #default="{ locale, isRequired }">
-                <Textarea
-                    :id="`${page.slug}_body_${locale}`"
-                    v-model="form.body[locale]"
-                    rows="8"
-                    :required="isRequired && form.published"
-                    :aria-invalid="!!form.errors[`body.${locale}`]"
-                />
-            </template>
-        </LocaleTabs>
+        <div>
+            <Label :for="`${page.slug}_body`" class="text-xs" :class="MUTED">{{ __('Body') }}</Label>
+            <Textarea
+                :id="`${page.slug}_body`"
+                v-model="form.body"
+                class="mt-1"
+                rows="8"
+                :required="form.published"
+                :aria-invalid="!!form.errors.body"
+            />
+            <p v-if="form.errors.body" class="mt-1 text-sm text-red-600 dark:text-red-400">
+                {{ form.errors.body }}
+            </p>
+        </div>
 
         <!-- Save drops below the Published toggle on a phone rather than sharing
              the row with it: side by side, the toggle's two lines of help text

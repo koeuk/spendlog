@@ -4,9 +4,9 @@ namespace App\Http\Requests;
 
 use App\Enums\CategoryColor;
 use App\Enums\Currency;
-use App\Enums\Locale;
 use App\Models\AppSetting;
 use App\Models\Category;
+use App\Support\TranslatableInput;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -21,14 +21,19 @@ class ExpenseRequest extends FormRequest
         return true;
     }
 
+    /**
+     * One Item box, not one per language — see TranslatableInput. The value is
+     * stored under the fallback locale.
+     */
+    protected function prepareForValidation(): void
+    {
+        $this->merge(['item' => TranslatableInput::toString($this->input('item'))]);
+    }
+
     public function rules(): array
     {
         return [
-            'item' => ['required', 'array'],
-            // English is the fallback locale, so it is the one that must exist —
-            // same rule as CategoryRequest::$name.
-            'item.en' => ['required', 'string', 'max:255'],
-            'item.km' => ['nullable', 'string', 'max:255'],
+            'item' => ['required', 'string', 'max:255'],
             'price' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
             // What the *entered* price is denominated in. Absent means USD, so
             // any existing client that never sends it keeps working unchanged.
@@ -71,7 +76,7 @@ class ExpenseRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'item.en.required' => __('The English item is required.'),
+            'item.required' => __('The item is required.'),
             'spent_on.before_or_equal' => __('You cannot log an expense in the future.'),
             'category_uuid.required' => __('Please pick a category.'),
             'category_uuid.exists' => __('That category no longer exists.'),
@@ -81,8 +86,7 @@ class ExpenseRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'item.en' => __('English item'),
-            'item.km' => __('Khmer item'),
+            'item' => __('item'),
             'new_category' => __('category'),
         ];
     }
@@ -107,13 +111,9 @@ class ExpenseRequest extends FormRequest
         $data['price'] = $currency->toUsd((float) $data['price'], AppSetting::current()->khrPerUsd());
         unset($data['currency']);
 
-        // Drop empty locales so spatie stores only real translations and the
-        // fallback can kick in, rather than persisting "".
-        $data['item'] = array_filter(
-            $data['item'],
-            fn (?string $value, string $locale) => filled($value) && Locale::tryFrom($locale),
-            ARRAY_FILTER_USE_BOTH,
-        );
+        // Written under the fallback locale — the column is still translatable
+        // JSON, the app just no longer authors a second language for it.
+        $data['item'] = TranslatableInput::toTranslations($data['item']);
 
         return $data;
     }

@@ -129,13 +129,11 @@ class ExpenseController extends Controller
         Gate::authorize('update', $expense);
 
         return Inertia::render('Expenses/Form', [
-            // item_translations is the raw JSON column. The form edits both
-            // locales at once, so it cannot be seeded from ->item, which is only
-            // whichever one is active.
+            // One item, resolved for the reader's locale — the form is a single
+            // box now, not a tab per language.
             'expense' => [
                 'uuid' => $expense->uuid,
                 'item' => $expense->item,
-                'item_translations' => $expense->getTranslations('item'),
                 'price' => $expense->price,
                 'category_uuid' => $expense->category?->uuid,
                 'spent_on' => $expense->spent_on?->toDateString(),
@@ -338,10 +336,8 @@ class ExpenseController extends Controller
                 'total' => (float) $group->sum('price'),
                 'expenses' => $group->map(fn (Expense $expense) => [
                     'uuid' => $expense->uuid,
-                    // Two shapes on purpose: the list renders the active locale,
-                    // while the edit dialog has to populate a field per locale.
+                    // Resolved for the reader's locale, falling back to English.
                     'item' => $expense->item,
-                    'item_translations' => $expense->getTranslations('item'),
                     'price' => (float) $expense->price,
                     'spent_on' => $expense->spent_on->toDateString(),
                     'category_uuid' => $expense->category->uuid,

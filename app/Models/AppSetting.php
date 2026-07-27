@@ -27,7 +27,7 @@ class AppSetting extends Model
     /**
      * Reading $settings->spending_warning returns the active locale's value,
      * falling back to fallback_locale when it is missing — same as Category name.
-     * The Settings form edits both locales at once via getTranslations().
+     * The Settings form writes one value, stored under fallback_locale.
      *
      * @var array<int, string>
      */

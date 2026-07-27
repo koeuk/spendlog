@@ -30,7 +30,7 @@ class CategoryController extends Controller
      * List categories
      *
      * `name` is resolved for the active locale (English is the fallback);
-     * `name_translations` carries the raw per-locale map for editing.
+     * `name_translations` carries the raw per-locale map as stored.
      *
      * @queryParam filter[name] string Partial match against the stored name JSON. Example: foo
      * @queryParam filter[color] string Exact colour. Example: amber
@@ -81,19 +81,19 @@ class CategoryController extends Controller
      * Admins only, and the token needs `categories:write` — which is **not**
      * granted by default.
      *
-     * The name is translatable, so it is sent as a per-locale map rather than a
-     * string. English is the fallback locale and is therefore required; Khmer is
-     * optional, and an empty locale is dropped rather than stored as "".
+     * The name is a plain string, stored under the fallback locale. The column
+     * behind it is still translatable, so `name_translations` may carry other
+     * languages seeded elsewhere — but nothing writes them through this endpoint.
+     * A per-locale object is still accepted for compatibility: its fallback-locale
+     * value is taken and the rest ignored.
      *
-     * @bodyParam name object required Per-locale names.
-     * @bodyParam name.en string required Must be unique among English names. Example: Travel
-     * @bodyParam name.km string Optional Khmer name. Must be unique among Khmer names. Example: ការធ្វើដំណើរ
+     * @bodyParam name string required Must be unique across every stored language. Example: Travel
      * @bodyParam color string required One of: slate, red, orange, amber, green, teal, blue, indigo, purple, pink. Example: blue
      * @bodyParam icon string One of the CategoryIcon values, or null. Example: plane
      *
-     * @response 201 {"data": {"uuid": "0198a...", "name": "Travel", "name_translations": {"en": "Travel", "km": "ការធ្វើដំណើរ"}, "color": "blue", "icon": "plane"}}
+     * @response 201 {"data": {"uuid": "0198a...", "name": "Travel", "name_translations": {"en": "Travel"}, "color": "blue", "icon": "plane"}}
      * @response 403 scenario="not an admin, or token lacks categories:write" {"message": "This action is unauthorized."}
-     * @response 422 scenario="duplicate name" {"message": "A category called \"Travel\" already exists.", "errors": {"name.en": ["A category called \"Travel\" already exists."]}}
+     * @response 422 scenario="duplicate name" {"message": "A category called \"Travel\" already exists.", "errors": {"name": ["A category called \"Travel\" already exists."]}}
      */
     public function store(CategoryRequest $request): JsonResponse
     {
@@ -111,13 +111,10 @@ class CategoryController extends Controller
      *
      * @urlParam category string required The category UUID. Example: 0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
      *
-     * Send the whole per-locale map — a locale omitted here is removed from the
-     * category, not left alone. `name_translations` from a GET is the shape to
-     * send back.
+     * The name replaces whatever was stored: translations in other languages are
+     * dropped, since the whole field is rewritten under the fallback locale.
      *
-     * @bodyParam name object required Per-locale names.
-     * @bodyParam name.en string required Unique, ignoring this category's own row. Example: Travel
-     * @bodyParam name.km string Optional Khmer name. Example: ការធ្វើដំណើរ
+     * @bodyParam name string required Unique, ignoring this category's own row. Example: Travel
      * @bodyParam color string required Example: blue
      * @bodyParam icon string Example: plane
      *

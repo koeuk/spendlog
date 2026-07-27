@@ -45,10 +45,8 @@ class ExerciseTypeController extends Controller
         return Inertia::render('Exercise/Types/Index', [
             'types' => $types->map(fn (ExerciseType $type) => [
                 'uuid' => $type->uuid,
-                // Two shapes on purpose: the list renders the active locale,
-                // while the edit dialog has to populate a field per locale.
+                // Resolved for the reader's locale, falling back to English.
                 'name' => $type->name,
-                'name_translations' => $type->getTranslations('name'),
                 'muscle_group' => $type->muscle_group?->value,
                 'is_cardio' => $type->is_cardio,
                 'color' => $type->color?->value,
@@ -83,12 +81,11 @@ class ExerciseTypeController extends Controller
         Gate::authorize('update', $exercise_type);
 
         return Inertia::render('Exercise/Types/Form', [
-            // Two shapes on purpose: the header renders the active locale, while
-            // the form has to populate a field per locale.
+            // One name, resolved for the reader's locale — the form is a single
+            // box now, not a tab per language.
             'type' => [
                 'uuid' => $exercise_type->uuid,
                 'name' => $exercise_type->name,
-                'name_translations' => $exercise_type->getTranslations('name'),
                 'muscle_group' => $exercise_type->muscle_group?->value,
                 'is_cardio' => $exercise_type->is_cardio,
                 'color' => $exercise_type->color?->value,

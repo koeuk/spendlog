@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\Locale;
 use App\Http\Requests\PageRequest;
 use App\Models\Page;
 use Illuminate\Http\RedirectResponse;
@@ -34,9 +33,10 @@ class PageController extends Controller
                 ->map(fn (Page $page) => [
                     'slug' => $page->slug,
                     'name' => self::LABELS[$page->slug] ?? $page->slug,
-                    // Raw per-locale maps, both keys always present.
-                    'title' => $this->localeMap($page, 'title'),
-                    'body' => $this->localeMap($page, 'body'),
+                    // One box per field, resolved for the reader's locale — the
+                    // editor no longer has a tab per language.
+                    'title' => $page->title,
+                    'body' => $page->body,
                     'published' => $page->published,
                 ]),
         ]);
@@ -84,23 +84,5 @@ class PageController extends Controller
                 'body' => $page->body,
             ],
         ]);
-    }
-
-    /**
-     * Both locales for a translatable field, always with every key present.
-     *
-     * @return array<string, string>
-     */
-    private function localeMap(Page $page, string $field): array
-    {
-        $translations = $page->getTranslations($field);
-
-        $map = [];
-
-        foreach (Locale::cases() as $locale) {
-            $map[$locale->value] = $translations[$locale->value] ?? '';
-        }
-
-        return $map;
     }
 }

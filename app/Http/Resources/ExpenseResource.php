@@ -21,8 +21,9 @@ class ExpenseResource extends JsonResource
             // Resolved for the active locale, falling back to English — this is
             // the one to render.
             'item' => $this->item,
-            // The raw per-locale map, so a client editing an expense can round
-            // trip it back to POST/PATCH, which take item[en]/item[km].
+            // The raw per-locale map as stored. Writes take a plain `item` and
+            // land under the fallback locale, so this is now a read of what is
+            // there rather than the shape to send back.
             'item_translations' => $this->getTranslations('item'),
             // Money is a string throughout this API — see the money note in
             // DEVELOPMENT_PLAN.md. Formatted to two places rather than cast

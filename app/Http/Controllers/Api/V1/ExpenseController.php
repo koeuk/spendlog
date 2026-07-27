@@ -128,12 +128,11 @@ class ExpenseController extends Controller
      * The owner always comes from the token — a `user_id` in the payload is
      * ignored, not honoured.
      *
-     * The item is translatable, so it is sent as a per-locale map rather than a
-     * string. English is the fallback locale and is therefore required.
+     * The item is a plain string, stored under the fallback locale. A per-locale
+     * object is still accepted for compatibility: its fallback-locale value is
+     * taken and the rest ignored.
      *
-     * @bodyParam item object required Per-locale item names.
-     * @bodyParam item.en string required Example: Coffee
-     * @bodyParam item.km string Optional Khmer name. Example: កាហ្វេ
+     * @bodyParam item string required Example: Coffee
      * @bodyParam price number required Max 99999999.99. Example: 4.50
      * @bodyParam currency string USD (default) or KHR. A riel amount is converted and stored in USD. Example: KHR
      * @bodyParam category_uuid string required Must be an existing category. Example: 0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
@@ -172,9 +171,7 @@ class ExpenseController extends Controller
      *
      * @urlParam expense string required The expense UUID. Example: 0198f1a2-b3c4-7d5e-8f9a-0b1c2d3e4f5a
      *
-     * @bodyParam item object required Per-locale item names.
-     * @bodyParam item.en string required Example: Coffee
-     * @bodyParam item.km string Optional Khmer name. Example: កាហ្វេ
+     * @bodyParam item string required Example: Coffee
      * @bodyParam price number required Example: 4.50
      * @bodyParam currency string USD (default) or KHR. A riel amount is converted and stored in USD. Example: KHR
      * @bodyParam category_uuid string required Example: 0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b

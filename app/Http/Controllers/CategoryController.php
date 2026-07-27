@@ -64,10 +64,11 @@ class CategoryController extends Controller
             ->get()
             ->map(fn (Category $category) => [
                 'uuid' => $category->uuid,
-                // The raw JSON field: {"en": "Food", "km": "អាហារ"}. This page
-                // both displays and edits it, so it ships every locale and the
-                // frontend picks one — no second, resolved copy of the name.
-                'name' => $category->getTranslations('name'),
+                // Resolved for the reader's locale, falling back to English. The
+                // column is still translatable JSON, but the form edits one name
+                // rather than one per language, so the page has no use for the
+                // raw map any more.
+                'name' => $category->name,
                 'color' => $category->color?->value,
                 'icon' => $category->icon?->value,
                 'expenses_count' => $category->expenses_count,
@@ -102,11 +103,11 @@ class CategoryController extends Controller
         Gate::authorize('update', $category);
 
         return Inertia::render('Categories/Form', [
-            // name is the raw translatable JSON: the form edits every locale at
-            // once, so seeding from ->name would drop the ones not active.
+            // One name, resolved for the reader's locale — the form is a single
+            // box now, not a tab per language.
             'category' => [
                 'uuid' => $category->uuid,
-                'name' => $category->getTranslations('name'),
+                'name' => $category->name,
                 'color' => $category->color?->value,
                 'icon' => $category->icon?->value,
             ],

@@ -41,13 +41,9 @@ function todayString() {
 const defaultCurrency = usePage().props.default_currency ?? 'USD';
 
 const form = useForm({
-    // One key per locale — item is a translatable JSON column, like category.name.
-    // item_translations is the raw JSON; item alone is only the active locale, so
-    // editing from it would quietly drop the other language on save.
-    item: {
-        en: props.expense?.item_translations?.en ?? '',
-        km: props.expense?.item_translations?.km ?? '',
-    },
+    // One item. The column behind it is still translatable JSON, but the value
+    // typed here is stored under the fallback locale — see TranslatableInput.
+    item: props.expense?.item ?? '',
     price: editing ? String(props.expense.price) : '',
     // The stored price is USD whatever it was typed in, so editing always starts
     // from USD rather than from the currency it happened to be entered in.

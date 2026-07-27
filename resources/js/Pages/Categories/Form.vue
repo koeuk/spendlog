@@ -3,7 +3,6 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 import FormScreenLayout from '@/Layouts/FormScreenLayout.vue';
 import CategoryStylePicker from '@/Components/CategoryStylePicker.vue';
 import FormActions from '@/Components/FormActions.vue';
-import LocaleTabs from '@/Components/LocaleTabs.vue';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
@@ -26,12 +25,9 @@ const props = defineProps({
 const editing = !!props.category;
 
 const form = useForm({
-    // Every locale at once — name is a translatable JSON column, so a single
-    // submit sends the whole object.
-    name: {
-        en: props.category?.name?.en ?? '',
-        km: props.category?.name?.km ?? '',
-    },
+    // One name. The column behind it is still translatable JSON, but the value
+    // typed here is stored under the fallback locale — see TranslatableInput.
+    name: props.category?.name ?? '',
     color: props.category?.color ?? 'slate',
     icon: props.category?.icon ?? null,
 });
@@ -70,26 +66,21 @@ function submit() {
                 rows, which is what the space was worth spending on.
             -->
             <div class="grid gap-6">
-                <LocaleTabs
-                    :form="form"
-                    field="name"
-                    :placeholders="{ en: 'e.g. Groceries', km: 'ឧ. គ្រឿងទេស' }"
-                >
-                    <template #label>
-                        <Label for="name_en">{{ __('Name') }}</Label>
-                    </template>
-
-                    <template #default="{ locale, placeholder, isRequired }">
-                        <Input
-                            :id="`name_${locale}`"
-                            v-model="form.name[locale]"
-                            autocomplete="off"
-                            :placeholder="placeholder"
-                            :required="isRequired"
-                            :aria-invalid="!!form.errors[`name.${locale}`]"
-                        />
-                    </template>
-                </LocaleTabs>
+                <div>
+                    <Label for="name">{{ __('Name') }}</Label>
+                    <Input
+                        id="name"
+                        v-model="form.name"
+                        class="mt-1"
+                        autocomplete="off"
+                        placeholder="e.g. Groceries"
+                        required
+                        :aria-invalid="!!form.errors.name"
+                    />
+                    <p v-if="form.errors.name" class="mt-1 text-sm text-red-600 dark:text-red-400">
+                        {{ form.errors.name }}
+                    </p>
+                </div>
 
                 <CategoryStylePicker :form="form" />
             </div>

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Enums\FaqStatus;
-use App\Enums\Locale;
 use App\Http\Requests\FaqRequest;
 use App\Models\Faq;
 use Illuminate\Http\RedirectResponse;
@@ -33,14 +32,12 @@ class FaqController extends Controller
                 ->get()
                 ->map(fn (Faq $faq) => [
                     'uuid' => $faq->uuid,
-                    // Raw per-locale maps, always with both keys, so the form
-                    // has a box for each even before anything is written.
-                    'question' => $this->localeMap($faq, 'question'),
-                    'answer' => $this->localeMap($faq, 'answer'),
+                    // Resolved for the reader's locale, falling back to English.
+                    'question' => $faq->question,
+                    'answer' => $faq->answer,
                     'status' => $faq->status->value,
                 ]),
             'statuses' => $this->statusOptions(),
-            // Locales come from the globally shared list (LocaleTabs reads it).
         ]);
     }
 
@@ -60,10 +57,10 @@ class FaqController extends Controller
         return Inertia::render('Settings/FaqForm', [
             'faq' => [
                 'uuid' => $faq->uuid,
-                // Raw per-locale maps, always with both keys, so the form has a
-                // box for each even before anything is written.
-                'question' => $this->localeMap($faq, 'question'),
-                'answer' => $this->localeMap($faq, 'answer'),
+                // One box per field, resolved for the reader's locale — the form
+                // no longer has a tab per language.
+                'question' => $faq->question,
+                'answer' => $faq->answer,
                 'status' => $faq->status->value,
             ],
             'statuses' => $this->statusOptions(),
@@ -146,24 +143,5 @@ class FaqController extends Controller
             fn (FaqStatus $status) => ['value' => $status->value, 'label' => $status->label()],
             FaqStatus::cases(),
         );
-    }
-
-    /**
-     * Both locales for a translatable field, always with every key present, so
-     * the admin form renders an empty box for a language rather than omitting it.
-     *
-     * @return array<string, string>
-     */
-    private function localeMap(Faq $faq, string $field): array
-    {
-        $translations = $faq->getTranslations($field);
-
-        $map = [];
-
-        foreach (Locale::cases() as $locale) {
-            $map[$locale->value] = $translations[$locale->value] ?? '';
-        }
-
-        return $map;
     }
 }

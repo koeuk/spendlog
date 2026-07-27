@@ -86,10 +86,10 @@ class SettingsController extends Controller
         return Inertia::render('Settings/Spending', [
             'spending' => [
                 'enabled' => $settings->spending_guidance_enabled,
-                // The raw JSON maps, exactly as CategoryController sends
-                // category.name. The form seeds both locales off them.
-                'warning' => $settings->getTranslations('spending_warning'),
-                'advice' => $settings->getTranslations('spending_advice'),
+                // Resolved for the reader's locale, exactly as CategoryController
+                // sends category.name — one box per message, not one per language.
+                'warning' => $settings->spending_warning,
+                'advice' => $settings->spending_advice,
                 'khr_per_usd' => $settings->khrPerUsd(),
                 'default_currency' => $settings->defaultCurrency()->value,
             ],

@@ -1,7 +1,6 @@
 <script setup>
 import { Head, useForm } from '@inertiajs/vue3';
 import SettingsLayout from '@/Layouts/SettingsLayout.vue';
-import LocaleTabs from '@/Components/LocaleTabs.vue';
 import { Button } from '@/Components/ui/button';
 import { Checkbox } from '@/Components/ui/checkbox';
 import { Input } from '@/Components/ui/input';
@@ -12,26 +11,20 @@ import { FORM_ACTION, MUTED } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
 
 const props = defineProps({
-    // { enabled, warning: {en?, km?}, advice: {en?, km?} } — the translatable
-    // fields arrive as raw JSON maps, exactly like category.name.
+    // { enabled, warning, advice } — both messages arrive resolved for the
+    // active locale, exactly like category.name.
     spending: { type: Object, required: true },
     // [{ value: 'USD', label: '$ USD' }, …] — built server-side so the page
     // does not have to know the symbol for each currency.
     currencies: { type: Array, default: () => [] },
 });
 
-// Both locales are always present on the form, so a language never goes missing
-// — the same shape Categories/Index seeds its name field with.
+// One box per message. The columns are still translatable JSON, but what is
+// written here is stored under the fallback locale — see TranslatableInput.
 const form = useForm({
     enabled: props.spending.enabled,
-    warning: {
-        en: props.spending.warning?.en ?? '',
-        km: props.spending.warning?.km ?? '',
-    },
-    advice: {
-        en: props.spending.advice?.en ?? '',
-        km: props.spending.advice?.km ?? '',
-    },
+    warning: props.spending.warning ?? '',
+    advice: props.spending.advice ?? '',
     khr_per_usd: props.spending.khr_per_usd,
     default_currency: props.spending.default_currency,
 });
@@ -67,49 +60,41 @@ function submit() {
                 </div>
             </div>
 
-            <!-- One LocaleTabs per translatable field, matching Categories. The
-                 language tabs sit in each field's own label row. Nothing is
-                 required — the whole feature is optional — so no locale is
-                 marked mandatory. -->
-            <LocaleTabs :form="form" field="warning">
-                <template #label>
-                    <div>
-                        <Label class="text-sm font-semibold">{{ __('Warning message') }}</Label>
-                        <p class="text-xs" :class="MUTED">
-                            {{ __('A caution about overspending. Leave a language blank to skip it.') }}
-                        </p>
-                    </div>
-                </template>
+            <!-- Neither message is required — the whole feature is optional, and
+                 a blank one is cleared rather than saved empty. -->
+            <div>
+                <Label for="warning" class="text-sm font-semibold">{{ __('Warning message') }}</Label>
+                <p class="text-xs" :class="MUTED">
+                    {{ __('A caution about overspending. Leave it blank to skip it.') }}
+                </p>
+                <Textarea
+                    id="warning"
+                    v-model="form.warning"
+                    class="mt-1"
+                    rows="3"
+                    :aria-invalid="!!form.errors.warning"
+                />
+                <p v-if="form.errors.warning" class="mt-1 text-sm text-red-600 dark:text-red-400">
+                    {{ form.errors.warning }}
+                </p>
+            </div>
 
-                <template #default="{ locale }">
-                    <Textarea
-                        :id="`warning_${locale}`"
-                        v-model="form.warning[locale]"
-                        rows="3"
-                        :aria-invalid="!!form.errors[`warning.${locale}`]"
-                    />
-                </template>
-            </LocaleTabs>
-
-            <LocaleTabs :form="form" field="advice">
-                <template #label>
-                    <div>
-                        <Label class="text-sm font-semibold">{{ __('Spending advice') }}</Label>
-                        <p class="text-xs" :class="MUTED">
-                            {{ __('A short tip on how to spend wisely.') }}
-                        </p>
-                    </div>
-                </template>
-
-                <template #default="{ locale }">
-                    <Textarea
-                        :id="`advice_${locale}`"
-                        v-model="form.advice[locale]"
-                        rows="3"
-                        :aria-invalid="!!form.errors[`advice.${locale}`]"
-                    />
-                </template>
-            </LocaleTabs>
+            <div>
+                <Label for="advice" class="text-sm font-semibold">{{ __('Spending advice') }}</Label>
+                <p class="text-xs" :class="MUTED">
+                    {{ __('A short tip on how to spend wisely.') }}
+                </p>
+                <Textarea
+                    id="advice"
+                    v-model="form.advice"
+                    class="mt-1"
+                    rows="3"
+                    :aria-invalid="!!form.errors.advice"
+                />
+                <p v-if="form.errors.advice" class="mt-1 text-sm text-red-600 dark:text-red-400">
+                    {{ form.errors.advice }}
+                </p>
+            </div>
 
             <!-- Not spending *guidance*, but it belongs to the same "how money
                  works here" settings page rather than a page of its own. -->

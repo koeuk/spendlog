@@ -1,7 +1,6 @@
 <script setup>
 import { computed } from 'vue';
 import { useForm } from '@inertiajs/vue3';
-import LocaleTabs from '@/Components/LocaleTabs.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 import FormActions from '@/Components/FormActions.vue';
 import { PILL_ACTION } from '@/lib/appStyles';
@@ -31,12 +30,9 @@ const emit = defineEmits(['cancel']);
 const editing = computed(() => props.type !== null);
 
 const form = useForm({
-    // name_translations is the raw JSON. Seeding from ->name would carry only
-    // the active locale and drop the other one on save.
-    name: {
-        en: props.type?.name_translations?.en ?? '',
-        km: props.type?.name_translations?.km ?? '',
-    },
+    // One name. The column behind it is still translatable JSON, but the value
+    // typed here is stored under the fallback locale — see TranslatableInput.
+    name: props.type?.name ?? '',
     muscle_group: props.type?.muscle_group ?? 'chest',
     is_cardio: props.type?.is_cardio ?? false,
     color: props.type?.color ?? null,
@@ -56,31 +52,22 @@ function submit() {
     <!-- Capped like the other forms: the card is page-width now, and these
          are short single-line controls that read badly stretched across it. -->
     <form class="flex flex-1 flex-col space-y-4" @submit.prevent="submit">
-        <!-- One field per locale would grow a column per language. The tabs keep
-             it to one, and every locale stays in form.name so a single submit
-             still sends the JSON. -->
-        <LocaleTabs
-            :form="form"
-            field="name"
-            :placeholders="{ en: 'e.g. Bench Press' }"
-        >
-            <template #label>
-                <span class="text-xs font-semibold">{{ trans('Name') }}</span>
-            </template>
-
-            <template #default="{ locale, placeholder, isRequired }">
-                <input
-                    :id="`name_${locale}`"
-                    v-model="form.name[locale]"
-                    type="text"
-                    autocomplete="off"
-                    class="h-10 w-full rounded-xl border border-border bg-card/70 px-3 text-sm"
-                    :placeholder="placeholder"
-                    :required="isRequired"
-                    :aria-invalid="!!form.errors[`name.${locale}`]"
-                />
-            </template>
-        </LocaleTabs>
+        <div>
+            <label for="name" class="text-xs font-semibold">{{ trans('Name') }}</label>
+            <input
+                id="name"
+                v-model="form.name"
+                type="text"
+                autocomplete="off"
+                class="mt-1 h-10 w-full rounded-xl border border-border bg-card/70 px-3 text-sm"
+                placeholder="e.g. Bench Press"
+                required
+                :aria-invalid="!!form.errors.name"
+            />
+            <p v-if="form.errors.name" class="mt-1 text-sm text-red-600 dark:text-red-400">
+                {{ form.errors.name }}
+            </p>
+        </div>
 
         <div class="grid gap-4 sm:grid-cols-2">
             <!-- Not a <label>: the trigger is a button, which a label cannot

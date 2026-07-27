@@ -21,8 +21,9 @@ class CategoryResource extends JsonResource
             // Resolved for the active locale, falling back to English — this is
             // the one to render.
             'name' => $this->name,
-            // The raw per-locale map, so a client editing a category can round
-            // trip it back to POST/PATCH, which take name[en]/name[km].
+            // The raw per-locale map as stored. Writes take a plain `name` and
+            // land under the fallback locale, so this is now a read of what is
+            // there rather than the shape to send back.
             'name_translations' => $this->getTranslations('name'),
             'color' => $this->color?->value,
             'icon' => $this->icon?->value,

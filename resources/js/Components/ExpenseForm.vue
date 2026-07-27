@@ -10,7 +10,6 @@ import {
 } from '@internationalized/date';
 import CategoryPicker from '@/Components/CategoryPicker.vue';
 import CurrencyToggle from '@/Components/CurrencyToggle.vue';
-import LocaleTabs from '@/Components/LocaleTabs.vue';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
 import { MUTED } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
@@ -131,33 +130,25 @@ const convertedPreview = computed(() => {
 
 <template>
     <div class="grid gap-4">
-        <LocaleTabs
-            :form="form"
-            field="item"
-            :placeholders="{ en: 'e.g. Coffee', km: 'ឧ. កាហ្វេ' }"
-        >
-            <template #label>
-                <Label for="item_en">{{ __('Item') }}</Label>
-            </template>
+        <div>
+            <Label for="item">{{ __('Item') }}</Label>
+            <Input
+                id="item"
+                v-model="form.item"
+                class="mt-1"
+                autocomplete="off"
+                placeholder="e.g. Coffee"
+                required
+                :aria-invalid="!!form.errors.item"
+            />
 
-            <template #default="{ locale, placeholder, isRequired }">
-                <Input
-                    :id="`item_${locale}`"
-                    v-model="form.item[locale]"
-                    autocomplete="off"
-                    :placeholder="placeholder"
-                    :required="isRequired"
-                    :aria-invalid="!!form.errors[`item.${locale}`]"
-                />
-            </template>
-        </LocaleTabs>
-
-        <p
-            v-if="form.errors.item"
-            class="-mt-2 text-sm text-red-600 dark:text-red-400"
-        >
-            {{ form.errors.item }}
-        </p>
+            <p
+                v-if="form.errors.item"
+                class="mt-1 text-sm text-red-600 dark:text-red-400"
+            >
+                {{ form.errors.item }}
+            </p>
+        </div>
 
         <!--
             Price gets its own row. Sharing one with Category and Date left it a

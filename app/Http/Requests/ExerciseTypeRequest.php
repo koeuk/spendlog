@@ -4,9 +4,9 @@ namespace App\Http\Requests;
 
 use App\Enums\CategoryColor;
 use App\Enums\ExerciseIcon;
-use App\Enums\Locale;
 use App\Enums\MuscleGroup;
 use App\Models\ExerciseType;
+use App\Support\TranslatableInput;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -20,13 +20,19 @@ class ExerciseTypeRequest extends FormRequest
         return true;
     }
 
+    /**
+     * One Name box, not one per language — see TranslatableInput. The value is
+     * stored under the fallback locale.
+     */
+    protected function prepareForValidation(): void
+    {
+        $this->merge(['name' => TranslatableInput::toString($this->input('name'))]);
+    }
+
     public function rules(): array
     {
         return [
-            'name' => ['required', 'array'],
-            // English is the fallback locale, so it is the one that must exist —
-            // same rule as CategoryRequest::$name.
-            'name.en' => [
+            'name' => [
                 'required',
                 'string',
                 'max:255',
@@ -36,7 +42,6 @@ class ExerciseTypeRequest extends FormRequest
                     }
                 },
             ],
-            'name.km' => ['nullable', 'string', 'max:255'],
             'muscle_group' => ['required', Rule::enum(MuscleGroup::class)],
             'is_cardio' => ['nullable', 'boolean'],
             'color' => ['nullable', Rule::enum(CategoryColor::class)],
@@ -47,8 +52,7 @@ class ExerciseTypeRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'name.en' => __('English name'),
-            'name.km' => __('Khmer name'),
+            'name' => __('name'),
             'muscle_group' => __('muscle group'),
         ];
     }
@@ -60,13 +64,9 @@ class ExerciseTypeRequest extends FormRequest
     {
         $data = $this->validated();
 
-        // Drop empty locales so spatie stores only real translations and the
-        // fallback can kick in, rather than persisting "".
-        $data['name'] = array_filter(
-            $data['name'],
-            fn (?string $value, string $locale) => filled($value) && Locale::tryFrom($locale),
-            ARRAY_FILTER_USE_BOTH,
-        );
+        // Written under the fallback locale — the column is still translatable
+        // JSON, the app just no longer authors a second language for it.
+        $data['name'] = TranslatableInput::toTranslations($data['name']);
 
         $group = MuscleGroup::from($data['muscle_group']);
 
