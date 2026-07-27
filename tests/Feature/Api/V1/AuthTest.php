@@ -313,7 +313,7 @@ class AuthTest extends TestCase
         ])->json('token');
 
         $this->withToken($token)->postJson('/api/v1/expenses', [
-            'item' => ['en' => 'Coffee'],
+            'item' => 'Coffee',
             'price' => 4.5,
             'category_uuid' => $category->uuid,
             'spent_on' => now()->toDateString(),

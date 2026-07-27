@@ -46,7 +46,7 @@ class CurrencyAndMonthFilterTest extends TestCase
         $category = Category::factory()->create();
 
         return $this->postJson('/api/v1/expenses', [
-            'item' => ['en' => 'Coffee'],
+            'item' => 'Coffee',
             'category_uuid' => $category->uuid,
             'spent_on' => '2026-07-15',
             ...$payload,

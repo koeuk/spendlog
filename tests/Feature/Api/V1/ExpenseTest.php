@@ -66,7 +66,7 @@ class ExpenseTest extends TestCase
         Sanctum::actingAs($user, [TokenAbility::ExpensesRead->value]);
 
         $this->postJson('/api/v1/expenses', [
-            'item' => ['en' => 'Coffee'],
+            'item' => 'Coffee',
             'price' => 4.5,
             'category_uuid' => $category->uuid,
             'spent_on' => now()->toDateString(),
@@ -81,7 +81,7 @@ class ExpenseTest extends TestCase
         Sanctum::actingAs($user, [TokenAbility::ExpensesWrite->value]);
 
         $response = $this->postJson('/api/v1/expenses', [
-            'item' => ['en' => 'Coffee'],
+            'item' => 'Coffee',
             'price' => 4.5,
             'category_uuid' => $category->uuid,
             'spent_on' => now()->toDateString(),
@@ -112,7 +112,7 @@ class ExpenseTest extends TestCase
         Sanctum::actingAs($user, [TokenAbility::ExpensesWrite->value]);
 
         $this->postJson('/api/v1/expenses', [
-            'item' => ['en' => 'Coffee'],
+            'item' => 'Coffee',
             'price' => 4.5,
             'category_uuid' => $category->uuid,
             'spent_on' => now()->toDateString(),
@@ -138,7 +138,7 @@ class ExpenseTest extends TestCase
         Sanctum::actingAs($user, [TokenAbility::ExpensesWrite->value]);
 
         $this->postJson('/api/v1/expenses', [
-            'item' => ['en' => 'Coffee'],
+            'item' => 'Coffee',
             'price' => 4.5,
             'category_uuid' => $category->uuid,
             'spent_on' => now()->addDay()->toDateString(),
@@ -154,7 +154,7 @@ class ExpenseTest extends TestCase
         Sanctum::actingAs($user, [TokenAbility::ExpensesWrite->value]);
 
         $this->patchJson("/api/v1/expenses/{$theirs->uuid}", [
-            'item' => ['en' => 'Hijacked'],
+            'item' => 'Hijacked',
             'price' => 1,
             'category_uuid' => $category->uuid,
             'spent_on' => now()->toDateString(),
@@ -192,7 +192,7 @@ class ExpenseTest extends TestCase
         Sanctum::actingAs($admin, [TokenAbility::ExpensesWrite->value]);
 
         $this->patchJson("/api/v1/expenses/{$theirs->uuid}", [
-            'item' => ['en' => 'Corrected'],
+            'item' => 'Corrected',
             'price' => 9.99,
             'category_uuid' => $category->uuid,
             'spent_on' => now()->toDateString(),

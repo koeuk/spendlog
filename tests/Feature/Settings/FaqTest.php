@@ -41,8 +41,8 @@ class FaqTest extends TestCase
     private function payload(array $overrides = []): array
     {
         return array_merge([
-            'question' => ['en' => 'How do I add an expense?', 'km' => 'តើបញ្ចូលចំណាយយ៉ាងណា?'],
-            'answer' => ['en' => 'Tap Add expense.', 'km' => 'ចុច បញ្ចូលចំណាយ។'],
+            'question' => 'How do I add an expense?',
+            'answer' => 'Tap Add expense.',
             'status' => FaqStatus::Published->value,
         ], $overrides);
     }
@@ -79,28 +79,35 @@ class FaqTest extends TestCase
 
     // --- CRUD -------------------------------------------------------------
 
-    public function test_an_admin_creates_a_translatable_entry(): void
+    public function test_an_admin_creates_an_entry(): void
     {
         $this->actingAs($this->admin())
             ->post(route('faqs.store'), $this->payload())
             ->assertRedirect();
 
         $faq = Faq::sole();
-        $this->assertSame('How do I add an expense?', $faq->getTranslation('question', 'en'));
-        $this->assertSame('តើបញ្ចូលចំណាយយ៉ាងណា?', $faq->getTranslation('question', 'km'));
+        // The columns are still translatable JSON, but the form writes one value
+        // and it lands under the fallback locale.
+        $this->assertSame(['en' => 'How do I add an expense?'], $faq->getTranslations('question'));
+        $this->assertSame(['en' => 'Tap Add expense.'], $faq->getTranslations('answer'));
         $this->assertSame(FaqStatus::Published, $faq->status);
     }
 
-    public function test_english_question_is_required(): void
+    public function test_the_question_is_required(): void
     {
         $this->actingAs($this->admin())
-            ->post(route('faqs.store'), $this->payload(['question' => ['en' => '', 'km' => 'x']]))
-            ->assertSessionHasErrors('question.en');
+            ->post(route('faqs.store'), $this->payload(['question' => '']))
+            ->assertSessionHasErrors('question');
 
         $this->assertSame(0, Faq::count());
     }
 
-    public function test_blanking_a_locale_clears_it_rather_than_storing_empty(): void
+    /**
+     * An entry seeded with a Khmer translation is rewritten wholesale on save:
+     * the form edits one value, so the locale it does not show cannot survive an
+     * edit — and must not be left behind as a stale second version of the text.
+     */
+    public function test_saving_replaces_every_stored_locale(): void
     {
         $faq = Faq::factory()->create([
             'question' => ['en' => 'Q', 'km' => 'ខ្មែរ'],
@@ -109,13 +116,12 @@ class FaqTest extends TestCase
 
         $this->actingAs($this->admin())
             ->patch(route('faqs.update', $faq), $this->payload([
-                'question' => ['en' => 'Q', 'km' => ''],
-                'answer' => ['en' => 'A'],
+                'question' => 'Q',
+                'answer' => 'A',
             ]))
             ->assertRedirect();
 
-        // The km key is gone, not stored as '' — so a km reader falls back to en.
-        $this->assertArrayNotHasKey('km', $faq->fresh()->getTranslations('question'));
+        $this->assertSame(['en' => 'Q'], $faq->fresh()->getTranslations('question'));
     }
 
     public function test_an_admin_deletes_an_entry(): void

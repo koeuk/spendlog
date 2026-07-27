@@ -253,7 +253,7 @@ class ExerciseModuleTest extends TestCase
         $user = $this->grantedUser();
 
         $this->actingAs($user)->post(route('exercise.types.store'), [
-            'name' => ['en' => 'Zercher Squat'],
+            'name' => 'Zercher Squat',
             'muscle_group' => MuscleGroup::Legs->value,
         ])->assertRedirect();
 
@@ -271,7 +271,7 @@ class ExerciseModuleTest extends TestCase
         $global = ExerciseType::whereJsonContains('name->en', 'Squat')->firstOrFail();
 
         $this->actingAs($user)->put(route('exercise.types.update', $global->uuid), [
-            'name' => ['en' => 'Hijacked'],
+            'name' => 'Hijacked',
             'muscle_group' => MuscleGroup::Legs->value,
         ])->assertForbidden();
 
@@ -285,7 +285,7 @@ class ExerciseModuleTest extends TestCase
         $global = ExerciseType::whereJsonContains('name->en', 'Squat')->firstOrFail();
 
         $this->actingAs($admin->fresh())->put(route('exercise.types.update', $global->uuid), [
-            'name' => ['en' => 'Back Squat'],
+            'name' => 'Back Squat',
             'muscle_group' => MuscleGroup::Legs->value,
         ])->assertRedirect();
 
@@ -299,7 +299,7 @@ class ExerciseModuleTest extends TestCase
 
         foreach ([$first, $second] as $user) {
             $this->actingAs($user)->post(route('exercise.types.store'), [
-                'name' => ['en' => 'Sled Push'],
+                'name' => 'Sled Push',
                 'muscle_group' => MuscleGroup::Legs->value,
             ])->assertRedirect();
         }
@@ -312,12 +312,12 @@ class ExerciseModuleTest extends TestCase
         $user = $this->grantedUser();
 
         $this->actingAs($user)->post(route('exercise.types.store'), [
-            'name' => ['en' => 'Sled Push'],
+            'name' => 'Sled Push',
             'muscle_group' => MuscleGroup::Legs->value,
         ])->assertRedirect();
 
         $this->actingAs($user)->post(route('exercise.types.store'), [
-            'name' => ['en' => 'sled push'],
+            'name' => 'sled push',
             'muscle_group' => MuscleGroup::Legs->value,
         ])->assertSessionHasErrors('name.en');
 

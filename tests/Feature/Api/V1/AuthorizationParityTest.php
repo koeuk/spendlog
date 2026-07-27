@@ -56,7 +56,7 @@ class AuthorizationParityTest extends TestCase
         $category = Category::factory()->create();
 
         $this->postJson('/api/v1/expenses', [
-            'item' => ['en' => 'Coffee'],
+            'item' => 'Coffee',
             'price' => '4.50',
             'category_uuid' => $category->uuid,
             'spent_on' => now()->toDateString(),
@@ -74,7 +74,7 @@ class AuthorizationParityTest extends TestCase
         $this->userWithout(Permission::CategoriesCreate, [TokenAbility::ExpensesWrite->value]);
 
         $this->postJson('/api/v1/expenses', [
-            'item' => ['en' => 'Coffee'],
+            'item' => 'Coffee',
             'price' => '4.50',
             'new_category' => 'Smuggled',
             'spent_on' => now()->toDateString(),
@@ -90,7 +90,7 @@ class AuthorizationParityTest extends TestCase
         $expense = Expense::factory()->for($user)->create();
 
         $this->patchJson("/api/v1/expenses/{$expense->uuid}", [
-            'item' => ['en' => 'Coffee'],
+            'item' => 'Coffee',
             'price' => '4.50',
             'new_category' => 'Smuggled',
             'spent_on' => now()->toDateString(),
@@ -107,7 +107,7 @@ class AuthorizationParityTest extends TestCase
         Sanctum::actingAs($user, [TokenAbility::ExpensesWrite->value]);
 
         $this->postJson('/api/v1/expenses', [
-            'item' => ['en' => 'Coffee'],
+            'item' => 'Coffee',
             'price' => '4.50',
             'new_category' => 'Allowed',
             'spent_on' => now()->toDateString(),

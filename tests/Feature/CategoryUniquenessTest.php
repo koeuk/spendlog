@@ -40,10 +40,10 @@ class CategoryUniquenessTest extends TestCase
 
         $this->actingAs($user)
             ->post(route('categories.store'), [
-                'name' => ['en' => $attempt, 'km' => ''],
+                'name' => $attempt,
                 'color' => 'slate',
             ])
-            ->assertSessionHasErrors('name.en');
+            ->assertSessionHasErrors('name');
 
         $this->assertSame(1, Category::count());
     }
@@ -65,7 +65,7 @@ class CategoryUniquenessTest extends TestCase
 
         $this->actingAs($user)
             ->post(route('categories.store'), [
-                'name' => ['en' => 'Transport', 'km' => ''],
+                'name' => 'Transport',
                 'color' => 'slate',
             ])
             ->assertSessionHasNoErrors();
@@ -81,7 +81,7 @@ class CategoryUniquenessTest extends TestCase
 
         $this->actingAs($user)
             ->put(route('categories.update', $category), [
-                'name' => ['en' => 'Food', 'km' => 'អាហារ'],
+                'name' => 'Food',
                 'color' => 'red',
             ])
             ->assertSessionHasNoErrors();
@@ -100,7 +100,7 @@ class CategoryUniquenessTest extends TestCase
 
         $this->actingAs($user)
             ->post(route('expenses.store'), [
-                'item' => ['en' => 'Lunch'],
+                'item' => 'Lunch',
                 'price' => '12.50',
                 'currency' => 'USD',
                 'new_category' => 'food',
@@ -128,7 +128,7 @@ class CategoryUniquenessTest extends TestCase
 
         $this->actingAs($user)
             ->post(route('expenses.store'), [
-                'item' => ['en' => 'Lunch'],
+                'item' => 'Lunch',
                 'price' => '12.50',
                 'currency' => 'USD',
                 'category_uuid' => $uuid,

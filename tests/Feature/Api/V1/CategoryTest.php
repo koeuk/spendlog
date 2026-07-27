@@ -107,7 +107,7 @@ class CategoryTest extends TestCase
         Sanctum::actingAs($user, [TokenAbility::CategoriesWrite->value]);
 
         $this->postJson('/api/v1/categories', [
-            'name' => ['en' => 'Snacks'],
+            'name' => 'Snacks',
             'color' => CategoryColor::Red->value,
         ])->assertStatus(201);
 
@@ -135,7 +135,7 @@ class CategoryTest extends TestCase
         ])->assertOk()->json('token');
 
         $this->withToken($token)->postJson('/api/v1/categories', [
-            'name' => ['en' => 'Snacks'],
+            'name' => 'Snacks',
             'color' => CategoryColor::Red->value,
         ])->assertStatus(201);
 
@@ -156,7 +156,7 @@ class CategoryTest extends TestCase
         Sanctum::actingAs($user, [TokenAbility::CategoriesWrite->value]);
 
         $this->patchJson("/api/v1/categories/{$category->uuid}", [
-            'name' => ['en' => 'Renamed'],
+            'name' => 'Renamed',
             'color' => CategoryColor::Red->value,
         ])->assertForbidden();
 
@@ -171,7 +171,7 @@ class CategoryTest extends TestCase
         Sanctum::actingAs($this->admin(), [TokenAbility::CategoriesRead->value]);
 
         $this->postJson('/api/v1/categories', [
-            'name' => ['en' => 'Blocked'],
+            'name' => 'Blocked',
             'color' => CategoryColor::Red->value,
         ])->assertForbidden();
 
@@ -183,7 +183,7 @@ class CategoryTest extends TestCase
         Sanctum::actingAs($this->admin(), [TokenAbility::CategoriesWrite->value]);
 
         $this->postJson('/api/v1/categories', [
-            'name' => ['en' => 'Travel', 'km' => 'ការធ្វើដំណើរ'],
+            'name' => 'Travel',
             'color' => CategoryColor::Blue->value,
             'icon' => CategoryIcon::Plane->value,
         ])->assertStatus(201)
@@ -200,7 +200,7 @@ class CategoryTest extends TestCase
         Sanctum::actingAs($this->admin(), [TokenAbility::CategoriesWrite->value]);
 
         $this->postJson('/api/v1/categories', [
-            'name' => ['en' => 'Bad'],
+            'name' => 'Bad',
             'color' => 'chartreuse',
         ])->assertStatus(422)->assertJsonValidationErrors('color');
     }
@@ -214,7 +214,7 @@ class CategoryTest extends TestCase
         // Uniqueness is per locale, checked with whereJsonContains rather than
         // Rule::unique, which cannot reach inside a JSON column.
         $this->postJson('/api/v1/categories', [
-            'name' => ['en' => 'Food'],
+            'name' => 'Food',
             'color' => CategoryColor::Red->value,
         ])->assertStatus(422)->assertJsonValidationErrors('name.en');
     }
@@ -230,7 +230,7 @@ class CategoryTest extends TestCase
         Sanctum::actingAs($this->admin(), [TokenAbility::CategoriesWrite->value]);
 
         $this->patchJson("/api/v1/categories/{$category->uuid}", [
-            'name' => ['en' => 'Food'],
+            'name' => 'Food',
             'color' => CategoryColor::Green->value,
         ])->assertOk()->assertJsonPath('data.color', CategoryColor::Green->value);
     }

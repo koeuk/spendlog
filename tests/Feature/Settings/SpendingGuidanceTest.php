@@ -89,8 +89,8 @@ class SpendingGuidanceTest extends TestCase
     {
         $this->actingAs($this->admin())
             ->post(route('spending.update'), $this->payload([
-                'warning' => ['en' => 'English only.', 'km' => '   '],
-                'advice' => ['en' => '', 'km' => ''],
+                'warning' => 'English only.',
+                'advice' => '',
             ]))
             ->assertRedirect();
 
@@ -109,7 +109,7 @@ class SpendingGuidanceTest extends TestCase
     {
         $this->actingAs($this->admin())
             ->post(route('spending.update'), $this->payload([
-                'warning' => ['en' => str_repeat('a', 501), 'km' => ''],
+                'warning' => str_repeat('a', 501),
             ]))
             ->assertSessionHasErrors('warning.en');
     }
@@ -149,8 +149,8 @@ class SpendingGuidanceTest extends TestCase
     {
         $this->actingAs($this->admin())->post(route('spending.update'), $this->payload([
             'enabled' => true,
-            'warning' => ['en' => '', 'km' => ''],
-            'advice' => ['en' => '', 'km' => ''],
+            'warning' => '',
+            'advice' => '',
         ]));
 
         $this->assertNull($this->dashboardProps($this->user())['guidance']);

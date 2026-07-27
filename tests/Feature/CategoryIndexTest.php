@@ -89,15 +89,18 @@ class CategoryIndexTest extends TestCase
         $props = json_decode($this->payload($response), true)['props'];
 
         $this->assertCount(1, $props['categories']);
-        $this->assertSame('Food', $props['categories'][0]['name']['en']);
+        $this->assertSame('Food', $props['categories'][0]['name']);
     }
 
-    /** @return list<string> The English names, in the order the page lists them. */
+    /**
+     * @return list<string> The names, resolved for the active locale, in the
+     *                      order the page lists them.
+     */
     private function names(TestResponse $response): array
     {
         $props = json_decode($this->payload($response), true)['props'];
 
-        return array_column(array_column($props['categories'], 'name'), 'en');
+        return array_column($props['categories'], 'name');
     }
 
     public function test_the_list_is_newest_first_by_default(): void

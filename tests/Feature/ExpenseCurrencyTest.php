@@ -38,7 +38,7 @@ class ExpenseCurrencyTest extends TestCase
     private function submit(array $overrides = []): \Illuminate\Testing\TestResponse
     {
         return $this->actingAs($this->user)->post(route('expenses.store'), [
-            'item' => ['en' => 'Coffee'],
+            'item' => 'Coffee',
             'category_uuid' => $this->category->uuid,
             'spent_on' => now()->toDateString(),
             ...$overrides,

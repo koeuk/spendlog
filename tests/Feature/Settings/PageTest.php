@@ -94,8 +94,8 @@ class PageTest extends TestCase
     {
         $this->actingAs($this->user())
             ->patch(route('pages.update', $this->about()), [
-                'title' => ['en' => 'Hacked'],
-                'body' => ['en' => 'x'],
+                'title' => 'Hacked',
+                'body' => 'x',
                 'published' => true,
             ])
             ->assertForbidden();
@@ -117,8 +117,8 @@ class PageTest extends TestCase
     {
         $this->actingAs($this->admin())
             ->patch(route('pages.update', $this->about()), [
-                'title' => ['en' => 'About us', 'km' => 'អំពីយើង'],
-                'body' => ['en' => 'We track spending.', 'km' => 'យើងតាមដានចំណាយ។'],
+                'title' => 'About us',
+                'body' => 'We track spending.',
                 'published' => true,
             ])
             ->assertRedirect();
@@ -133,8 +133,8 @@ class PageTest extends TestCase
     {
         $this->actingAs($this->admin())
             ->patch(route('pages.update', $this->about()), [
-                'title' => ['en' => '', 'km' => 'x'],
-                'body' => ['en' => '', 'km' => 'x'],
+                'title' => '',
+                'body' => '',
                 'published' => true,
             ])
             ->assertSessionHasErrors(['title.en', 'body.en']);
@@ -145,8 +145,8 @@ class PageTest extends TestCase
         // Off, so the fallback is not required — an admin can park a draft.
         $this->actingAs($this->admin())
             ->patch(route('pages.update', $this->about()), [
-                'title' => ['en' => ''],
-                'body' => ['en' => ''],
+                'title' => '',
+                'body' => '',
                 'published' => false,
             ])
             ->assertRedirect()
