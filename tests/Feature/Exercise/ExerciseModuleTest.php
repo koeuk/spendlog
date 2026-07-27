@@ -319,7 +319,7 @@ class ExerciseModuleTest extends TestCase
         $this->actingAs($user)->post(route('exercise.types.store'), [
             'name' => 'sled push',
             'muscle_group' => MuscleGroup::Legs->value,
-        ])->assertSessionHasErrors('name.en');
+        ])->assertSessionHasErrors('name');
 
         $this->assertSame(1, ExerciseType::whereJsonContains('name->en', 'Sled Push')->count());
     }

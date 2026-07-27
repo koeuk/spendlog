@@ -113,7 +113,7 @@ class PageTest extends TestCase
 
     // --- Editing -----------------------------------------------------------
 
-    public function test_an_admin_saves_a_translatable_page(): void
+    public function test_an_admin_saves_a_page(): void
     {
         $this->actingAs($this->admin())
             ->patch(route('pages.update', $this->about()), [
@@ -124,12 +124,37 @@ class PageTest extends TestCase
             ->assertRedirect();
 
         $about = $this->about()->fresh();
-        $this->assertSame('About us', $about->getTranslation('title', 'en'));
-        $this->assertSame('អំពីយើង', $about->getTranslation('title', 'km'));
+        // The columns are still translatable JSON, but the editor writes one
+        // value and it lands under the fallback locale.
+        $this->assertSame(['en' => 'About us'], $about->getTranslations('title'));
+        $this->assertSame(['en' => 'We track spending.'], $about->getTranslations('body'));
         $this->assertTrue($about->published);
     }
 
-    public function test_a_published_page_requires_the_fallback_title(): void
+    /**
+     * A page seeded with a Khmer translation is rewritten wholesale on save: the
+     * editor shows one value, so the locale it does not show cannot survive an
+     * edit — and must not be left behind as a stale second version of the copy.
+     */
+    public function test_saving_replaces_every_stored_locale(): void
+    {
+        $this->about()->update([
+            'title' => ['en' => 'About', 'km' => 'អំពី'],
+            'body' => ['en' => 'Hi', 'km' => 'សួស្តី'],
+        ]);
+
+        $this->actingAs($this->admin())
+            ->patch(route('pages.update', $this->about()), [
+                'title' => 'About us',
+                'body' => 'We track spending.',
+                'published' => true,
+            ])
+            ->assertRedirect();
+
+        $this->assertSame(['en' => 'About us'], $this->about()->fresh()->getTranslations('title'));
+    }
+
+    public function test_a_published_page_requires_a_title_and_body(): void
     {
         $this->actingAs($this->admin())
             ->patch(route('pages.update', $this->about()), [
@@ -137,7 +162,7 @@ class PageTest extends TestCase
                 'body' => '',
                 'published' => true,
             ])
-            ->assertSessionHasErrors(['title.en', 'body.en']);
+            ->assertSessionHasErrors(['title', 'body']);
     }
 
     public function test_a_draft_may_be_saved_half_written(): void

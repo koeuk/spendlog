@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\CategoryRequest;
 use App\Models\Category;
+use App\Support\TranslatableInput;
 use App\Support\TranslatableQuery;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -118,10 +120,15 @@ class CategoryController extends Controller
     {
         Gate::authorize('create', Category::class);
 
+        // Outside the try: a ValidationException raised in there would be caught
+        // by the \Exception arm below and flashed as "something went wrong",
+        // losing the one message that says what to change.
+        $this->guardNameIsFree($request->validated('name'));
+
         DB::beginTransaction();
 
         try {
-            Category::create($request->categoryAttributes());
+            Category::create($this->attributes($request));
 
             DB::commit();
 
@@ -144,10 +151,13 @@ class CategoryController extends Controller
     {
         Gate::authorize('update', $category);
 
+        // See store(): outside the try so its message survives.
+        $this->guardNameIsFree($request->validated('name'), $category);
+
         DB::beginTransaction();
 
         try {
-            $category->update($request->categoryAttributes());
+            $category->update($this->attributes($request));
 
             DB::commit();
 
@@ -195,6 +205,49 @@ class CategoryController extends Controller
             report($e);
 
             return redirect()->back()->withError(__('Something went wrong. Please try again.'));
+        }
+    }
+
+    /**
+     * The columns to write. The name is a plain string by the time it gets here
+     * and goes in under the fallback locale — the column is still translatable
+     * JSON, the app just no longer authors a second language for it.
+     *
+     * @return array<string, mixed>
+     */
+    private function attributes(CategoryRequest $request): array
+    {
+        return [
+            ...$request->validated(),
+            'name' => TranslatableInput::toTranslations($request->validated('name')),
+        ];
+    }
+
+    /**
+     * Refuse a name another category already answers to.
+     *
+     * Rule::unique cannot target a key inside a JSON column, so the check is the
+     * Category::named() scope — the one place that decides what "the same name"
+     * means. It used to live in CategoryRequest, and the inline picker on the
+     * expense form used its own copy of the comparison; the two disagreed about
+     * case, which was enough to split one real category into two rows that each
+     * held their own budget for the same month.
+     *
+     * Thrown rather than returned so the web form gets a redirect with the error
+     * on the field and the API gets its documented 422, without this method
+     * having to know which one it is serving.
+     */
+    private function guardNameIsFree(string $name, ?Category $ignoring = null): void
+    {
+        $exists = Category::query()
+            ->named($name)
+            ->when($ignoring, fn ($query, Category $category) => $query->whereKeyNot($category->getKey()))
+            ->exists();
+
+        if ($exists) {
+            throw ValidationException::withMessages([
+                'name' => __('A category called ":name" already exists.', ['name' => trim($name)]),
+            ]);
         }
     }
 }

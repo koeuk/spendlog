@@ -49,13 +49,21 @@ class PageRequest extends FormRequest
     }
 
     /**
-     * The value for one field as the per-locale map the column stores. Blank
-     * clears it rather than storing "" — spatie only falls back on an absent key.
+     * The columns to mass-assign, mirroring CategoryRequest::categoryAttributes().
      *
-     * @return array<string, string>
+     * Each translatable field becomes the per-locale map the column stores. The
+     * controller writes it with replaceTranslations — plain assignment would
+     * merge into the stored map and leave other locales behind. Blank clears
+     * the field rather than storing "" — spatie only falls back on an absent key.
+     *
+     * @return array<string, mixed>
      */
-    public function translationsFor(string $field): array
+    public function pageAttributes(): array
     {
-        return TranslatableInput::toTranslations($this->input($field));
+        return [
+            'title' => TranslatableInput::toTranslations($this->input('title')),
+            'body' => TranslatableInput::toTranslations($this->input('body')),
+            'published' => $this->boolean('published'),
+        ];
     }
 }

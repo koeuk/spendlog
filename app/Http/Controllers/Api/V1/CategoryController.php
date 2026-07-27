@@ -6,12 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\CategoryRequest;
 use App\Http\Resources\CategoryResource;
 use App\Models\Category;
+use App\Support\TranslatableInput;
 use App\Support\TranslatableQuery;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\AllowedSort;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -99,7 +101,9 @@ class CategoryController extends Controller
     {
         Gate::authorize('create', Category::class);
 
-        $category = DB::transaction(fn () => Category::create($request->categoryAttributes()));
+        $this->guardNameIsFree($request->validated('name'));
+
+        $category = DB::transaction(fn () => Category::create($this->attributes($request)));
 
         return (new CategoryResource($category))
             ->response()
@@ -125,7 +129,9 @@ class CategoryController extends Controller
     {
         Gate::authorize('update', $category);
 
-        DB::transaction(fn () => $category->update($request->categoryAttributes()));
+        $this->guardNameIsFree($request->validated('name'), $category);
+
+        DB::transaction(fn () => $category->update($this->attributes($request)));
 
         return new CategoryResource($category);
     }
@@ -162,5 +168,38 @@ class CategoryController extends Controller
         }
 
         return response()->json([], 204);
+    }
+
+    /**
+     * The columns to write — same shape as the web CategoryController.
+     *
+     * @return array<string, mixed>
+     */
+    private function attributes(CategoryRequest $request): array
+    {
+        return [
+            ...$request->validated(),
+            'name' => TranslatableInput::toTranslations($request->validated('name')),
+        ];
+    }
+
+    /**
+     * Refuse a name another category already answers to, in any stored
+     * language. See the web CategoryController for why this lives with the
+     * write rather than in CategoryRequest, and Category::named() for what
+     * "the same name" means.
+     */
+    private function guardNameIsFree(string $name, ?Category $ignoring = null): void
+    {
+        $exists = Category::query()
+            ->named($name)
+            ->when($ignoring, fn ($query, Category $category) => $query->whereKeyNot($category->getKey()))
+            ->exists();
+
+        if ($exists) {
+            throw ValidationException::withMessages([
+                'name' => __('A category called ":name" already exists.', ['name' => trim($name)]),
+            ]);
+        }
     }
 }

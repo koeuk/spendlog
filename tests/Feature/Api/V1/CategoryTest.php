@@ -188,9 +188,9 @@ class CategoryTest extends TestCase
             'icon' => CategoryIcon::Plane->value,
         ])->assertStatus(201)
             // `name` is resolved for the active locale; the raw map rides along
-            // so a client can round trip an edit.
+            // and holds the one locale a write stores it under.
             ->assertJsonPath('data.name', 'Travel')
-            ->assertJsonPath('data.name_translations.km', 'ការធ្វើដំណើរ');
+            ->assertJsonPath('data.name_translations', ['en' => 'Travel']);
 
         $this->assertSame(1, Category::query()->whereJsonContains('name->en', 'Travel')->count());
     }
@@ -211,12 +211,29 @@ class CategoryTest extends TestCase
 
         Sanctum::actingAs($this->admin(), [TokenAbility::CategoriesWrite->value]);
 
-        // Uniqueness is per locale, checked with whereJsonContains rather than
-        // Rule::unique, which cannot reach inside a JSON column.
+        // Checked by hand rather than with Rule::unique, which cannot reach
+        // inside a JSON column.
         $this->postJson('/api/v1/categories', [
             'name' => 'Food',
             'color' => CategoryColor::Red->value,
-        ])->assertStatus(422)->assertJsonValidationErrors('name.en');
+        ])->assertStatus(422)->assertJsonValidationErrors('name');
+    }
+
+    /**
+     * A name already held by another category's Khmer translation is a clash
+     * too: the two rows read as one category to whoever is looking at the list,
+     * even though only the fallback locale is written from here now.
+     */
+    public function test_store_rejects_a_name_taken_by_another_locale(): void
+    {
+        Category::factory()->create(['name' => ['en' => 'Food', 'km' => 'អាហារ']]);
+
+        Sanctum::actingAs($this->admin(), [TokenAbility::CategoriesWrite->value]);
+
+        $this->postJson('/api/v1/categories', [
+            'name' => 'អាហារ',
+            'color' => CategoryColor::Red->value,
+        ])->assertStatus(422)->assertJsonValidationErrors('name');
     }
 
     /**
@@ -235,16 +252,37 @@ class CategoryTest extends TestCase
         ])->assertOk()->assertJsonPath('data.color', CategoryColor::Green->value);
     }
 
-    public function test_store_requires_an_english_name(): void
+    public function test_store_requires_a_name(): void
     {
         Sanctum::actingAs($this->admin(), [TokenAbility::CategoriesWrite->value]);
 
-        // English is the fallback locale, so a Khmer-only category would render
-        // as nothing for an English reader.
+        $this->postJson('/api/v1/categories', [
+            'name' => '',
+            'color' => CategoryColor::Blue->value,
+        ])->assertStatus(422)->assertJsonValidationErrors('name');
+    }
+
+    /**
+     * The name used to be sent as a per-locale map. A client still posting that
+     * shape is not broken by the change: the fallback-locale value is taken, and
+     * a payload without one falls back to the single value it does carry rather
+     * than storing an empty name.
+     */
+    public function test_a_per_locale_name_is_still_accepted(): void
+    {
+        Sanctum::actingAs($this->admin(), [TokenAbility::CategoriesWrite->value]);
+
+        $this->postJson('/api/v1/categories', [
+            'name' => ['en' => 'Travel', 'km' => 'ការធ្វើដំណើរ'],
+            'color' => CategoryColor::Blue->value,
+        ])->assertStatus(201)
+            ->assertJsonPath('data.name_translations', ['en' => 'Travel']);
+
         $this->postJson('/api/v1/categories', [
             'name' => ['km' => 'ការធ្វើដំណើរ'],
-            'color' => CategoryColor::Blue->value,
-        ])->assertStatus(422)->assertJsonValidationErrors('name.en');
+            'color' => CategoryColor::Red->value,
+        ])->assertStatus(201)
+            ->assertJsonPath('data.name_translations', ['en' => 'ការធ្វើដំណើរ']);
     }
 
     public function test_an_unused_category_can_be_deleted(): void

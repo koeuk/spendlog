@@ -46,10 +46,16 @@ class PageController extends Controller
     {
         Gate::authorize('managePages');
 
-        $page->replaceTranslations('title', $request->translationsFor('title'));
-        $page->replaceTranslations('body', $request->translationsFor('body'));
-        $page->published = $request->boolean('published');
-        $page->save();
+        $attributes = $request->pageAttributes();
+
+        // Not $page->update(): mass-assigning a translations array funnels
+        // through spatie's setTranslations, which merges into the stored map —
+        // a locale the editor does not show would survive the save as a stale
+        // second version of the copy. Replace, so the one box is the whole field.
+        $page->replaceTranslations('title', $attributes['title'])
+            ->replaceTranslations('body', $attributes['body'])
+            ->fill(['published' => $attributes['published']])
+            ->save();
 
         return back()->with('success', __('Page saved.'));
     }
