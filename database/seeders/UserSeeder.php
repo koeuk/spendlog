@@ -20,10 +20,11 @@ class UserSeeder extends Seeder
 
         $this->upsertSuperAdmin();
 
-        // Never in production: these are throwaway logins with a public
-        // password, and the seeder runs on every deploy.
+        // The admin login on every environment is the super admin above —
+        // koeukkos@gmail.com. Only a throwaway regular-user account is seeded
+        // beside it, and never in production: its password is public and the
+        // seeder runs on every deploy.
         if (! app()->isProduction()) {
-            $this->upsertUser('admin@spendlog.test', 'Admin', RoleName::Admin);
             $this->upsertUser('user@spendlog.test', 'Test User', RoleName::User);
         }
     }
