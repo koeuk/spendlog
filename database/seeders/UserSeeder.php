@@ -20,8 +20,12 @@ class UserSeeder extends Seeder
 
         $this->upsertSuperAdmin();
 
-        $this->upsertUser('admin@spendlog.test', 'Admin', RoleName::Admin);
-        $this->upsertUser('user@spendlog.test', 'Test User', RoleName::User);
+        // Never in production: these are throwaway logins with a public
+        // password, and the seeder runs on every deploy.
+        if (! app()->isProduction()) {
+            $this->upsertUser('admin@spendlog.test', 'Admin', RoleName::Admin);
+            $this->upsertUser('user@spendlog.test', 'Test User', RoleName::User);
+        }
     }
 
     /**

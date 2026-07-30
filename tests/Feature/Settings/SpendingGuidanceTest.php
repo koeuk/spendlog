@@ -43,8 +43,10 @@ class SpendingGuidanceTest extends TestCase
     {
         return array_merge([
             'enabled' => true,
-            'warning' => ['en' => 'Spend less.', 'km' => 'ចាយតិច។'],
-            'advice' => ['en' => 'Save first.', 'km' => 'សន្សំមុន។'],
+            // One box per message — see TranslatableInput. A per-locale map is
+            // still accepted from older clients, reduced to its en value.
+            'warning' => 'Spend less.',
+            'advice' => 'Save first.',
         ], $overrides);
     }
 
@@ -65,7 +67,7 @@ class SpendingGuidanceTest extends TestCase
 
     // -------------------------------------------------------------- saving
 
-    public function test_an_admin_saves_both_locales_and_the_toggle(): void
+    public function test_an_admin_saves_the_guidance_and_the_toggle(): void
     {
         $this->actingAs($this->admin())
             ->post(route('spending.update'), $this->payload())
@@ -74,10 +76,10 @@ class SpendingGuidanceTest extends TestCase
         $settings = AppSetting::current();
 
         $this->assertTrue($settings->spending_guidance_enabled);
-        $this->assertSame('Spend less.', $settings->getTranslation('spending_warning', 'en'));
-        $this->assertSame('ចាយតិច។', $settings->getTranslation('spending_warning', 'km'));
-        $this->assertSame('Save first.', $settings->getTranslation('spending_advice', 'en'));
-        $this->assertSame('សន្សំមុន។', $settings->getTranslation('spending_advice', 'km'));
+        // The columns are still translatable JSON, but the editor writes one
+        // value and it lands under the fallback locale.
+        $this->assertSame(['en' => 'Spend less.'], $settings->getTranslations('spending_warning'));
+        $this->assertSame(['en' => 'Save first.'], $settings->getTranslations('spending_advice'));
     }
 
     /**
@@ -111,7 +113,7 @@ class SpendingGuidanceTest extends TestCase
             ->post(route('spending.update'), $this->payload([
                 'warning' => str_repeat('a', 501),
             ]))
-            ->assertSessionHasErrors('warning.en');
+            ->assertSessionHasErrors('warning');
     }
 
     // ------------------------------------------------- dashboard rendering
@@ -156,7 +158,11 @@ class SpendingGuidanceTest extends TestCase
         $this->assertNull($this->dashboardProps($this->user())['guidance']);
     }
 
-    public function test_guidance_resolves_to_the_active_locale(): void
+    /**
+     * The editor writes one value under the fallback locale, so a Khmer reader
+     * gets the English copy via spatie's fallback rather than a blank card.
+     */
+    public function test_guidance_falls_back_for_a_khmer_reader(): void
     {
         $this->actingAs($this->admin())->post(route('spending.update'), $this->payload());
 
@@ -164,7 +170,7 @@ class SpendingGuidanceTest extends TestCase
 
         $guidance = AppSetting::current()->spendingGuidance();
 
-        $this->assertSame('ចាយតិច។', $guidance['warning']);
-        $this->assertSame('សន្សំមុន។', $guidance['advice']);
+        $this->assertSame('Spend less.', $guidance['warning']);
+        $this->assertSame('Save first.', $guidance['advice']);
     }
 }

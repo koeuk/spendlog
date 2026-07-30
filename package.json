@@ -22,6 +22,7 @@
     },
     "dependencies": {
         "@lucide/vue": "^1.24.0",
+        "@supabase/supabase-js": "^2.111.0",
         "@tanstack/vue-table": "^8.21.3",
         "@vueuse/core": "^14.3.0",
         "class-variance-authority": "^0.7.1",
