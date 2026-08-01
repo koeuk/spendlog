@@ -30,6 +30,21 @@ jobs:
     environment: production
 
     steps:
+      - name: Check secrets are configured
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          missing=0
+          for name in EC2_HOST EC2_USER EC2_SSH_KEY; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Repository secret $name is not set (Settings → Secrets and variables → Actions)."
+              missing=1
+            fi
+          done
+          exit $missing
+
       - name: Load SSH key
         run: |
           mkdir -p ~/.ssh
@@ -41,9 +56,23 @@ jobs:
         run: |
           ssh -i ~/.ssh/id_deploy "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" '
             set -euo pipefail
-            cd /var/www/spendlog
+            APP_DIR=/var/www/spendlog
 
-            php artisan down --retry=15 || true
+            # First deploy on a fresh server: clone the repo into place.
+            # (Ubuntu EC2 users have passwordless sudo.)
+            if [ ! -d "$APP_DIR/.git" ]; then
+              echo "First deploy: cloning the repository."
+              sudo mkdir -p "$APP_DIR"
+              sudo chown "$USER":www-data "$APP_DIR" 2>/dev/null || sudo chown "$USER" "$APP_DIR"
+              git clone https://github.com/koeuk/spendlog.git "$APP_DIR"
+            fi
+
+            cd "$APP_DIR"
+
+            # Maintenance mode only when the app is already installed.
+            if [ -f vendor/autoload.php ] && [ -f .env ]; then
+              php artisan down --retry=15 || true
+            fi
 
             git pull origin main
 
@@ -51,6 +80,14 @@ jobs:
 
             npm ci
             npm run build
+
+            # The .env cannot be invented here: it holds the DB password and
+            # the super admin password. Copy deploy/env.production.example to
+            # .env on the server, fill it in, and run: php artisan key:generate
+            if [ ! -f .env ]; then
+              echo "::error::No .env at $APP_DIR/.env — create it from deploy/env.production.example, then re-run Deploy. See deploy/SETUP.md."
+              exit 1
+            fi
 
             # --force: production refuses interactive confirmation otherwise.
             php artisan migrate --force
