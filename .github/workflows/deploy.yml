@@ -99,7 +99,9 @@ jobs:
             # afterwards. The filename varies by release, so purge by content:
             # remove every apt source that mentions the PPA.
             sudo add-apt-repository -r -y ppa:ondrej/php 2>/dev/null || true
-            grep -rl "ondrej" /etc/apt/sources.list.d/ 2>/dev/null | while read -r f; do sudo rm -f "$f"; done
+            # grep exits 1 when nothing matches (the normal case once clean) —
+            # guard it, or pipefail turns that into a failed deploy.
+            { grep -rl "ondrej" /etc/apt/sources.list.d/ 2>/dev/null || true; } | while read -r f; do sudo rm -f "$f"; done
             { [ -f /etc/apt/sources.list ] && sudo sed -i "/ondrej/d" /etc/apt/sources.list; } || true
 
             sudo apt-get update -y
