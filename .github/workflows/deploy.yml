@@ -91,15 +91,33 @@ jobs:
 
           # --- provision a fresh server (first run only) --------------------
           if [ "$FIRST" = 1 ]; then
-            echo "First deploy: installing PHP 8.4, Composer, Node 22, MySQL, Nginx."
+            echo "First deploy: installing PHP, Composer, Node 22, MySQL, Nginx."
             export DEBIAN_FRONTEND=noninteractive
+
+            # A previous attempt may have added the ondrej PPA on an Ubuntu
+            # release it does not publish for, which breaks every apt update
+            # afterwards — clear it before touching apt.
+            sudo rm -f /etc/apt/sources.list.d/ondrej-*
+
             sudo apt-get update -y
-            sudo apt-get install -y software-properties-common
-            sudo add-apt-repository -y ppa:ondrej/php
-            sudo apt-get update -y
-            sudo apt-get install -y git unzip nginx mysql-server \
-              php8.4-fpm php8.4-cli php8.4-mysql php8.4-mbstring php8.4-xml \
-              php8.4-curl php8.4-zip php8.4-gd php8.4-bcmath php8.4-intl
+            sudo apt-get install -y software-properties-common git unzip nginx mysql-server
+
+            PHP_EXTS="fpm cli mysql mbstring xml curl zip gd bcmath intl"
+            if apt-cache show php8.4-fpm >/dev/null 2>&1; then
+              # This Ubuntu packages 8.4 itself — no PPA needed.
+              sudo apt-get install -y $(for e in $PHP_EXTS; do echo "php8.4-$e"; done)
+            else
+              # Try the distro default PHP; only reach for the ondrej PPA when
+              # that default is older than the 8.4 this app requires.
+              sudo apt-get install -y php-cli
+              if php -r 'exit(PHP_VERSION_ID >= 80400 ? 0 : 1);'; then
+                sudo apt-get install -y $(for e in $PHP_EXTS; do echo "php-$e"; done)
+              else
+                sudo add-apt-repository -y ppa:ondrej/php
+                sudo apt-get update -y
+                sudo apt-get install -y $(for e in $PHP_EXTS; do echo "php8.4-$e"; done)
+              fi
+            fi
 
             if ! command -v composer >/dev/null 2>&1; then
               curl -sS https://getcomposer.org/installer -o /tmp/composer-setup.php
@@ -118,6 +136,10 @@ jobs:
             # a domain + certbot arrive (SETUP.md section 4).
             sudo cp deploy/nginx.conf /etc/nginx/sites-available/spendlog
             sudo sed -i 's/YOUR_DOMAIN/_/' /etc/nginx/sites-available/spendlog
+            # The template names php8.4-fpm.sock; point it at whichever PHP
+            # version actually got installed above.
+            PHP_SOCK="php$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')-fpm.sock"
+            sudo sed -i "s/php8\.4-fpm\.sock/${PHP_SOCK}/" /etc/nginx/sites-available/spendlog
             sudo ln -sf /etc/nginx/sites-available/spendlog /etc/nginx/sites-enabled/spendlog
             sudo rm -f /etc/nginx/sites-enabled/default
             sudo nginx -t
