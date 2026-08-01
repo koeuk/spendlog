@@ -2,6 +2,16 @@
 
 Everything after this is just `bash deploy/deploy.sh` per release.
 
+## 0. AWS EC2 notes
+
+- Instance: Ubuntu 24.04 LTS AMI, t3.small or larger (t3.micro works but
+  composer/npm get slow). Attach an Elastic IP so the address survives restarts.
+- Security group inbound rules: 22 (SSH, your IP only), 80 and 443 (anywhere).
+- Log in with the instance key pair: `ssh -i your-key.pem ubuntu@ELASTIC_IP`,
+  then follow the steps below as that user.
+- For GitHub-triggered deploys, add the repo secrets listed in
+  `.github/workflows/deploy.yml` (host, user, private key).
+
 ## 1. Packages
 
 ```bash

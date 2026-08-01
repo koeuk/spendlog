@@ -1,0 +1,45 @@
+# SpendLog — deploy to the EC2 server over SSH.
+#
+# Trigger: manual ("Run workflow" button on the Actions tab). Once you trust
+# it, automatic deploys on every green main build are one edit away — see the
+# comment on `on:` below.
+#
+# Required repository secrets (Settings → Secrets and variables → Actions):
+#   EC2_HOST     the server's public IP or DNS name (e.g. 13.212.x.x)
+#   EC2_USER     the SSH user (ubuntu on Ubuntu AMIs)
+#   EC2_SSH_KEY  the PRIVATE key that matches a key in the server's
+#                ~/.ssh/authorized_keys (the .pem from AWS works)
+#
+# The server itself must already be set up once via deploy/SETUP.md, with the
+# repo cloned at /var/www/spendlog.
+name: Deploy
+
+on:
+  workflow_dispatch:
+  # To deploy automatically after every push to main, replace the block above with:
+  #   workflow_dispatch:
+  #   push:
+  #     branches: [main]
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Load SSH key
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Run deploy script on the server
+        run: |
+          ssh -i ~/.ssh/id_deploy "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" \
+            'bash /var/www/spendlog/deploy/deploy.sh'
