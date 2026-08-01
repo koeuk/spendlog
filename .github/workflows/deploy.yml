@@ -1,15 +1,22 @@
-# SpendLog — deploy to the EC2 server over SSH. Self-contained: every deploy
-# step lives here; nothing on the server is needed beyond the one-time setup
-# (nginx, PHP, MySQL, the repo cloned at /var/www/spendlog — deploy/SETUP.md).
+# SpendLog — deploy to the EC2 server over SSH. Fully self-contained: on a
+# fresh Ubuntu server the first run installs everything (PHP 8.4, Composer,
+# Node 22, MySQL, Nginx), creates the database and .env, migrates, seeds and
+# serves the app on http://EC2_HOST. Later runs detect the install and only
+# update: pull → install deps → build → migrate → cache.
 #
-# Trigger: manual ("Run workflow" button on the Actions tab). Once you trust
-# it, automatic deploys on every push are one edit away — see `on:` below.
+# Trigger: manual ("Run workflow" button on the Actions tab). For automatic
+# deploys on every push, see the comment on `on:` below.
 #
 # Required repository secrets (Settings → Secrets and variables → Actions):
-#   EC2_HOST     the server's public IP or DNS name (e.g. 13.212.x.x)
-#   EC2_USER     the SSH user (ubuntu on Ubuntu AMIs)
-#   EC2_SSH_KEY  the PRIVATE key that matches a key in the server's
-#                ~/.ssh/authorized_keys (the .pem from AWS works)
+#   EC2_HOST              server public IP or DNS name
+#   EC2_USER              SSH user (ubuntu on Ubuntu AMIs)
+#   EC2_SSH_KEY           private key matching the server's authorized_keys
+#   DB_PASSWORD           first run only: password for the MySQL app user
+#   SUPER_ADMIN_PASSWORD  first run only: login password for koeukkos@gmail.com
+# Keep the two passwords to letters and numbers (no quotes or | & \ symbols).
+#
+# HTTPS: once a domain points at the server, run certbot manually — see
+# deploy/SETUP.md section 4 — and set APP_URL/SESSION_SECURE_COOKIE in .env.
 name: Deploy
 
 on:
@@ -53,49 +60,109 @@ jobs:
           ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Deploy
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          SUPER_ADMIN_PASSWORD: ${{ secrets.SUPER_ADMIN_PASSWORD }}
+          SERVER_HOST: ${{ secrets.EC2_HOST }}
         run: |
-          ssh -i ~/.ssh/id_deploy "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" '
-            set -euo pipefail
-            APP_DIR=/var/www/spendlog
+          ssh -i ~/.ssh/id_deploy "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" \
+            "DB_PASSWORD='$DB_PASSWORD' SUPER_ADMIN_PASSWORD='$SUPER_ADMIN_PASSWORD' SERVER_HOST='$SERVER_HOST' bash -s" <<'REMOTE'
+          set -euo pipefail
+          APP_DIR=/var/www/spendlog
 
-            # First deploy on a fresh server: clone the repo into place.
-            # (Ubuntu EC2 users have passwordless sudo.)
-            if [ ! -d "$APP_DIR/.git" ]; then
-              echo "First deploy: cloning the repository."
-              sudo mkdir -p "$APP_DIR"
-              sudo chown "$USER":www-data "$APP_DIR" 2>/dev/null || sudo chown "$USER" "$APP_DIR"
-              git clone https://github.com/koeuk/spendlog.git "$APP_DIR"
+          # A missing .env is the mark of a fresh server: everything below the
+          # provisioning block assumes it exists, and it is written exactly once.
+          FIRST=0
+          [ -f "$APP_DIR/.env" ] || FIRST=1
+
+          if [ "$FIRST" = 1 ]; then
+            : "${DB_PASSWORD:?First deploy needs the DB_PASSWORD repository secret}"
+            : "${SUPER_ADMIN_PASSWORD:?First deploy needs the SUPER_ADMIN_PASSWORD repository secret}"
+          fi
+
+          # --- clone --------------------------------------------------------
+          if [ ! -d "$APP_DIR/.git" ]; then
+            echo "First deploy: cloning the repository."
+            sudo mkdir -p "$APP_DIR"
+            sudo chown "$USER":www-data "$APP_DIR" 2>/dev/null || sudo chown "$USER" "$APP_DIR"
+            git clone https://github.com/koeuk/spendlog.git "$APP_DIR"
+          fi
+          cd "$APP_DIR"
+
+          # --- provision a fresh server (first run only) --------------------
+          if [ "$FIRST" = 1 ]; then
+            echo "First deploy: installing PHP 8.4, Composer, Node 22, MySQL, Nginx."
+            export DEBIAN_FRONTEND=noninteractive
+            sudo apt-get update -y
+            sudo apt-get install -y software-properties-common
+            sudo add-apt-repository -y ppa:ondrej/php
+            sudo apt-get update -y
+            sudo apt-get install -y git unzip nginx mysql-server \
+              php8.4-fpm php8.4-cli php8.4-mysql php8.4-mbstring php8.4-xml \
+              php8.4-curl php8.4-zip php8.4-gd php8.4-bcmath php8.4-intl
+
+            if ! command -v composer >/dev/null 2>&1; then
+              curl -sS https://getcomposer.org/installer -o /tmp/composer-setup.php
+              sudo php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer
+              rm -f /tmp/composer-setup.php
             fi
 
-            cd "$APP_DIR"
-
-            # Maintenance mode only when the app is already installed.
-            if [ -f vendor/autoload.php ] && [ -f .env ]; then
-              php artisan down --retry=15 || true
+            if ! command -v node >/dev/null 2>&1; then
+              curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+              sudo apt-get install -y nodejs
             fi
 
-            git pull origin main
+            sudo mysql -e "CREATE DATABASE IF NOT EXISTS spendlog CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE USER IF NOT EXISTS 'spendlog'@'localhost' IDENTIFIED BY '${DB_PASSWORD}'; ALTER USER 'spendlog'@'localhost' IDENTIFIED BY '${DB_PASSWORD}'; GRANT ALL PRIVILEGES ON spendlog.* TO 'spendlog'@'localhost'; FLUSH PRIVILEGES;"
 
-            composer install --no-dev --optimize-autoloader --no-interaction
+            # Nginx vhost from the repo template; serves on the bare IP until
+            # a domain + certbot arrive (SETUP.md section 4).
+            sudo cp deploy/nginx.conf /etc/nginx/sites-available/spendlog
+            sudo sed -i 's/YOUR_DOMAIN/_/' /etc/nginx/sites-available/spendlog
+            sudo ln -sf /etc/nginx/sites-available/spendlog /etc/nginx/sites-enabled/spendlog
+            sudo rm -f /etc/nginx/sites-enabled/default
+            sudo nginx -t
+            sudo systemctl reload nginx
+          fi
 
-            npm ci
-            npm run build
+          # --- update -------------------------------------------------------
+          if [ "$FIRST" = 0 ] && [ -f vendor/autoload.php ]; then
+            php artisan down --retry=15 || true
+          fi
 
-            # The .env cannot be invented here: it holds the DB password and
-            # the super admin password. Copy deploy/env.production.example to
-            # .env on the server, fill it in, and run: php artisan key:generate
-            if [ ! -f .env ]; then
-              echo "::error::No .env at $APP_DIR/.env — create it from deploy/env.production.example, then re-run Deploy. See deploy/SETUP.md."
-              exit 1
-            fi
+          git pull origin main
 
-            # --force: production refuses interactive confirmation otherwise.
-            php artisan migrate --force
+          composer install --no-dev --optimize-autoloader --no-interaction
 
-            # Rebuild the config/route/view caches against the new code.
-            php artisan optimize
+          npm ci
+          npm run build
 
-            php artisan up
+          # --- first-run app configuration ----------------------------------
+          if [ ! -f .env ]; then
+            cp deploy/env.production.example .env
+            sed -i "s|^APP_URL=.*|APP_URL=http://${SERVER_HOST}|" .env
+            sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=${DB_PASSWORD}|" .env
+            sed -i "s|^SUPER_ADMIN_PASSWORD=.*|SUPER_ADMIN_PASSWORD=${SUPER_ADMIN_PASSWORD}|" .env
+            # No HTTPS yet: a secure-only cookie would break login over http.
+            sed -i "s|^SESSION_SECURE_COOKIE=.*|SESSION_SECURE_COOKIE=false|" .env
+            php artisan key:generate --force
+          fi
 
-            echo "Deployed $(git rev-parse --short HEAD)"
-          '
+          # --force: production refuses interactive confirmation otherwise.
+          php artisan migrate --force
+
+          if [ "$FIRST" = 1 ]; then
+            php artisan db:seed --force
+            php artisan storage:link || true
+          fi
+
+          # Laravel only writes here; group-write for the php-fpm user.
+          sudo chgrp -R www-data storage bootstrap/cache
+          sudo chmod -R g+w storage bootstrap/cache
+
+          # Rebuild the config/route/view caches against the new code.
+          php artisan optimize
+
+          php artisan up
+
+          echo "Deployed $(git rev-parse --short HEAD)"
+          REMOTE
