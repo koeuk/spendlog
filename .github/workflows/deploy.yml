@@ -96,8 +96,11 @@ jobs:
 
             # A previous attempt may have added the ondrej PPA on an Ubuntu
             # release it does not publish for, which breaks every apt update
-            # afterwards — clear it before touching apt.
-            sudo rm -f /etc/apt/sources.list.d/ondrej-*
+            # afterwards. The filename varies by release, so purge by content:
+            # remove every apt source that mentions the PPA.
+            sudo add-apt-repository -r -y ppa:ondrej/php 2>/dev/null || true
+            grep -rl "ondrej" /etc/apt/sources.list.d/ 2>/dev/null | while read -r f; do sudo rm -f "$f"; done
+            { [ -f /etc/apt/sources.list ] && sudo sed -i "/ondrej/d" /etc/apt/sources.list; } || true
 
             sudo apt-get update -y
             sudo apt-get install -y software-properties-common git unzip nginx mysql-server
@@ -151,7 +154,10 @@ jobs:
             php artisan down --retry=15 || true
           fi
 
-          git pull origin main
+          # reset --hard rather than pull: survives any local drift on the
+          # server (edited files, force-pushed history).
+          git fetch origin main
+          git reset --hard origin/main
 
           composer install --no-dev --optimize-autoloader --no-interaction
 
@@ -183,6 +189,10 @@ jobs:
 
           # Rebuild the config/route/view caches against the new code.
           php artisan optimize
+
+          # New PHP code is only picked up by fpm workers after a reload.
+          PHP_V=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')
+          sudo systemctl reload "php${PHP_V}-fpm" || sudo systemctl restart "php${PHP_V}-fpm" || true
 
           php artisan up
 
