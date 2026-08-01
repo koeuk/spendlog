@@ -1,6 +1,7 @@
 # SpendLog — one-time VPS setup (Ubuntu/Debian)
 
-Everything after this is just `bash deploy/deploy.sh` per release.
+Everything after this is handled by the Deploy workflow
+(`.github/workflows/deploy.yml`) — Actions tab → Deploy → Run workflow.
 
 ## 0. AWS EC2 notes
 
@@ -73,6 +74,6 @@ sudo certbot --nginx -d YOUR_DOMAIN
 
 ## 5. Later deploys
 
-```bash
-bash /var/www/spendlog/deploy/deploy.sh
-```
+Run the **Deploy** workflow from the repo's Actions tab (or push to main once
+the automatic trigger is enabled in `.github/workflows/deploy.yml`). The
+workflow SSHes in and runs pull → install → build → migrate → cache itself.

@@ -1,17 +1,15 @@
-# SpendLog — deploy to the EC2 server over SSH.
+# SpendLog — deploy to the EC2 server over SSH. Self-contained: every deploy
+# step lives here; nothing on the server is needed beyond the one-time setup
+# (nginx, PHP, MySQL, the repo cloned at /var/www/spendlog — deploy/SETUP.md).
 #
 # Trigger: manual ("Run workflow" button on the Actions tab). Once you trust
-# it, automatic deploys on every green main build are one edit away — see the
-# comment on `on:` below.
+# it, automatic deploys on every push are one edit away — see `on:` below.
 #
 # Required repository secrets (Settings → Secrets and variables → Actions):
 #   EC2_HOST     the server's public IP or DNS name (e.g. 13.212.x.x)
 #   EC2_USER     the SSH user (ubuntu on Ubuntu AMIs)
 #   EC2_SSH_KEY  the PRIVATE key that matches a key in the server's
 #                ~/.ssh/authorized_keys (the .pem from AWS works)
-#
-# The server itself must already be set up once via deploy/SETUP.md, with the
-# repo cloned at /var/www/spendlog.
 name: Deploy
 
 on:
@@ -39,7 +37,28 @@ jobs:
           chmod 600 ~/.ssh/id_deploy
           ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Run deploy script on the server
+      - name: Deploy
         run: |
-          ssh -i ~/.ssh/id_deploy "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" \
-            'bash /var/www/spendlog/deploy/deploy.sh'
+          ssh -i ~/.ssh/id_deploy "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" '
+            set -euo pipefail
+            cd /var/www/spendlog
+
+            php artisan down --retry=15 || true
+
+            git pull origin main
+
+            composer install --no-dev --optimize-autoloader --no-interaction
+
+            npm ci
+            npm run build
+
+            # --force: production refuses interactive confirmation otherwise.
+            php artisan migrate --force
+
+            # Rebuild the config/route/view caches against the new code.
+            php artisan optimize
+
+            php artisan up
+
+            echo "Deployed $(git rev-parse --short HEAD)"
+          '
