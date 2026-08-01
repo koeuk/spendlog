@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\RestrictDocsAccess;
 use Knuckles\Scribe\Config\AuthIn;
 use Knuckles\Scribe\Config\Defaults;
 use Knuckles\Scribe\Extracting\Strategies;
@@ -98,7 +99,7 @@ return [
         // open in local and admin-only everywhere else.
         'middleware' => [
             'web',
-            \App\Http\Middleware\RestrictDocsAccess::class,
+            RestrictDocsAccess::class,
         ],
     ],
 

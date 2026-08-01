@@ -26,15 +26,15 @@ class PageSeeder extends Seeder
                     'km' => 'អំពី',
                 ],
                 'body' => [
-                    'en' => "MoneyLog helps you log what you spend the moment you spend it, "
-                        ."see where the money actually goes each month, and set a budget "
+                    'en' => 'MoneyLog helps you log what you spend the moment you spend it, '
+                        .'see where the money actually goes each month, and set a budget '
                         ."before you overshoot it.\n\n"
-                        ."Replace this text with your own story — who built it, why, and "
-                        ."how to get in touch.",
-                    'km' => "MoneyLog ជួយអ្នកកត់ត្រាការចំណាយភ្លាមៗពេលអ្នកចំណាយ "
+                        .'Replace this text with your own story — who built it, why, and '
+                        .'how to get in touch.',
+                    'km' => 'MoneyLog ជួយអ្នកកត់ត្រាការចំណាយភ្លាមៗពេលអ្នកចំណាយ '
                         ."មើលថាលុយពិតជាទៅណាខ្លះក្នុងមួយខែ និងកំណត់ថវិកាមុនពេលចំណាយលើស។\n\n"
-                        ."សូមជំនួសអត្ថបទនេះដោយរឿងរបស់អ្នក — អ្នកណាបង្កើត ហេតុអ្វី "
-                        ."និងវិធីទាក់ទង។",
+                        .'សូមជំនួសអត្ថបទនេះដោយរឿងរបស់អ្នក — អ្នកណាបង្កើត ហេតុអ្វី '
+                        .'និងវិធីទាក់ទង។',
                 ],
             ],
             'privacy' => [
@@ -43,18 +43,18 @@ class PageSeeder extends Seeder
                     'km' => 'គោលការណ៍ឯកជនភាព',
                 ],
                 'body' => [
-                    'en' => "Your expenses are yours. This is a starting template — replace it "
+                    'en' => 'Your expenses are yours. This is a starting template — replace it '
                         ."with your own policy.\n\n"
-                        ."What we store: the expenses, budgets and categories you enter, and "
+                        .'What we store: the expenses, budgets and categories you enter, and '
                         ."the account details you sign up with.\n\n"
                         ."What we do with it: show it back to you. We do not sell your data.\n\n"
-                        ."Contact us if you want your account and its data deleted.",
-                    'km' => "ការចំណាយរបស់អ្នកគឺជារបស់អ្នក។ នេះជាគំរូចាប់ផ្តើម — "
+                        .'Contact us if you want your account and its data deleted.',
+                    'km' => 'ការចំណាយរបស់អ្នកគឺជារបស់អ្នក។ នេះជាគំរូចាប់ផ្តើម — '
                         ."សូមជំនួសដោយគោលការណ៍របស់អ្នក។\n\n"
-                        ."អ្វីដែលយើងរក្សាទុក៖ ការចំណាយ ថវិកា និងប្រភេទដែលអ្នកបញ្ចូល "
+                        .'អ្វីដែលយើងរក្សាទុក៖ ការចំណាយ ថវិកា និងប្រភេទដែលអ្នកបញ្ចូល '
                         ."ព្រមទាំងព័ត៌មានគណនីដែលអ្នកចុះឈ្មោះ។\n\n"
                         ."អ្វីដែលយើងធ្វើជាមួយវា៖ បង្ហាញវាមកអ្នកវិញ។ យើងមិនលក់ទិន្នន័យរបស់អ្នកទេ។\n\n"
-                        ."សូមទាក់ទងយើងប្រសិនបើអ្នកចង់លុបគណនី និងទិន្នន័យរបស់វា។",
+                        .'សូមទាក់ទងយើងប្រសិនបើអ្នកចង់លុបគណនី និងទិន្នន័យរបស់វា។',
                 ],
             ],
         ];

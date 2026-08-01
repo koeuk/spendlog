@@ -133,5 +133,4 @@ class BudgetController extends Controller
 
         return response()->json([], 204);
     }
-
 }

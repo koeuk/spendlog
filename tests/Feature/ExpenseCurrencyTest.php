@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\Expense;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
 /**
@@ -35,7 +36,7 @@ class ExpenseCurrencyTest extends TestCase
         $this->category = Category::factory()->create();
     }
 
-    private function submit(array $overrides = []): \Illuminate\Testing\TestResponse
+    private function submit(array $overrides = []): TestResponse
     {
         return $this->actingAs($this->user)->post(route('expenses.store'), [
             'item' => 'Coffee',

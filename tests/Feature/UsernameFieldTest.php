@@ -7,6 +7,8 @@ use App\Enums\TokenAbility;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Testing\TestResponse;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 /**
@@ -35,7 +37,7 @@ class UsernameFieldTest extends TestCase
         return $user;
     }
 
-    private function updateProfile(User $user, array $overrides = []): \Illuminate\Testing\TestResponse
+    private function updateProfile(User $user, array $overrides = []): TestResponse
     {
         return $this->actingAs($user)->patch('/settings/profile', [
             'name' => $user->name,
@@ -193,7 +195,7 @@ class UsernameFieldTest extends TestCase
     {
         $user = User::factory()->create(['username' => 'koeuk']);
 
-        \Laravel\Sanctum\Sanctum::actingAs($user, [TokenAbility::ExpensesRead->value]);
+        Sanctum::actingAs($user, [TokenAbility::ExpensesRead->value]);
 
         $this->getJson('/api/v1/me')
             ->assertOk()

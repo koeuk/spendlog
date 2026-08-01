@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ExerciseTypeRequest;
 use App\Models\ExerciseType;
 use App\Support\TranslatableQuery;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -169,7 +170,7 @@ class ExerciseTypeController extends Controller
             DB::commit();
 
             return redirect()->back()->withSuccess(__('Exercise deleted successfully.'));
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             DB::rollback();
 
             /*

@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Workout;
 use App\Models\WorkoutSet;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 /**
@@ -286,7 +287,7 @@ class WorkoutTrend
      * so a month of nothing but cardio would otherwise come back as null and
      * cast to a misleading 0.0 only by luck of PHP's coercion.
      */
-    private function volumeQuery(User $user): \Illuminate\Database\Eloquent\Builder
+    private function volumeQuery(User $user): Builder
     {
         return WorkoutSet::query()
             ->join('workouts', 'workouts.id', '=', 'workout_sets.workout_id')

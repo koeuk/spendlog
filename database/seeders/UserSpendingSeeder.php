@@ -7,6 +7,7 @@ use App\Models\Expense;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -155,7 +156,7 @@ class UserSpendingSeeder extends Seeder
     /**
      * Every row for the whole range, prices still unscaled.
      *
-     * @param  \Illuminate\Support\Collection<string, int>  $categoryIds
+     * @param  Collection<string, int>  $categoryIds
      * @return array<int, array<string, mixed>>
      */
     private function buildRows(User $user, $categoryIds): array
@@ -321,7 +322,7 @@ class UserSpendingSeeder extends Seeder
     /**
      * Category ids keyed by English name, so the profile can name them.
      *
-     * @return \Illuminate\Support\Collection<string, int>
+     * @return Collection<string, int>
      */
     private function categoryIds()
     {

@@ -3,10 +3,11 @@
 namespace Database\Factories;
 
 use App\Enums\FaqStatus;
+use App\Models\Faq;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<\App\Models\Faq>
+ * @extends Factory<Faq>
  */
 class FaqFactory extends Factory
 {
