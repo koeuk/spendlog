@@ -518,17 +518,6 @@ watch(() => page.url, () => (showMoreSheet.value = false));
                             </template>
 
                             <template #content>
-                                <!-- The second way into the module, alongside
-                                     the workspace pill. Only rendered while you
-                                     are outside it, so it reads as "go there"
-                                     rather than as a link to the page you are
-                                     already on. -->
-                                <DropdownLink
-                                    v-if="showSwitcher && activeModule.key !== 'exercise'"
-                                    :href="route('exercise.dashboard')"
-                                >
-                                    {{ __('Exercise') }}
-                                </DropdownLink>
                                 <DropdownLink :href="route('settings')">
                                     {{ __('Settings') }}
                                 </DropdownLink>
@@ -774,14 +763,6 @@ watch(() => page.url, () => (showMoreSheet.value = false));
                         class="flex flex-col gap-0.5"
                         :class="overflowLinks.length && 'mt-1 border-t border-border pt-1'"
                     >
-                        <!-- The other way into the module, matching the desktop
-                             account menu. Hidden while you are already inside it. -->
-                        <ResponsiveNavLink
-                            v-if="showSwitcher && activeModule.key !== 'exercise'"
-                            :href="route('exercise.dashboard')"
-                        >
-                            {{ __('Exercise') }}
-                        </ResponsiveNavLink>
                         <ResponsiveNavLink :href="route('settings')">
                             {{ __('Settings') }}
                         </ResponsiveNavLink>
