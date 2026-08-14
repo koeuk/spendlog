@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 import { Eye, EyeOff, LockKeyhole } from 'lucide-vue-next';
 import AuthCardLayout from '@/Layouts/AuthCardLayout.vue';
 import { Button } from '@/Components/ui/button';
@@ -9,13 +9,15 @@ import { Label } from '@/Components/ui/label';
 import { PILL_BUTTON, PILL_INPUT } from '@/lib/authStyles';
 
 const props = defineProps({
-    email: { type: String, required: true },
-    token: { type: String, required: true },
+    // Prefilled when we arrive from the forgot-password step; empty on a
+    // direct visit, where the person types it alongside the code.
+    email: { type: String, default: '' },
+    status: { type: String, default: null },
 });
 
 const form = useForm({
-    token: props.token,
     email: props.email,
+    code: '',
     password: '',
     password_confirmation: '',
 });
@@ -32,33 +34,55 @@ const submit = () => {
 <template>
     <Head title="Reset password" />
 
-    <AuthCardLayout heading="Choose a new password">
+    <AuthCardLayout heading="Enter your code">
         <template #icon>
             <LockKeyhole class="size-6 text-[#4b9d5f]" aria-hidden="true" />
         </template>
 
         <template #description>
-            Pick something you'll remember. You'll be signed in with it right away.
+            Type the 6-digit code we emailed you, then choose a new password.
         </template>
 
+        <div
+            v-if="status"
+            class="mb-4 rounded-[20px] bg-[#eaf5e6] px-4 py-3 text-center text-sm font-medium text-[#2f6b3d] dark:bg-[#16281a] dark:text-[#8fd4a0]"
+        >
+            {{ status }}
+        </div>
+
         <form @submit.prevent="submit">
-            <!--
-                The email comes from the reset link and is shown read-only:
-                editing it here would only ever invalidate the token.
-            -->
             <Label for="email" class="sr-only">Email</Label>
             <Input
                 id="email"
                 v-model="form.email"
                 type="email"
                 required
-                readonly
                 autocomplete="username"
+                placeholder="Email"
                 :aria-invalid="!!form.errors.email"
-                :class="[PILL_INPUT, 'cursor-not-allowed bg-neutral-50 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-500']"
+                :class="PILL_INPUT"
             />
             <p v-if="form.errors.email" class="mt-1.5 px-5 text-xs font-medium text-red-600 dark:text-red-400">
                 {{ form.errors.email }}
+            </p>
+
+            <Label for="code" class="sr-only">6-digit code</Label>
+            <Input
+                id="code"
+                v-model="form.code"
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                maxlength="6"
+                required
+                autofocus
+                autocomplete="one-time-code"
+                placeholder="6-digit code"
+                :aria-invalid="!!form.errors.code"
+                :class="[PILL_INPUT, 'mt-3 text-center text-lg font-semibold tracking-[0.5em]']"
+            />
+            <p v-if="form.errors.code" class="mt-1.5 px-5 text-xs font-medium text-red-600 dark:text-red-400">
+                {{ form.errors.code }}
             </p>
 
             <div class="relative mt-3">
@@ -68,7 +92,6 @@ const submit = () => {
                     v-model="form.password"
                     :type="showPassword ? 'text' : 'password'"
                     required
-                    autofocus
                     autocomplete="new-password"
                     placeholder="New password"
                     :aria-invalid="!!form.errors.password"
@@ -112,5 +135,14 @@ const submit = () => {
                 {{ form.processing ? 'Saving…' : 'Reset password' }}
             </Button>
         </form>
+
+        <template #footer>
+            <Link
+                :href="route('password.request')"
+                class="text-sm font-medium text-neutral-500 underline-offset-4 hover:text-neutral-900 hover:underline dark:text-neutral-400 dark:hover:text-neutral-100"
+            >
+                Didn't get it? Send a new code
+            </Link>
+        </template>
     </AuthCardLayout>
 </template>

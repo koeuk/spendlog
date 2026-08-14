@@ -3,17 +3,24 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
+use App\Notifications\PasswordOtpNotification;
+use App\Support\PasswordOtp;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
+/**
+ * Step one of the OTP reset: ask for an email, send a six-digit code to it.
+ * The name is inherited from the Breeze link flow this replaced, so the route
+ * names (password.request / password.email) and their tests stay put.
+ */
 class PasswordResetLinkController extends Controller
 {
     /**
-     * Display the password reset link request view.
+     * Display the password reset request view.
      */
     public function create(): Response
     {
@@ -23,7 +30,7 @@ class PasswordResetLinkController extends Controller
     }
 
     /**
-     * Handle an incoming password reset link request.
+     * Email a reset code and move on to the enter-code screen.
      *
      * @throws ValidationException
      */
@@ -33,19 +40,31 @@ class PasswordResetLinkController extends Controller
             'email' => 'required|email',
         ]);
 
-        // We will send the password reset link to this user. Once we have attempted
-        // to send the link, we will examine the response then see the message we
-        // need to show to the user. Finally, we'll send out a proper response.
-        $status = Password::sendResetLink(
-            $request->only('email')
-        );
+        // Same response as the old broker: an unknown address is said out
+        // loud. The register page already answers "is this email taken?", so
+        // silence here would cost usability without buying any secrecy.
+        $user = User::where('email', $request->email)->first();
 
-        if ($status == Password::RESET_LINK_SENT) {
-            return back()->with('status', __($status));
+        if (! $user) {
+            throw ValidationException::withMessages([
+                'email' => [trans('passwords.user')],
+            ]);
         }
 
-        throw ValidationException::withMessages([
-            'email' => [trans($status)],
-        ]);
+        $code = PasswordOtp::issue($user->email);
+
+        // Null means a code was already sent moments ago and still stands —
+        // resending would only race the one already in the inbox.
+        if ($code === null) {
+            throw ValidationException::withMessages([
+                'email' => [trans('passwords.throttled')],
+            ]);
+        }
+
+        $user->notify(new PasswordOtpNotification($code));
+
+        return redirect()
+            ->route('password.reset', ['email' => $user->email])
+            ->with('status', __('We emailed you a 6-digit code.'));
     }
 }

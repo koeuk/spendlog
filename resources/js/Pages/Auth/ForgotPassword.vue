@@ -29,8 +29,8 @@ const submit = () => {
         </template>
 
         <template #description>
-            No problem. Tell us your email address and we'll send you a link to
-            choose a new one.
+            No problem. Tell us your email address and we'll send you a 6-digit
+            code to choose a new one.
         </template>
 
         <div
@@ -58,7 +58,7 @@ const submit = () => {
             </p>
 
             <Button type="submit" :disabled="form.processing" :class="[PILL_BUTTON, 'mt-4']">
-                {{ form.processing ? 'Sending…' : 'Email password reset link' }}
+                {{ form.processing ? 'Sending…' : 'Email me a code' }}
             </Button>
         </form>
 
