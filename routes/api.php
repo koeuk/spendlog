@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\PasswordResetController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\WorkoutController;
+use App\Http\Controllers\ReportController as WebReportController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -56,6 +57,13 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::get('reports', ReportController::class)
             ->middleware('abilities:'.TokenAbility::ReportsRead->value)
             ->name('reports');
+
+        // The same file downloads the web offers, over a bearer token. The web
+        // controller only reads $request->user() and gates on viewReports, so
+        // it serves both guards unchanged — one export, not two.
+        Route::get('reports/export/{format}', [WebReportController::class, 'export'])
+            ->middleware('abilities:'.TokenAbility::ReportsRead->value)
+            ->name('reports.export');
 
         // Read and write abilities are checked separately so a token can be
         // read-only without needing a second route table.

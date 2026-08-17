@@ -75,6 +75,15 @@ class ReportTest extends TestCase
         $this->getJson('/api/v1/reports')->assertForbidden();
     }
 
+    public function test_the_report_downloads_as_a_file_over_the_api(): void
+    {
+        Sanctum::actingAs($this->user(), [TokenAbility::ReportsRead->value]);
+
+        $this->get('/api/v1/reports/export/csv?period=month')
+            ->assertOk()
+            ->assertDownload();
+    }
+
     public function test_reports_read_is_in_a_regular_users_default_token(): void
     {
         $this->assertContains(
