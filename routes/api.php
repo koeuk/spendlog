@@ -6,10 +6,13 @@ use App\Http\Controllers\Api\V1\BudgetController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\ExpenseController;
+use App\Http\Controllers\Api\V1\FaqAdminController;
 use App\Http\Controllers\Api\V1\PasswordController;
 use App\Http\Controllers\Api\V1\PasswordResetController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\ReportController;
+use App\Http\Controllers\Api\V1\SettingsAdminController;
+use App\Http\Controllers\Api\V1\UserAdminController;
 use App\Http\Controllers\Api\V1\WorkoutController;
 use App\Http\Controllers\ReportController as WebReportController;
 use Illuminate\Support\Facades\Route;
@@ -130,6 +133,33 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::middleware('abilities:'.TokenAbility::ProfileWrite->value)->group(function () {
             Route::patch('profile', [ProfileController::class, 'update'])->name('profile.update');
             Route::put('password', [PasswordController::class, 'update'])->name('password.update');
+        });
+
+        /*
+         * The admin desk. Every route is double-gated: the ability limits the
+         * client (an admin can mint a token that cannot touch accounts), and
+         * the policy/gate behind it limits the user.
+         */
+        Route::middleware('abilities:'.TokenAbility::UsersRead->value)->group(function () {
+            Route::get('admin/users', [UserAdminController::class, 'index'])->name('admin.users.index');
+        });
+
+        Route::middleware('abilities:'.TokenAbility::UsersWrite->value)->group(function () {
+            Route::post('admin/users', [UserAdminController::class, 'store'])->name('admin.users.store');
+            Route::patch('admin/users/{user:uuid}', [UserAdminController::class, 'update'])->name('admin.users.update');
+            Route::delete('admin/users/{user:uuid}', [UserAdminController::class, 'destroy'])->name('admin.users.destroy');
+        });
+
+        // FAQ reads are open to any token — the Help screen is for everyone.
+        Route::get('faqs', [FaqAdminController::class, 'index'])->name('faqs.index');
+
+        Route::middleware('abilities:'.TokenAbility::SettingsWrite->value)->group(function () {
+            Route::post('admin/faqs', [FaqAdminController::class, 'store'])->name('admin.faqs.store');
+            Route::patch('admin/faqs/{faq:uuid}', [FaqAdminController::class, 'update'])->name('admin.faqs.update');
+            Route::delete('admin/faqs/{faq:uuid}', [FaqAdminController::class, 'destroy'])->name('admin.faqs.destroy');
+
+            Route::get('admin/settings/spending', [SettingsAdminController::class, 'spending'])->name('admin.settings.spending');
+            Route::put('admin/settings/spending', [SettingsAdminController::class, 'updateSpending'])->name('admin.settings.spending.update');
         });
     });
 });
