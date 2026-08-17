@@ -37,6 +37,14 @@ enum TokenAbility: string
     // The account's own profile and password. One ability for both: they are
     // the same self-service surface, and the gates still rule separately.
     case ProfileWrite = 'profile:write';
+    /*
+     * The admin desk. Derived from admin-only permissions like every other
+     * ability, so a regular user's token simply never carries them — and an
+     * admin can still mint a narrower token that cannot touch user accounts.
+     */
+    case UsersRead = 'users:read';
+    case UsersWrite = 'users:write';
+    case SettingsWrite = 'settings:write';
 
     /**
      * The permissions that justify this ability.
@@ -80,6 +88,13 @@ enum TokenAbility: string
             self::ProfileWrite => [
                 Permission::ProfileUpdate,
                 Permission::PasswordUpdate,
+            ],
+            self::UsersRead => [Permission::UsersView],
+            self::UsersWrite => [Permission::UsersManage],
+            self::SettingsWrite => [
+                Permission::SettingsFaq,
+                Permission::SettingsBranding,
+                Permission::SettingsPages,
             ],
         };
     }
