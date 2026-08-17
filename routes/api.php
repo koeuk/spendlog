@@ -6,6 +6,9 @@ use App\Http\Controllers\Api\V1\BudgetController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\ExpenseController;
+use App\Http\Controllers\Api\V1\PasswordController;
+use App\Http\Controllers\Api\V1\PasswordResetController;
+use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\WorkoutController;
 use Illuminate\Support\Facades\Route;
 
@@ -27,6 +30,16 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::post('register', [AuthController::class, 'register'])
         ->middleware('throttle:api-login')
         ->name('register');
+
+    // The OTP reset, throttled like login: both are endpoints where guessing
+    // is the attack. The per-code limits live in PasswordOtp on top of this.
+    Route::post('forgot-password', [PasswordResetController::class, 'send'])
+        ->middleware('throttle:api-login')
+        ->name('password.email');
+
+    Route::post('reset-password', [PasswordResetController::class, 'reset'])
+        ->middleware('throttle:api-login')
+        ->name('password.reset');
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('me', [AuthController::class, 'me'])->name('me');
@@ -94,6 +107,13 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::post('workouts', [WorkoutController::class, 'store'])->name('workouts.store');
             Route::patch('workouts/{workout:uuid}', [WorkoutController::class, 'update'])->name('workouts.update');
             Route::delete('workouts/{workout:uuid}', [WorkoutController::class, 'destroy'])->name('workouts.destroy');
+        });
+
+        // The account's own details. Both routes share one ability; the
+        // updateProfile / updatePassword gates still rule separately.
+        Route::middleware('abilities:'.TokenAbility::ProfileWrite->value)->group(function () {
+            Route::patch('profile', [ProfileController::class, 'update'])->name('profile.update');
+            Route::put('password', [PasswordController::class, 'update'])->name('password.update');
         });
     });
 });

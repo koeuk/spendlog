@@ -30,6 +30,9 @@ enum TokenAbility: string
      */
     case ExerciseRead = 'exercise:read';
     case ExerciseWrite = 'exercise:write';
+    // The account's own profile and password. One ability for both: they are
+    // the same self-service surface, and the gates still rule separately.
+    case ProfileWrite = 'profile:write';
 
     /**
      * The permissions that justify this ability.
@@ -68,6 +71,10 @@ enum TokenAbility: string
                 Permission::ExerciseCreate,
                 Permission::ExerciseUpdate,
                 Permission::ExerciseDelete,
+            ],
+            self::ProfileWrite => [
+                Permission::ProfileUpdate,
+                Permission::PasswordUpdate,
             ],
         };
     }
