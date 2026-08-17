@@ -20,15 +20,16 @@ class ProfileUpdateRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             // Same rules an admin's form uses, so a handle is not valid on one
-            // screen and rejected on the other.
-            'username' => UsernameRules::for($this->user()->id),
+            // screen and rejected on the other. Null-safe: Scribe builds this
+            // request with no user when generating the API docs.
+            'username' => UsernameRules::for($this->user()?->id),
             'email' => [
                 'required',
                 'string',
                 'lowercase',
                 'email',
                 'max:255',
-                Rule::unique(User::class)->ignore($this->user()->id),
+                Rule::unique(User::class)->ignore($this->user()?->id),
             ],
         ];
     }

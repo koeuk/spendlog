@@ -1,0 +1,168 @@
+name: Profile
+description: |-
+
+  The account's own details. Requires the `profile:write` ability — which is
+  **not** in a default token unless the account holds the profile permissions.
+endpoints:
+  -
+    custom: []
+    httpMethods:
+      - PATCH
+    uri: api/v1/profile
+    metadata:
+      custom: []
+      groupName: Profile
+      groupDescription: |-
+
+        The account's own details. Requires the `profile:write` ability — which is
+        **not** in a default token unless the account holds the profile permissions.
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Update the profile'
+      description: |-
+        Same rules as the web form: the username is a display handle (blank
+        releases it), and changing the email clears its verified timestamp.
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      name:
+        custom: []
+        name: name
+        description: ''
+        required: true
+        example: Koeuk
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      username:
+        custom: []
+        name: username
+        description: 'A display handle, or blank to release it.'
+        required: false
+        example: koeuk
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: true
+        deprecated: false
+      email:
+        custom: []
+        name: email
+        description: ''
+        required: true
+        example: koeukkos@gmail.com
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+    cleanBodyParameters:
+      name: Koeuk
+      username: koeuk
+      email: koeukkos@gmail.com
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"data": {"uuid": "0198a...", "name": "Koeuk", "email": "koeukkos@gmail.com"}}'
+        headers: []
+        description: ''
+      -
+        custom: []
+        status: 403
+        content: '{"message": "This action is unauthorized."}'
+        headers: []
+        description: 'token lacks profile:write, or user lacks the permission'
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - PUT
+    uri: api/v1/password
+    metadata:
+      custom: []
+      groupName: Profile
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Change the password'
+      description: |-
+        No current-password check, mirroring the web form — accounts here are
+        created by an admin for a small known group, and the `profile:write`
+        ability plus the gate already bound who can reach this.
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      password:
+        custom: []
+        name: password
+        description: 'The new password.'
+        required: true
+        example: a-much-better-one
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      password_confirmation:
+        custom: []
+        name: password_confirmation
+        description: ''
+        required: true
+        example: a-much-better-one
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+    cleanBodyParameters:
+      password: a-much-better-one
+      password_confirmation: a-much-better-one
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"message": "Password changed."}'
+        headers: []
+        description: ''
+      -
+        custom: []
+        status: 403
+        content: '{"message": "This action is unauthorized."}'
+        headers: []
+        description: 'token lacks profile:write, or user lacks the permission'
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null

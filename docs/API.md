@@ -43,8 +43,9 @@ break every client that expects `"12.50"`.
 unauthenticated, `403` forbidden or missing token ability, `404` unknown UUID,
 `409` conflict, `429` throttled.
 
-**Rate limits.** 60 requests/minute per token. `login` and `register` allow 5 per
-minute per email+IP, plus 20 per minute per IP.
+**Rate limits.** 60 requests/minute per token. `login`, `register`,
+`forgot-password` and `reset-password` allow 5 per minute per email+IP, plus 20
+per minute per IP — they are the endpoints where guessing is the attack.
 
 ## Authentication
 
@@ -56,12 +57,16 @@ Two independent gates, and **both** must pass:
 A mobile token cannot write categories even when its owner is an admin; an admin
 token with `categories:write` still fails for a non-admin user. Abilities:
 `expenses:read`, `expenses:write`, `categories:read`, `categories:write`,
-`budgets:read`, `budgets:write`, `dashboard:read`.
+`budgets:read`, `budgets:write`, `dashboard:read`, `exercise:read`,
+`exercise:write`, `profile:write`.
 
-New tokens get everything **except** `categories:write` — category management is
-an admin desk job, and a lost phone should not rewrite the taxonomy every user's
-expenses hang off. A client may request a *narrower* token; anything it asks for
-is intersected with what the user may grant, so asking for more never widens it.
+A fresh token carries every ability the user's permissions justify and nothing
+more — both sides derive from one permission system (`TokenAbility::grantableTo`),
+so an admin's default token holds `categories:write` while a regular user's never
+does, and an account without the exercise module has no `exercise:*` to give. A
+client may request a *narrower* token (a read-only dashboard widget, say);
+anything it asks for is intersected with what the user may grant, so asking for
+more never widens it.
 
 ### `POST /api/v1/login`
 
@@ -96,6 +101,20 @@ role — a `role` in the payload is ignored, not honoured.
 
 `logout` revokes **only the calling token**, so signing out on a phone leaves
 other devices signed in.
+
+### `POST /api/v1/forgot-password` · `POST /api/v1/reset-password`
+
+The OTP reset, unauthenticated and throttled like login. `forgot-password`
+takes an `email` and mails a **six-digit code**; `reset-password` trades
+`email`, `code`, `password`, `password_confirmation` for a reset.
+
+The limits live in `App\Support\PasswordOtp` and are shared with the web form,
+so the two doors cannot be played against each other: a code lasts **10
+minutes**, works **once**, dies after **5 wrong guesses** *counted across web
+and API together*, and asking again inside **60 seconds** is a `422` rather
+than a second email. Wrong, expired and over-guessed codes all return the same
+`422` on `code` — distinguishing them would confirm which emails have a reset
+in flight.
 
 ## Expenses
 
@@ -277,6 +296,62 @@ how a client tells "now" apart from whichever month it is browsing.
 ```
 
 `breakdown` is empty when nothing was spent — the shares would be meaningless.
+
+## Workouts (exercise module)
+
+Locked behind `exercise:read` / `exercise:write` — abilities an account only
+has once an admin grants the module, so for everyone else these routes are
+invisible rather than merely forbidden.
+
+### `GET /api/v1/workouts`
+
+The caller's own sessions, paginated newest first. `filter[from]` /
+`filter[to]` bound `performed_on`; `sort` takes `performed_on` or
+`duration_seconds`. Each row carries its `sets` with their exercise types.
+
+### `POST /api/v1/workouts` → `201`
+
+A workout is submitted whole: the session (`performed_on`, `duration_seconds`,
+`notes`) plus a `sets` array, each set naming an `exercise_type_uuid` with
+`reps`, `weight`, `distance_m`, `duration_seconds`, `rpe` as the movement
+needs. Conventions that mirror expenses' currency handling:
+
+- **Weights are stored in kilograms.** Send `weight_unit=lb` and every weight
+  in the payload converts on the way in; omit it and the app-configured
+  default applies. Responses always read back kilograms.
+- `set_no` is assigned from array order, never trusted from the client.
+- An `exercise_type_uuid` must be one the caller may log against — a guessed
+  UUID for someone else's private movement is a `422`, not a hit.
+
+`PATCH` replaces the session the same way; `DELETE` returns `204`.
+
+### `GET /api/v1/workouts/summary?month=YYYY-MM`
+
+Sessions, volume, time and current streak for the month (default: this one),
+plus the muscle-group split — what the exercise dashboard renders.
+
+### `GET /api/v1/exercises`
+
+The movements available to the caller: the global catalogue plus their own.
+
+## Profile
+
+The account's own details, behind the `profile:write` ability — a deliberately
+narrow token can exclude it, so a kiosk-style client cannot rotate the email or
+password out from under the account's owner.
+
+### `PATCH /api/v1/profile`
+
+`name`, `username`, `email` — same rules as the web form: the username is a
+display handle and blank **releases** it (stored as null, never `''`), and a
+changed email clears `email_verified_at`. Returns the updated user.
+
+### `PUT /api/v1/password`
+
+`password` + `password_confirmation`. No current-password check, mirroring the
+web form's reasoning: accounts here are made by an admin for a small known
+group, and the ability plus the `updatePassword` gate already bound who can
+reach this. Existing tokens stay valid.
 
 ## Configuration
 

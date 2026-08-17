@@ -1,0 +1,556 @@
+name: Exercise
+description: ''
+endpoints:
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/workouts
+    metadata:
+      custom: []
+      groupName: Exercise
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'List workouts'
+      description: "The caller's own sessions, newest first."
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/workouts/summary
+    metadata:
+      custom: []
+      groupName: Exercise
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Training summary'
+      description: |-
+        Sessions, volume, time and streak for one month (`?month=YYYY-MM`,
+        defaulting to the current one), plus the muscle-group split.
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/exercises
+    metadata:
+      custom: []
+      groupName: Exercise
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'List available exercises'
+      description: 'The shared catalogue plus anything the caller invented.'
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: 'api/v1/workouts/{uuid}'
+    metadata:
+      custom: []
+      groupName: Exercise
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Show a workout'
+      description: ''
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      uuid:
+        custom: []
+        name: uuid
+        description: ''
+        required: true
+        example: 019f751e-3f9d-7309-95f1-5d76cba496fb
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      uuid: 019f751e-3f9d-7309-95f1-5d76cba496fb
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: api/v1/workouts
+    metadata:
+      custom: []
+      groupName: Exercise
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Log a workout'
+      description: |-
+        Send `sets` as an array; weights are read in `weight_unit` (kg or lb) and
+        stored as kilograms. Omitting the unit uses the app's configured default.
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      performed_on:
+        custom: []
+        name: performed_on
+        description: 'Must be a valid date. Must be a date before or equal to <code>today</code>.'
+        required: true
+        example: '2022-09-10'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      duration_seconds:
+        custom: []
+        name: duration_seconds
+        description: 'Must be at least 0. Must not be greater than 86400.'
+        required: false
+        example: 22
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      notes:
+        custom: []
+        name: notes
+        description: 'Must not be greater than 2000 characters.'
+        required: false
+        example: g
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      weight_unit:
+        custom: []
+        name: weight_unit
+        description: ''
+        required: false
+        example: lb
+        type: string
+        enumValues:
+          - kg
+          - lb
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      sets:
+        custom: []
+        name: sets
+        description: 'Must not have more than 200 items.'
+        required: false
+        example: null
+        type: 'object[]'
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      'sets[].exercise_type_uuid':
+        custom: []
+        name: 'sets[].exercise_type_uuid'
+        description: 'Must be a valid UUID.'
+        required: true
+        example: c90237e9-ced5-3af6-88ea-84aeaa148878
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      'sets[].reps':
+        custom: []
+        name: 'sets[].reps'
+        description: 'Must be at least 1. Must not be greater than 10000.'
+        required: false
+        example: 15
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      'sets[].weight':
+        custom: []
+        name: 'sets[].weight'
+        description: 'Must be at least 0. Must not be greater than 2000.'
+        required: false
+        example: 8
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      'sets[].distance_m':
+        custom: []
+        name: 'sets[].distance_m'
+        description: 'Must be at least 0. Must not be greater than 1000000.'
+        required: false
+        example: 1
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      'sets[].duration_seconds':
+        custom: []
+        name: 'sets[].duration_seconds'
+        description: 'Must be at least 0. Must not be greater than 86400.'
+        required: false
+        example: 1
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      'sets[].rpe':
+        custom: []
+        name: 'sets[].rpe'
+        description: 'Must be at least 1. Must not be greater than 10.'
+        required: false
+        example: 10
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+    cleanBodyParameters:
+      performed_on: '2022-09-10'
+      duration_seconds: 22
+      notes: g
+      weight_unit: lb
+      sets:
+        - exercise_type_uuid: c90237e9-ced5-3af6-88ea-84aeaa148878
+          reps: 15
+          weight: 8
+          distance_m: 1
+          duration_seconds: 1
+          rpe: 10
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - PATCH
+    uri: 'api/v1/workouts/{uuid}'
+    metadata:
+      custom: []
+      groupName: Exercise
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Update a workout'
+      description: 'Sets are replaced wholesale — send the full list, not a delta.'
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      uuid:
+        custom: []
+        name: uuid
+        description: ''
+        required: true
+        example: 019f751e-3f9d-7309-95f1-5d76cba496fb
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      uuid: 019f751e-3f9d-7309-95f1-5d76cba496fb
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      performed_on:
+        custom: []
+        name: performed_on
+        description: 'Must be a valid date. Must be a date before or equal to <code>today</code>.'
+        required: true
+        example: '2022-09-10'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      duration_seconds:
+        custom: []
+        name: duration_seconds
+        description: 'Must be at least 0. Must not be greater than 86400.'
+        required: false
+        example: 22
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      notes:
+        custom: []
+        name: notes
+        description: 'Must not be greater than 2000 characters.'
+        required: false
+        example: g
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      weight_unit:
+        custom: []
+        name: weight_unit
+        description: ''
+        required: false
+        example: lb
+        type: string
+        enumValues:
+          - kg
+          - lb
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      sets:
+        custom: []
+        name: sets
+        description: 'Must not have more than 200 items.'
+        required: false
+        example: null
+        type: 'object[]'
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      'sets[].exercise_type_uuid':
+        custom: []
+        name: 'sets[].exercise_type_uuid'
+        description: 'Must be a valid UUID.'
+        required: true
+        example: c90237e9-ced5-3af6-88ea-84aeaa148878
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      'sets[].reps':
+        custom: []
+        name: 'sets[].reps'
+        description: 'Must be at least 1. Must not be greater than 10000.'
+        required: false
+        example: 15
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      'sets[].weight':
+        custom: []
+        name: 'sets[].weight'
+        description: 'Must be at least 0. Must not be greater than 2000.'
+        required: false
+        example: 8
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      'sets[].distance_m':
+        custom: []
+        name: 'sets[].distance_m'
+        description: 'Must be at least 0. Must not be greater than 1000000.'
+        required: false
+        example: 1
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      'sets[].duration_seconds':
+        custom: []
+        name: 'sets[].duration_seconds'
+        description: 'Must be at least 0. Must not be greater than 86400.'
+        required: false
+        example: 1
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      'sets[].rpe':
+        custom: []
+        name: 'sets[].rpe'
+        description: 'Must be at least 1. Must not be greater than 10.'
+        required: false
+        example: 10
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+    cleanBodyParameters:
+      performed_on: '2022-09-10'
+      duration_seconds: 22
+      notes: g
+      weight_unit: lb
+      sets:
+        - exercise_type_uuid: c90237e9-ced5-3af6-88ea-84aeaa148878
+          reps: 15
+          weight: 8
+          distance_m: 1
+          duration_seconds: 1
+          rpe: 10
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - DELETE
+    uri: 'api/v1/workouts/{uuid}'
+    metadata:
+      custom: []
+      groupName: Exercise
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Delete a workout'
+      description: ''
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      uuid:
+        custom: []
+        name: uuid
+        description: ''
+        required: true
+        example: 019f751e-3f9d-7309-95f1-5d76cba496fb
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      uuid: 019f751e-3f9d-7309-95f1-5d76cba496fb
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null

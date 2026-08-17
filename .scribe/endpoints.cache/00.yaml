@@ -24,7 +24,10 @@ endpoints:
       description: |-
         Issues a personal access token for a device.
 
-        A wrong password and an unknown email return the identical 422 — a
+        Accepts an email or a username in the `email` field; a value containing
+        '@' is treated as an email.
+
+        A wrong password and an unknown account return the identical 422 — a
         distinguishable response would be a free user-enumeration oracle.
       authenticated: false
       deprecated: false
@@ -39,7 +42,7 @@ endpoints:
       email:
         custom: []
         name: email
-        description: "The account's email."
+        description: "The account's email or username."
         required: true
         example: sam@example.com
         type: string

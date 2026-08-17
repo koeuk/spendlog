@@ -1,57 +1,166 @@
-name: Dashboard
-description: ''
+name: Auth
+description: |-
+
+  The same OTP reset the web login uses, for API clients: request a six-digit
+  code by email, then trade code + new password for a reset. All the limits
+  live in one place (PasswordOtp), so the two doors cannot drift apart —
+  five guesses, ten minutes, one use, shared between web and API.
 endpoints:
   -
     custom: []
     httpMethods:
-      - GET
-    uri: api/v1/dashboard
+      - POST
+    uri: api/v1/forgot-password
     metadata:
       custom: []
-      groupName: Dashboard
-      groupDescription: ''
+      groupName: Auth
+      groupDescription: |-
+
+        The same OTP reset the web login uses, for API clients: request a six-digit
+        code by email, then trade code + new password for a reset. All the limits
+        live in one place (PasswordOtp), so the two doors cannot drift apart —
+        five guesses, ten minutes, one use, shared between web and API.
       subgroup: ''
       subgroupDescription: ''
-      title: 'Home screen'
+      title: 'Request a reset code'
       description: |-
-        Everything a home screen needs in one call, rather than four round trips:
-        today's total, this month's summary, the by-category breakdown ranked by
-        spend with each category's share of the month, and the 8 most recent
-        expenses.
-
-        `breakdown` is empty when nothing was spent this month — the shares would
-        be meaningless.
-      authenticated: true
+        Emails a six-digit code to the account. One code per minute per email;
+        a fresh request inside that window is a 422, not a second email.
+      authenticated: false
       deprecated: false
     headers:
-      Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
       Content-Type: application/json
       Accept: application/json
     urlParameters: []
     cleanUrlParameters: []
     queryParameters: []
     cleanQueryParameters: []
-    bodyParameters: []
-    cleanBodyParameters: []
+    bodyParameters:
+      email:
+        custom: []
+        name: email
+        description: ''
+        required: true
+        example: koeukkos@gmail.com
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+    cleanBodyParameters:
+      email: koeukkos@gmail.com
     fileParameters: []
     responses:
       -
         custom: []
         status: 200
-        content: '{"data": {"today": {"date": "2026-07-16", "total": "12.50"}, "summary": {"month": "2026-07", "overall": {"spent": "75.00", "budget": "200.00", "remaining": "125.00", "percent": 38, "bar_percent": 38, "status": "ok"}, "categories": []}, "breakdown": [{"uuid": "0198a...", "name": "Food", "color": "amber", "icon": "utensils", "spent": "75.00", "share": 75}], "recent": [{"uuid": "0198f...", "item": "Coffee", "price": "4.50", "spent_on": "2026-07-16", "category": {"uuid": "0198a...", "name": "Food"}}]}}'
+        content: '{"message": "We emailed you a 6-digit code."}'
         headers: []
         description: ''
       -
         custom: []
-        status: 403
-        content: '{"message": "Invalid ability provided."}'
+        status: 422
+        content: '{"message": "We can''t find a user with that email address.", "errors": {"email": ["We can''t find a user with that email address."]}}'
         headers: []
-        description: 'token lacks dashboard:read'
+        description: 'unknown email, or asked again too soon'
     responseFields: []
-    auth:
-      - headers
-      - Authorization
-      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: api/v1/reset-password
+    metadata:
+      custom: []
+      groupName: Auth
+      groupDescription: |-
+
+        The same OTP reset the web login uses, for API clients: request a six-digit
+        code by email, then trade code + new password for a reset. All the limits
+        live in one place (PasswordOtp), so the two doors cannot drift apart —
+        five guesses, ten minutes, one use, shared between web and API.
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Reset with the code'
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      email:
+        custom: []
+        name: email
+        description: ''
+        required: true
+        example: koeukkos@gmail.com
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      code:
+        custom: []
+        name: code
+        description: 'The six digits from the email.'
+        required: true
+        example: '483291'
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      password:
+        custom: []
+        name: password
+        description: ''
+        required: true
+        example: a-much-better-one
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      password_confirmation:
+        custom: []
+        name: password_confirmation
+        description: ''
+        required: true
+        example: a-much-better-one
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+    cleanBodyParameters:
+      email: koeukkos@gmail.com
+      code: '483291'
+      password: a-much-better-one
+      password_confirmation: a-much-better-one
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"message": "Your password has been reset."}'
+        headers: []
+        description: ''
+      -
+        custom: []
+        status: 422
+        content: '{"message": "That code is not valid.", "errors": {"code": ["That code is not valid. It may have expired — you can request a new one."]}}'
+        headers: []
+        description: 'wrong, expired or over-guessed code'
+    responseFields: []
+    auth: []
     controller: null
     method: null
     route: null
