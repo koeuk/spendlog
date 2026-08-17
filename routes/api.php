@@ -50,6 +50,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             ->middleware('abilities:'.TokenAbility::DashboardRead->value)
             ->name('dashboard');
 
+        // Reads the same expenses as the dashboard, but over a chosen period
+        // and against the one before it. Its own ability, so a client scoped to
+        // the home screen does not pick up the whole history with it.
         Route::get('reports', ReportController::class)
             ->middleware('abilities:'.TokenAbility::ReportsRead->value)
             ->name('reports');

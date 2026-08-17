@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\TrendGranularity;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ExpenseResource;
 use App\Models\Expense;
 use App\Models\User;
 use App\Services\SpendingReport;
@@ -173,11 +174,6 @@ class ReportController extends Controller
                 'prev' => $paginator->previousPageUrl(),
             ],
         ];
-    }
-
-    private function request(): Request
-    {
-        return request();
     }
 
     /**

@@ -297,6 +297,58 @@ how a client tells "now" apart from whichever month it is browsing.
 
 `breakdown` is empty when nothing was spent — the shares would be meaningless.
 
+## Reports
+
+### `GET /api/v1/reports`
+
+The dashboard answers "how am I doing right now"; this answers "where did the
+money go over a period", compared against the period before. Needs
+`reports:read` — a separate ability from `dashboard:read`, so a client scoped to
+the home screen does not pick up the whole history with it.
+
+| Query | Purpose |
+|---|---|
+| `period` | `week` \| `month` \| `year` \| `all`. Anything else falls back to `month`. |
+| `at` | Which period: `YYYY-MM-DD` (week), `YYYY-MM` (month), `YYYY` (year). Ignored for `all`. Defaults to the current one. A malformed or future value falls back to now rather than 500ing. |
+| `page`, `per_page` | Paginate the expense list. `per_page` is an allow-list: 20, 50, 100, 150, 200. |
+
+```json
+{
+  "data": {
+    "granularity": "month",
+    "anchor": "2026-07",
+    "period_label": "July 2026",
+    "options": [{ "value": "2026-07", "label": "July 2026" }],
+    "series": { "label": "July 2026", "total": "706.80",
+                "buckets": [{ "key": "2026-07-01", "label": "1", "caption": "Wed 1 Jul",
+                              "value": "12.50", "is_current": false, "is_future": false }] },
+    "breakdown": [{ "uuid": "0198a...", "name": "Food", "color": "amber", "icon": "utensils",
+                    "total": "106.00", "count": 4, "average": "26.50", "share": 15 }],
+    "stats": { "total": "706.80", "count": 22, "daily_average": "22.80",
+               "previous": "41.67", "change_percent": -27.2,
+               "previous_label": "June 2026", "previous_is_partial": true },
+    "expenses": { "data": [], "meta": { }, "links": { "next": null } }
+  }
+}
+```
+
+`options` is bounded by the account's own history, so a new user is not offered
+ten empty years to browse.
+
+Buckets carry `is_future` so a day that has not happened is drawn empty rather
+than as a zero — "nothing spent" and "not yet" are different claims.
+
+**The comparison.** `change_percent` is `null`, never `0`, when there is nothing
+to compare against: `all` has no period before it, and neither does a first
+month. While the current period is still running, `previous_is_partial` is true
+and `previous` covers only the same elapsed stretch of the previous period —
+comparing 18 days against a full 30 reported a 40% fall for someone whose
+spending had not changed.
+
+Every figure comes from the same `SpendingTrend` / `SpendingReport` services the
+web Reports page and its PDF export use, so the two clients cannot disagree
+about the same period.
+
 ## Workouts (exercise module)
 
 Locked behind `exercise:read` / `exercise:write` — abilities an account only
