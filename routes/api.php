@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\ExpenseController;
 use App\Http\Controllers\Api\V1\PasswordController;
 use App\Http\Controllers\Api\V1\PasswordResetController;
 use App\Http\Controllers\Api\V1\ProfileController;
+use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\WorkoutController;
 use Illuminate\Support\Facades\Route;
 
@@ -48,6 +49,10 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::get('dashboard', DashboardController::class)
             ->middleware('abilities:'.TokenAbility::DashboardRead->value)
             ->name('dashboard');
+
+        Route::get('reports', ReportController::class)
+            ->middleware('abilities:'.TokenAbility::ReportsRead->value)
+            ->name('reports');
 
         // Read and write abilities are checked separately so a token can be
         // read-only without needing a second route table.

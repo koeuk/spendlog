@@ -23,6 +23,10 @@ enum TokenAbility: string
     case BudgetsRead = 'budgets:read';
     case BudgetsWrite = 'budgets:write';
     case DashboardRead = 'dashboard:read';
+    // Reports read the same expenses the dashboard does, but answer a different
+    // question over a chosen period. Separate from dashboard:read so a client
+    // scoped to the home screen does not silently gain the history with it.
+    case ReportsRead = 'reports:read';
     /*
      * The exercise module. Nothing extra is needed to keep these locked: the
      * abilities are derived from permissions by grantableTo below, and an
@@ -66,6 +70,7 @@ enum TokenAbility: string
                 Permission::BudgetsDelete,
             ],
             self::DashboardRead => [Permission::DashboardView],
+            self::ReportsRead => [Permission::ReportsView],
             self::ExerciseRead => [Permission::ExerciseView],
             self::ExerciseWrite => [
                 Permission::ExerciseCreate,

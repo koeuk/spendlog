@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\Enums\TrendGranularity;
 use App\Exports\ExpensesExport;
 use App\Models\AppSetting;
-use App\Models\Category;
 use App\Models\Expense;
 use App\Models\User;
+use App\Services\SpendingReport;
 use App\Services\SpendingTrend;
 use App\Support\Concerns\PaginatesLists;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -41,7 +41,10 @@ class ReportController extends Controller
         'purple' => '#a855f7', 'pink' => '#ec4899',
     ];
 
-    public function __construct(private readonly SpendingTrend $trend) {}
+    public function __construct(
+        private readonly SpendingTrend $trend,
+        private readonly SpendingReport $report,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -57,7 +60,7 @@ class ReportController extends Controller
         [$start, $end] = $this->trend->range($granularity, $anchor, $user);
 
         $series = $this->trend->series($user, $granularity, $anchor);
-        $breakdown = $this->breakdown($user, $start, $end);
+        $breakdown = $this->report->breakdown($user, $start, $end);
 
         return Inertia::render('Reports/Index', [
             'granularity' => $granularity->value,
@@ -65,7 +68,7 @@ class ReportController extends Controller
             'options' => $this->trend->options($user, $granularity),
             'series' => $series,
             'breakdown' => $breakdown,
-            'stats' => $this->stats($user, $start, $end, $granularity, $anchor, $breakdown),
+            'stats' => $this->report->stats($user, $start, $end, $granularity, $anchor, $breakdown),
             'expenses' => $this->expenses($user, $start, $end, $this->perPage($request)),
         ]);
     }
@@ -91,7 +94,7 @@ class ReportController extends Controller
         // on the Expenses card, for when you want the rows and nothing else.
         $listOnly = $request->query('scope') === 'expenses';
 
-        $periodLabel = $this->periodLabelFor($granularity, $anchor);
+        $periodLabel = $this->trend->periodLabel($granularity, $anchor);
         $expenses = $this->allExpenses($user, $start, $end);
         $filename = $this->filename($periodLabel, $format, $listOnly);
 
@@ -101,15 +104,17 @@ class ReportController extends Controller
             return Excel::download(new ExpensesExport($expenses, $periodLabel), $filename);
         }
 
-        $breakdown = $listOnly ? [] : $this->breakdown($user, $start, $end);
+        // Computed once and used twice: the stats need the real figures even
+        // for a list-only export, which only drops the table from the page.
+        $breakdown = $this->report->breakdown($user, $start, $end);
 
         $pdf = Pdf::loadView('reports.pdf', [
             'brand' => AppSetting::current()->app_name,
             'userName' => $user->name,
             'periodLabel' => $periodLabel,
             'generatedAt' => CarbonImmutable::now()->isoFormat('D MMM YYYY, HH:mm'),
-            'stats' => $this->stats($user, $start, $end, $granularity, $anchor, $this->breakdown($user, $start, $end)),
-            'breakdown' => $breakdown,
+            'stats' => $this->report->stats($user, $start, $end, $granularity, $anchor, $breakdown),
+            'breakdown' => $listOnly ? [] : $breakdown,
             'listOnly' => $listOnly,
             'expenses' => $expenses,
             // Formatting helpers, so the view holds no logic.
@@ -180,138 +185,4 @@ class ReportController extends Controller
         ];
     }
 
-    /**
-     * Spend per category over the range, largest first.
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function breakdown(User $user, CarbonImmutable $start, CarbonImmutable $end): array
-    {
-        $rows = Expense::query()
-            ->where('user_id', $user->id)
-            ->whereBetween('spent_on', [$start->toDateString(), $end->toDateString()])
-            ->groupBy('category_id')
-            ->selectRaw('category_id, SUM(price) as total, COUNT(*) as count')
-            ->get()
-            ->keyBy('category_id');
-
-        $total = (float) $rows->sum('total');
-
-        return Category::query()
-            ->whereIn('id', $rows->keys())
-            ->get()
-            ->map(fn (Category $category) => [
-                'uuid' => $category->uuid,
-                'name' => $category->name,
-                'color' => $category->color?->value,
-                'icon' => $category->icon?->value,
-                'total' => round((float) $rows[$category->id]->total, 2),
-                'count' => (int) $rows[$category->id]->count,
-                'average' => round((float) $rows[$category->id]->total / max($rows[$category->id]->count, 1), 2),
-                'share' => $total > 0 ? round(((float) $rows[$category->id]->total / $total) * 100, 1) : 0,
-            ])
-            ->sortByDesc('total')
-            ->values()
-            ->all();
-    }
-
-    /**
-     * Headline figures, including the change against the previous period —
-     * a total means little without something to compare it to.
-     *
-     * @param  array<int, array<string, mixed>>  $breakdown
-     * @return array<string, mixed>
-     */
-    private function stats(
-        User $user,
-        CarbonImmutable $start,
-        CarbonImmutable $end,
-        TrendGranularity $granularity,
-        CarbonImmutable $anchor,
-        array $breakdown,
-    ): array {
-        $total = round(array_sum(array_column($breakdown, 'total')), 2);
-        $count = array_sum(array_column($breakdown, 'count'));
-
-        // Averaged over elapsed days only: dividing this month's spend by 31 on
-        // the 3rd would report a daily average three times lower than reality.
-        $now = CarbonImmutable::now();
-        $last = $end->gt($now) ? $now : $end;
-
-        // Count whole calendar days. $end carries a 23:59:59.999999 time, so the
-        // raw float diff already spans the final day — adding one to it would
-        // bill a day that never elapsed and report the average ~12% low.
-        $days = max($start->startOfDay()->diffInDays($last->startOfDay()) + 1, 1);
-
-        // All time has nothing before it, so there is no comparison to make.
-        // Each anchor is normalised before stepping back: subMonth() from the
-        // 31st overflows forward into the current month, which would compare the
-        // period being reported against itself.
-        $previousAnchor = match ($granularity) {
-            TrendGranularity::Week => $anchor->startOfWeek()->subWeek(),
-            TrendGranularity::Month => $anchor->startOfMonth()->subMonth(),
-            TrendGranularity::Year => $anchor->startOfYear()->subYear(),
-            TrendGranularity::All => null,
-        };
-
-        $previous = 0.0;
-        $partial = false;
-
-        if ($previousAnchor !== null) {
-            [$prevStart, $prevEnd] = $this->trend->range($granularity, $previousAnchor, $user);
-
-            /*
-             * Truncated to the days that have actually elapsed this period, for
-             * the same reason daily_average is: on the 18th, $total holds 18
-             * days and the previous month holds 30. Comparing them reported a
-             * 40% fall for someone whose spending had not changed at all — and
-             * it read correctly only on the last day of a period.
-             *
-             * $days already counts the elapsed span, so the window is the first
-             * $days of the previous period. Clamped to $prevEnd because a longer
-             * month compared against a shorter one would otherwise reach past it.
-             */
-            $prevCutoff = $prevStart->startOfDay()->addDays($days - 1);
-
-            if ($prevCutoff->gt($prevEnd)) {
-                $prevCutoff = $prevEnd;
-            }
-
-            $partial = $prevCutoff->lt($prevEnd->startOfDay());
-
-            $previous = round((float) Expense::query()
-                ->where('user_id', $user->id)
-                ->whereBetween('spent_on', [$prevStart->toDateString(), $prevCutoff->toDateString()])
-                ->sum('price'), 2);
-        }
-
-        return [
-            'total' => $total,
-            'count' => $count,
-            'daily_average' => round($total / $days, 2),
-            'previous' => $previous,
-            // Null, not 0: with nothing to compare against, "+100%" would be a
-            // fabricated claim rather than a measurement.
-            'change_percent' => $previous > 0
-                ? round((($total - $previous) / $previous) * 100, 1)
-                : null,
-            'previous_label' => $previousAnchor !== null
-                ? $this->periodLabelFor($granularity, $previousAnchor)
-                : null,
-            // True while the current period is still running, so the UI can say
-            // the comparison is against the same stretch of the previous one
-            // rather than the whole of it.
-            'previous_is_partial' => $partial,
-        ];
-    }
-
-    private function periodLabelFor(TrendGranularity $granularity, CarbonImmutable $date): string
-    {
-        return match ($granularity) {
-            TrendGranularity::Week => $date->startOfWeek()->isoFormat('D MMM').' – '.$date->endOfWeek()->isoFormat('D MMM YYYY'),
-            TrendGranularity::Month => $date->isoFormat('MMMM YYYY'),
-            TrendGranularity::Year => $date->isoFormat('YYYY'),
-            TrendGranularity::All => __('All time'),
-        };
-    }
 }

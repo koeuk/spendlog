@@ -170,7 +170,10 @@ class SpendingTrend
         };
     }
 
-    private function periodLabel(TrendGranularity $granularity, CarbonImmutable $date): string
+    /** Public because SpendingReport and both report controllers label the
+     *  same periods, and three copies of this match would be three chances to
+     *  disagree. */
+    public function periodLabel(TrendGranularity $granularity, CarbonImmutable $date): string
     {
         return match ($granularity) {
             TrendGranularity::Week => $date->startOfWeek()->isoFormat('D MMM').' – '.$date->endOfWeek()->isoFormat('D MMM YYYY'),
