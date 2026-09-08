@@ -31,6 +31,9 @@ class ProfileUpdateRequest extends FormRequest
                 'max:255',
                 Rule::unique(User::class)->ignore($this->user()?->id),
             ],
+            // Digits with the usual separators; a leading + for a country
+            // code. Loose on purpose — this is a contact detail, not a login.
+            'phone' => ['nullable', 'string', 'max:32', 'regex:/^\+?[0-9 ().-]{6,31}$/'],
         ];
     }
 
@@ -39,7 +42,10 @@ class ProfileUpdateRequest extends FormRequest
      */
     public function messages(): array
     {
-        return UsernameRules::messages();
+        return [
+            ...UsernameRules::messages(),
+            'phone.regex' => __('Enter a valid phone number.'),
+        ];
     }
 
     /**
@@ -53,6 +59,7 @@ class ProfileUpdateRequest extends FormRequest
         return [
             ...$this->safe()->only(['name', 'email']),
             'username' => UsernameRules::normalize($this->input('username')),
+            'phone' => filled($this->input('phone')) ? trim((string) $this->input('phone')) : null,
         ];
     }
 }

@@ -23,6 +23,10 @@ class UserResource extends JsonResource
             // in alongside the email.
             'username' => $this->username,
             'email' => $this->email,
+            // Contact detail, or null when none was given.
+            'phone' => $this->phone,
+            // Absolute, or null when the account has no photo.
+            'avatar_url' => $this->avatar_url,
             'is_admin' => $this->isAdmin(),
             'email_verified_at' => $this->email_verified_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),

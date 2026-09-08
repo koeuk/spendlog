@@ -142,6 +142,12 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
                 ->name('savings.entries.destroy');
         });
 
+        // The profile photo is open to every signed-in account — no ability,
+        // no gate. It is cosmetic: unlike the name or email it cannot be used
+        // to impersonate or lock anyone out, so a narrow token may still set it.
+        Route::post('profile/avatar', [ProfileController::class, 'storeAvatar'])->name('profile.avatar.store');
+        Route::delete('profile/avatar', [ProfileController::class, 'destroyAvatar'])->name('profile.avatar.destroy');
+
         // The account's own details. Both routes share one ability; the
         // updateProfile / updatePassword gates still rule separately.
         Route::middleware('abilities:'.TokenAbility::ProfileWrite->value)->group(function () {

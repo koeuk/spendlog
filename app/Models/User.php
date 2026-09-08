@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -34,6 +35,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'username',
         'email',
+        'phone',
+        'avatar_path',
         'google_id',
         'password',
         'status',
@@ -48,7 +51,18 @@ class User extends Authenticatable implements MustVerifyEmail
         'id',
         'password',
         'remember_token',
+        // Clients get avatar_url; the disk path is an implementation detail.
+        'avatar_path',
     ];
+
+    /**
+     * Derived at read time from avatar_path, and appended so the web's shared
+     * user object and the API resource both carry it without either knowing
+     * where photos live.
+     *
+     * @var list<string>
+     */
+    protected $appends = ['avatar_url'];
 
     /**
      * Get the attributes that should be cast.
@@ -159,6 +173,22 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isSuspended(): bool
     {
         return $this->status === UserStatus::Suspended;
+    }
+
+    /**
+     * The profile photo's public URL, or null when there is none.
+     *
+     * Cache-busted on updated_at like branding: the path is reused across
+     * replacements only by coincidence, but a client that cached the old
+     * bytes under the same URL would show the old face until it evicted it.
+     */
+    public function getAvatarUrlAttribute(): ?string
+    {
+        if (! $this->avatar_path) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($this->avatar_path).'?v='.$this->updated_at?->timestamp;
     }
 
     public function expenses(): HasMany

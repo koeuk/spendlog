@@ -8,8 +8,10 @@ use App\Models\User;
 use App\Notifications\PasswordOtpNotification;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -54,6 +56,35 @@ class ProfileTest extends TestCase
         $this->assertSame('New Name', $user->fresh()->name);
     }
 
+    public function test_a_user_sets_and_clears_their_phone(): void
+    {
+        $user = $this->user();
+
+        Sanctum::actingAs($user, [TokenAbility::ProfileWrite->value]);
+
+        $this->patchJson('/api/v1/profile', [
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => '+855 12 345 678',
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.phone', '+855 12 345 678');
+
+        $this->patchJson('/api/v1/profile', [
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => 'call me',
+        ])->assertUnprocessable()->assertJsonValidationErrors('phone');
+
+        $this->patchJson('/api/v1/profile', [
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => '',
+        ])->assertOk()->assertJsonPath('data.phone', null);
+
+        $this->assertNull($user->fresh()->phone);
+    }
+
     public function test_changing_the_email_clears_verification(): void
     {
         $user = $this->user();
@@ -91,6 +122,87 @@ class ProfileTest extends TestCase
             TokenAbility::ProfileWrite->value,
             TokenAbility::defaults($user),
         );
+    }
+
+    // ------------------------------------------------------------ avatar
+
+    public function test_any_signed_in_user_uploads_a_profile_photo(): void
+    {
+        Storage::fake('public');
+
+        $user = $this->user();
+
+        // A deliberately narrow token: the photo needs no ability at all.
+        Sanctum::actingAs($user, [TokenAbility::DashboardRead->value]);
+
+        $this->post('/api/v1/profile/avatar', [
+            'avatar' => UploadedFile::fake()->image('me.jpg', 300, 300),
+        ], ['Accept' => 'application/json'])
+            ->assertOk()
+            ->assertJsonPath('data.avatar_url', fn ($url) => str_contains($url, '/storage/avatars/'));
+
+        Storage::disk('public')->assertExists($user->fresh()->avatar_path);
+    }
+
+    public function test_replacing_the_photo_deletes_the_old_file(): void
+    {
+        Storage::fake('public');
+
+        $user = $this->user();
+
+        Sanctum::actingAs($user);
+
+        $this->post('/api/v1/profile/avatar', [
+            'avatar' => UploadedFile::fake()->image('one.jpg'),
+        ], ['Accept' => 'application/json'])->assertOk();
+
+        $first = $user->fresh()->avatar_path;
+
+        $this->post('/api/v1/profile/avatar', [
+            'avatar' => UploadedFile::fake()->image('two.png'),
+        ], ['Accept' => 'application/json'])->assertOk();
+
+        Storage::disk('public')->assertMissing($first);
+        Storage::disk('public')->assertExists($user->fresh()->avatar_path);
+    }
+
+    public function test_removing_the_photo_clears_it_and_deletes_the_file(): void
+    {
+        Storage::fake('public');
+
+        $user = $this->user();
+
+        Sanctum::actingAs($user);
+
+        $this->post('/api/v1/profile/avatar', [
+            'avatar' => UploadedFile::fake()->image('one.jpg'),
+        ], ['Accept' => 'application/json'])->assertOk();
+
+        $path = $user->fresh()->avatar_path;
+
+        $this->deleteJson('/api/v1/profile/avatar')
+            ->assertOk()
+            ->assertJsonPath('data.avatar_url', null);
+
+        $this->assertNull($user->fresh()->avatar_path);
+        Storage::disk('public')->assertMissing($path);
+    }
+
+    public function test_a_non_image_is_rejected(): void
+    {
+        Storage::fake('public');
+
+        $user = $this->user();
+
+        Sanctum::actingAs($user);
+
+        $this->post('/api/v1/profile/avatar', [
+            'avatar' => UploadedFile::fake()->create('notes.pdf', 10, 'application/pdf'),
+        ], ['Accept' => 'application/json'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('avatar');
+
+        $this->assertNull($user->fresh()->avatar_path);
     }
 
     // ---------------------------------------------------------- password

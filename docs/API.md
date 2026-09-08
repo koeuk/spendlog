@@ -535,9 +535,22 @@ password out from under the account's owner.
 
 ### `PATCH /api/v1/profile`
 
-`name`, `username`, `email` — same rules as the web form: the username is a
-display handle and blank **releases** it (stored as null, never `''`), and a
-changed email clears `email_verified_at`. Returns the updated user.
+`name`, `username`, `email`, `phone` — same rules as the web form: the username
+is a display handle and blank **releases** it (stored as null, never `''`), and
+a changed email clears `email_verified_at`. `phone` is an optional contact
+number (digits, spaces, `+ ( ) . -`, up to 32 characters); blank clears it.
+Returns the updated user. Every user payload also carries `phone` (or `null`)
+and `avatar_url` (see below), or `null` without a photo.
+
+### `POST /api/v1/profile/avatar` · `DELETE /api/v1/profile/avatar`
+
+The profile photo. Multipart `avatar` (JPEG, PNG or WebP, up to 4 MB) replaces
+whatever was there and deletes the old file; `DELETE` clears it. Both return the
+updated user, whose `avatar_url` is an absolute, cache-busted URL or `null`.
+
+These two sit **outside** the `profile:write` ability and the `updateProfile`
+gate on purpose: a photo is cosmetic, so every signed-in account may set one
+even when it may not rotate its own email.
 
 ### `PUT /api/v1/password`
 
