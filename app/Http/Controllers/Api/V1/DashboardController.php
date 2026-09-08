@@ -10,6 +10,7 @@ use App\Models\Income;
 use App\Models\User;
 use App\Services\BudgetSummary;
 use App\Services\CategoryBreakdown;
+use App\Services\RecurringRunner;
 use App\Services\SavingsSummary;
 use App\Support\CalendarOptions;
 use Carbon\CarbonImmutable;
@@ -32,6 +33,7 @@ class DashboardController extends Controller
         private readonly BudgetSummary $summary,
         private readonly CategoryBreakdown $breakdown,
         private readonly SavingsSummary $savings,
+        private readonly RecurringRunner $recurring,
     ) {}
 
     /**
@@ -64,6 +66,11 @@ class DashboardController extends Controller
 
         $user = $request->user();
         $today = CarbonImmutable::now();
+
+        // Anything a recurring rule owes this person is written first, so the
+        // totals below include today's rent whether or not the nightly run
+        // happened. One indexed read; nothing at all when nothing is due.
+        $this->recurring->runDue($user);
 
         // Each card carries its own month, matching the web Dashboard: budgets
         // are monthly rows, and the breakdown is asked separately so pointing one

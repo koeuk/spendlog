@@ -23,6 +23,8 @@ class IncomeResource extends JsonResource
             // rather than cast straight through — see ExpenseResource::price.
             'amount' => number_format((float) $this->amount, 2, '.', ''),
             'received_on' => $this->received_on?->toDateString(),
+            // Written by a recurring rule — see ExpenseResource::recurring.
+            'recurring' => $this->recurring_rule_id !== null,
             'note' => $this->note,
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),

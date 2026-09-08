@@ -32,6 +32,9 @@ class ExpenseResource extends JsonResource
             // emitted "12.50" and clients parse it as a USD figure.
             'price' => number_format((float) $this->price, 2, '.', ''),
             'spent_on' => $this->spent_on?->toDateString(),
+            // Written by a recurring rule rather than typed in, so the app can
+            // badge it. A boolean, not the rule: the rule may be gone by now.
+            'recurring' => $this->recurring_rule_id !== null,
             'category' => new CategoryResource($this->whenLoaded('category')),
             // Deliberately not UserResource: the owner is only meaningful to an
             // admin looking across users, and the full resource would leak email

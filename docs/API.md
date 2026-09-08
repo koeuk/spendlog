@@ -47,6 +47,13 @@ unauthenticated, `403` forbidden or missing token ability, `404` unknown UUID,
 `forgot-password` and `reset-password` allow 5 per minute per email+IP, plus 20
 per minute per IP — they are the endpoints where guessing is the attack.
 
+### Language
+
+Send `Accept-Language: km` (or `en`) and every translatable field — category
+names, FAQ entries, the dashboard guidance — comes back in that language,
+falling back to English where a translation is missing. The first tag wins and
+a region suffix (`km-KH`) is ignored; anything else leaves the default.
+
 ## Authentication
 
 Two independent gates, and **both** must pass:
@@ -58,7 +65,8 @@ A mobile token cannot write categories even when its owner is an admin; an admin
 token with `categories:write` still fails for a non-admin user. Abilities:
 `expenses:read`, `expenses:write`, `categories:read`, `categories:write`,
 `budgets:read`, `budgets:write`, `incomes:read`, `incomes:write`,
-`savings:read`, `savings:write`, `dashboard:read`, `profile:write`.
+`savings:read`, `savings:write`, `recurring:read`, `recurring:write`,
+`dashboard:read`, `profile:write`.
 
 A fresh token carries every ability the user's permissions justify and nothing
 more — both sides derive from one permission system (`TokenAbility::grantableTo`),
@@ -144,6 +152,10 @@ Paginated, newest first. Scoped to the caller's own rows.
 `filter[user]` exists only while an admin is viewing everyone; for anyone else it
 is a `400`, not a silent empty result.
 
+`recurring` is `true` on a row a [recurring rule](#recurring) wrote rather than
+a person typed, so the app can badge it. It is otherwise an ordinary expense:
+edit it, delete it, and it counts in every total exactly as any other row.
+
 ```json
 {
   "data": [{
@@ -151,6 +163,7 @@ is a `400`, not a silent empty result.
     "item": "Coffee",
     "price": "4.50",
     "spent_on": "2026-07-16",
+    "recurring": false,
     "category": { "uuid": "0198a...", "name": "Food", "color": "amber", "icon": "utensils" },
     "created_at": "2026-07-16T10:00:00+00:00"
   }],
@@ -288,6 +301,9 @@ Paginated, newest first. Scoped to the caller's own rows.
 | `sort` | `received_on`, `amount`, `source` (prefix `-` to reverse; default `-received_on,-id`) |
 | `per_page` | default 50, clamped to 100 |
 
+`recurring` marks a row a [recurring rule](#recurring) wrote, as it does on
+expenses.
+
 ```json
 {
   "data": [{
@@ -295,6 +311,7 @@ Paginated, newest first. Scoped to the caller's own rows.
     "source": "Salary",
     "amount": "1200.00",
     "received_on": "2026-09-01",
+    "recurring": false,
     "note": null,
     "created_at": "2026-09-01T10:00:00+00:00",
     "updated_at": "2026-09-01T10:00:00+00:00"
@@ -302,6 +319,16 @@ Paginated, newest first. Scoped to the caller's own rows.
   "links": { "next": null },
   "meta": { "current_page": 1, "per_page": 50, "total": 1 }
 }
+```
+
+### `GET /api/v1/incomes/sources`
+
+The caller's sources, most used first, as a flat list of strings — what the
+web's source picker offers. There is no catalogue behind it: a source the list
+lacks is created by simply posting an income with it.
+
+```json
+{ "data": ["Salary", "Freelance"] }
 ```
 
 ### `GET /api/v1/incomes/summary?month=2026-09`
@@ -437,6 +464,110 @@ needs `update` on the goal, and someone else's goal is a `403`.
 The entry must belong to that goal; one from another goal is a `404`, not a
 `403`.
 
+## Recurring
+
+Expenses and income that repeat — rent, a salary, a subscription. A **rule** is
+a template: it holds no money of its own. On schedule the system writes real
+`expenses` / `incomes` rows from it, badged `recurring: true`, and every list,
+report, budget and total sees them as ordinary rows. Behind `recurring:read` /
+`recurring:write`.
+
+**Permissions.** A rule has none of its own; it is guarded like the rows it
+writes. An expense rule needs `expenses.view` / `expenses.create` /
+`expenses.update` / `expenses.delete`, an income rule the `incomes.*` set, and
+someone else's rule needs the kind's `manage_all`. The list only shows the
+kinds the caller may view.
+
+**Schedule.** Occurrences are `starts_on` and each `frequency` step after it:
+`daily`, `weekly`, `monthly` or `yearly`. Monthly and yearly keep the day the
+rule started on, clamped to the last day of a shorter month — a rule from
+Jan 31 fires on Feb 28 (or 29) and comes back to Mar 31. `next_run_on` is the
+next occurrence still to be written; `last_run_on` the last one that was.
+
+**When rows are written.** Three places, one service:
+
+- Nightly at 00:05 (`php artisan spendlog:run-recurring`), for everyone.
+- The moment a rule is created or updated — a rule starting today has today's
+  row in the `201`, and one starting in the past has every row it missed.
+- On `GET /api/v1/dashboard`, for the caller, before the totals are computed.
+  So the app stays right without cron, and a missed night is not a missed row.
+
+A run writes one row per occurrence up to today (and up to `ends_on`, when
+set), never the same day twice, and at most 400 occurrences in one go — the
+rest follow on the next run. Once the cursor passes `ends_on` the rule turns
+`active: false` on its own.
+
+Editing a rule's title, amount or category changes future rows only; rows
+already written are untouched. Deleting a rule keeps them too — they simply
+stop being badged.
+
+### `GET /api/v1/recurring`
+
+Active rules first, then by `next_run_on`. Scoped to the caller's own rules.
+
+| Query | Meaning |
+|---|---|
+| `kind` | `expense` or `income`; anything else is a `422` |
+
+```json
+{
+  "data": [{
+    "uuid": "0198f...",
+    "kind": "expense",
+    "title": "Rent",
+    "amount": "450.00",
+    "category": { "uuid": "0198a...", "name": "Housing", "color": "amber", "icon": "home" },
+    "frequency": "monthly",
+    "starts_on": "2026-09-01",
+    "ends_on": null,
+    "next_run_on": "2026-10-01",
+    "last_run_on": "2026-09-01",
+    "active": true,
+    "note": null,
+    "created_at": "2026-09-01T10:00:00+00:00",
+    "updated_at": "2026-09-01T10:00:00+00:00"
+  }]
+}
+```
+
+`category` is `null` on an income rule. `title` is the expense item or the
+income source the rows are written with.
+
+### `POST /api/v1/recurring` → `201`
+
+```bash
+curl -X POST https://spendlog.test/api/v1/recurring \
+  -H 'Authorization: Bearer 3|kR9x...' -H 'Accept: application/json' \
+  -d 'kind=expense' -d 'title=Rent' -d 'amount=450' \
+  -d 'category_uuid=0198a...' -d 'frequency=monthly' -d 'starts_on=2026-09-01'
+```
+
+| Field | Rule |
+|---|---|
+| `kind` | required: `expense` or `income`. Fixed for the life of the rule. |
+| `title` | required, max 255 |
+| `amount` | required, 0.01 – 99999999.99; `currency=KHR` converts on the way in exactly as it does for expenses |
+| `category_uuid` | required for an expense rule, forbidden for an income one |
+| `frequency` | required: `daily`, `weekly`, `monthly`, `yearly` |
+| `starts_on` | required. May be in the past — the missed rows are written at once — but not more than a year ago |
+| `ends_on` | optional, after `starts_on` |
+| `active` | optional, default `true` |
+| `note` | optional, max 500. Copied onto the income rows a rule writes |
+
+The response already reflects the run: `last_run_on` and `next_run_on` are
+set, and any rows due are in place.
+
+### `GET|PATCH|DELETE /api/v1/recurring/{uuid}`
+
+`PATCH` takes the same fields as `POST` (the full shape — an omitted `ends_on`
+or `note` clears it; an omitted `active` is left as it was). `kind` may be
+echoed back unchanged; a different value is a `422`. When `starts_on` or
+`frequency` changes, `next_run_on` moves to the first occurrence on or after
+today — never backwards, so the past is not written again.
+
+`DELETE` returns `204` and keeps the rows the rule wrote. Touching someone
+else's rule is a `403` unless the caller holds the kind's `manage_all`.
+
 ## Dashboard
 
 ### `GET /api/v1/dashboard`
@@ -449,6 +580,10 @@ by spend with each `share` of the month, and the 8 most recent expenses.
 |---|---|
 | `budget_month` | `YYYY-MM` — which month's budgets `summary` reports. Defaults to the current month. |
 | `breakdown_month` | `YYYY-MM` — which month `breakdown` splits. Defaults to the current month. |
+
+Before anything is computed, every recurring rule the caller has due is run
+(see [Recurring](#recurring)), so the totals include today's rent whether or
+not the nightly job happened.
 
 The two are independent: pointing the breakdown at March leaves the budgets on
 July. Both echo back what they resolved to, so a client can render its own

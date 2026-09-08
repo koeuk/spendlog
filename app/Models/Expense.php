@@ -65,6 +65,15 @@ class Expense extends Model
         return $this->belongsTo(Category::class);
     }
 
+    /**
+     * The rule that wrote this row, when one did. Not fillable: a client
+     * cannot claim a row is recurring, only RecurringRunner sets it.
+     */
+    public function recurringRule(): BelongsTo
+    {
+        return $this->belongsTo(RecurringRule::class);
+    }
+
     public function scopeForUser(Builder $query, string $userId): Builder
     {
         return $query->where('user_id', $userId);

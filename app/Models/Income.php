@@ -58,6 +58,12 @@ class Income extends Model
         return $this->belongsTo(User::class);
     }
 
+    /** The rule that wrote this row, when one did — see Expense::recurringRule(). */
+    public function recurringRule(): BelongsTo
+    {
+        return $this->belongsTo(RecurringRule::class);
+    }
+
     public function scopeForUser(Builder $query, int $userId): Builder
     {
         return $query->where('user_id', $userId);

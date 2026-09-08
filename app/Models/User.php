@@ -245,6 +245,12 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(SavingsGoal::class);
     }
 
+    /** The expense and income templates that repeat on this person's behalf. */
+    public function recurringRules(): HasMany
+    {
+        return $this->hasMany(RecurringRule::class);
+    }
+
     /**
      * Every deposit and withdrawal across all of this person's goals — the
      * read path for "saved this month". Writes go through a goal's entries().

@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\IncomeController;
 use App\Http\Controllers\Api\V1\PasswordController;
 use App\Http\Controllers\Api\V1\PasswordResetController;
 use App\Http\Controllers\Api\V1\ProfileController;
+use App\Http\Controllers\Api\V1\RecurringController;
 use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\SavingsController;
 use App\Http\Controllers\Api\V1\SettingsAdminController;
@@ -118,6 +119,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::middleware('abilities:'.TokenAbility::IncomesRead->value)->group(function () {
             Route::get('incomes', [IncomeController::class, 'index'])->name('incomes.index');
             Route::get('incomes/summary', [IncomeController::class, 'summary'])->name('incomes.summary');
+            Route::get('incomes/sources', [IncomeController::class, 'sources'])->name('incomes.sources');
             Route::get('incomes/{income:uuid}', [IncomeController::class, 'show'])->name('incomes.show');
         });
 
@@ -125,6 +127,21 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::post('incomes', [IncomeController::class, 'store'])->name('incomes.store');
             Route::patch('incomes/{income:uuid}', [IncomeController::class, 'update'])->name('incomes.update');
             Route::delete('incomes/{income:uuid}', [IncomeController::class, 'destroy'])->name('incomes.destroy');
+        });
+
+        // Recurring rules: templates that write expenses and incomes on a
+        // schedule. Their own read/write pair, so a token scoped to logging
+        // rows by hand does not also get to schedule them; the policy then
+        // rules per rule on the row kind's permissions.
+        Route::middleware('abilities:'.TokenAbility::RecurringRead->value)->group(function () {
+            Route::get('recurring', [RecurringController::class, 'index'])->name('recurring.index');
+            Route::get('recurring/{rule:uuid}', [RecurringController::class, 'show'])->name('recurring.show');
+        });
+
+        Route::middleware('abilities:'.TokenAbility::RecurringWrite->value)->group(function () {
+            Route::post('recurring', [RecurringController::class, 'store'])->name('recurring.store');
+            Route::patch('recurring/{rule:uuid}', [RecurringController::class, 'update'])->name('recurring.update');
+            Route::delete('recurring/{rule:uuid}', [RecurringController::class, 'destroy'])->name('recurring.destroy');
         });
 
         Route::middleware('abilities:'.TokenAbility::SavingsRead->value)->group(function () {
