@@ -6,10 +6,12 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\HelpController;
+use App\Http\Controllers\IncomeController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SavingsController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Auth;
@@ -46,6 +48,28 @@ Route::middleware('auth')->group(function () {
     // store() upserts the (category, month) slot, so no separate update route.
     Route::resource('budgets', BudgetController::class)
         ->only(['index', 'store', 'destroy']);
+
+    // Income sits beside expenses: the same own-screen forms, for the same
+    // reason — the amount field opens a calendar, which a dialog cannot hold
+    // on a phone.
+    Route::resource('incomes', IncomeController::class)
+        ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
+
+    /*
+     * Savings goals, each with a ledger. The parameter is named `goal` so the
+     * controller reads as it does in the API. The ledger routes are declared
+     * after the resource: `savings/{goal}/entries/...` cannot collide with
+     * `savings/create`, but keeping them together says what they belong to.
+     */
+    Route::resource('savings', SavingsController::class)
+        ->parameters(['savings' => 'goal'])
+        ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
+    Route::get('/savings/{goal}/entries/create', [SavingsController::class, 'createEntry'])->name('savings.entries.create');
+    Route::post('/savings/{goal}/entries', [SavingsController::class, 'storeEntry'])->name('savings.entries.store');
+    // Scoped so an entry uuid from another goal is a 404 rather than a hit.
+    Route::delete('/savings/{goal}/entries/{entry}', [SavingsController::class, 'destroyEntry'])
+        ->scopeBindings()
+        ->name('savings.entries.destroy');
 
     /*
      * Settings. The route names stay as they were (profile.edit, password.update)

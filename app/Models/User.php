@@ -89,7 +89,9 @@ class User extends Authenticatable implements MustVerifyEmail
     private const PAGE_PERMISSIONS = [
         'dashboard' => Permission::DashboardView,
         'expenses.index' => Permission::ExpensesView,
+        'incomes.index' => Permission::IncomesView,
         'budgets.index' => Permission::BudgetsView,
+        'savings.index' => Permission::SavingsView,
         'reports.index' => Permission::ReportsView,
         'categories.index' => Permission::CategoriesView,
     ];

@@ -29,6 +29,7 @@ import { useTheme } from '@/composables/useTheme';
 import { useBrandColors } from '@/composables/useBrandColors';
 import { APP_PAGE } from '@/lib/appStyles';
 import {
+    Banknote,
     ChartColumn,
     Check,
     ChevronDown,
@@ -38,6 +39,7 @@ import {
     Receipt,
     Shapes,
     TriangleAlert,
+    Vault,
     Wallet,
     X,
 } from 'lucide-vue-next';
@@ -162,7 +164,9 @@ const MODULES = [
             { label: 'Dashboard', route: 'dashboard', active: 'dashboard', permission: 'dashboard.view', icon: LayoutDashboard },
             { label: 'Categories', route: 'categories.index', active: 'categories.*', permission: 'categories.view', icon: Shapes },
             { label: 'Expenses', route: 'expenses.index', active: 'expenses.*', permission: 'expenses.view', icon: Receipt },
+            { label: 'Income', route: 'incomes.index', active: 'incomes.*', permission: 'incomes.view', icon: Banknote },
             { label: 'Budgets', route: 'budgets.index', active: 'budgets.*', permission: 'budgets.view', icon: PiggyBank },
+            { label: 'Savings', route: 'savings.index', active: 'savings.*', permission: 'savings.view', icon: Vault },
             { label: 'Reports', route: 'reports.index', active: 'reports.*', permission: 'reports.view', icon: ChartColumn },
         ],
     },
