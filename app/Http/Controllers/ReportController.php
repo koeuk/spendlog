@@ -184,5 +184,4 @@ class ReportController extends Controller
                 ->all(),
         ];
     }
-
 }

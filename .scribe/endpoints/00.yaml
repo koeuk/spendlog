@@ -1,32 +1,31 @@
-name: Authentication
+name: Auth
 description: |-
 
-  Token auth for mobile and third-party clients. The Inertia frontend keeps
-  using session auth and is unaffected.
+  The same OTP reset the web login uses, for API clients: request a six-digit
+  code by email, then trade code + new password for a reset. All the limits
+  live in one place (PasswordOtp), so the two doors cannot drift apart —
+  five guesses, ten minutes, one use, shared between web and API.
 endpoints:
   -
     custom: []
     httpMethods:
       - POST
-    uri: api/v1/login
+    uri: api/v1/forgot-password
     metadata:
       custom: []
-      groupName: Authentication
+      groupName: Auth
       groupDescription: |-
 
-        Token auth for mobile and third-party clients. The Inertia frontend keeps
-        using session auth and is unaffected.
+        The same OTP reset the web login uses, for API clients: request a six-digit
+        code by email, then trade code + new password for a reset. All the limits
+        live in one place (PasswordOtp), so the two doors cannot drift apart —
+        five guesses, ten minutes, one use, shared between web and API.
       subgroup: ''
       subgroupDescription: ''
-      title: 'Log in'
+      title: 'Request a reset code'
       description: |-
-        Issues a personal access token for a device.
-
-        Accepts an email or a username in the `email` field; a value containing
-        '@' is treated as an email.
-
-        A wrong password and an unknown account return the identical 422 — a
-        distinguishable response would be a free user-enumeration oracle.
+        Emails a six-digit code to the account. One code per minute per email;
+        a fresh request inside that window is a 422, not a second email.
       authenticated: false
       deprecated: false
     headers:
@@ -40,277 +39,32 @@ endpoints:
       email:
         custom: []
         name: email
-        description: "The account's email or username."
-        required: true
-        example: sam@example.com
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-      password:
-        custom: []
-        name: password
         description: ''
         required: true
-        example: secret
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-      device_name:
-        custom: []
-        name: device_name
-        description: 'Names the token so it can be revoked on its own later.'
-        required: true
-        example: 'iPhone 15'
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-      abilities:
-        custom: []
-        name: abilities
-        description: 'Ask for a narrower token than the default. Intersected with what the user may grant, so it can never widen.'
-        required: false
-        example:
-          - 'expenses:read'
-        type: 'string[]'
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-    cleanBodyParameters:
-      email: sam@example.com
-      password: secret
-      device_name: 'iPhone 15'
-      abilities:
-        - 'expenses:read'
-    fileParameters: []
-    responses:
-      -
-        custom: []
-        status: 200
-        content: '{"token": "3|kR9xLm...", "user": {"uuid": "0198f...", "name": "Sam", "email": "sam@example.com", "is_admin": false, "email_verified_at": "2026-07-16T10:00:00+00:00", "created_at": "2026-07-16T10:00:00+00:00"}}'
-        headers: []
-        description: ''
-      -
-        custom: []
-        status: 422
-        content: '{"message": "These credentials do not match our records.", "errors": {"email": ["These credentials do not match our records."]}}'
-        headers: []
-        description: ''
-      -
-        custom: []
-        status: 429
-        content: '{"message": "Too many attempts."}'
-        headers: []
-        description: ''
-    responseFields: []
-    auth: []
-    controller: null
-    method: null
-    route: null
-  -
-    custom: []
-    httpMethods:
-      - POST
-    uri: api/v1/register
-    metadata:
-      custom: []
-      groupName: Authentication
-      groupDescription: |-
-
-        Token auth for mobile and third-party clients. The Inertia frontend keeps
-        using session auth and is unaffected.
-      subgroup: ''
-      subgroupDescription: ''
-      title: Register
-      description: |-
-        Creates an account and returns a token, mirroring the web register flow
-        (including the verification email).
-
-        The new user always gets the `user` role — a `role` in the payload is
-        ignored, not honoured.
-      authenticated: false
-      deprecated: false
-    headers:
-      Content-Type: application/json
-      Accept: application/json
-    urlParameters: []
-    cleanUrlParameters: []
-    queryParameters: []
-    cleanQueryParameters: []
-    bodyParameters:
-      name:
-        custom: []
-        name: name
-        description: ''
-        required: true
-        example: Sam
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-      email:
-        custom: []
-        name: email
-        description: 'Must not already be registered.'
-        required: true
-        example: sam@example.com
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-      password:
-        custom: []
-        name: password
-        description: ''
-        required: true
-        example: Password123!
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-      device_name:
-        custom: []
-        name: device_name
-        description: ''
-        required: true
-        example: 'iPhone 15'
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-      password_confirmation:
-        custom: []
-        name: password_confirmation
-        description: 'Must match password.'
-        required: true
-        example: Password123!
+        example: koeukkos@gmail.com
         type: string
         enumValues: []
         exampleWasSpecified: true
         nullable: false
         deprecated: false
     cleanBodyParameters:
-      name: Sam
-      email: sam@example.com
-      password: Password123!
-      device_name: 'iPhone 15'
-      password_confirmation: Password123!
+      email: koeukkos@gmail.com
     fileParameters: []
     responses:
       -
         custom: []
-        status: 201
-        content: '{"token": "3|kR9xLm...", "user": {"uuid": "0198f...", "name": "Sam", "email": "sam@example.com", "is_admin": false}}'
+        status: 200
+        content: '{"message": "We emailed you a 6-digit code."}'
         headers: []
         description: ''
       -
         custom: []
         status: 422
-        content: '{"message": "The email has already been taken.", "errors": {"email": ["The email has already been taken."]}}'
+        content: '{"message": "We can''t find a user with that email address.", "errors": {"email": ["We can''t find a user with that email address."]}}'
         headers: []
-        description: ''
+        description: 'unknown email, or asked again too soon'
     responseFields: []
     auth: []
-    controller: null
-    method: null
-    route: null
-  -
-    custom: []
-    httpMethods:
-      - GET
-    uri: api/v1/me
-    metadata:
-      custom: []
-      groupName: Authentication
-      groupDescription: |-
-
-        Token auth for mobile and third-party clients. The Inertia frontend keeps
-        using session auth and is unaffected.
-      subgroup: ''
-      subgroupDescription: ''
-      title: 'Current user'
-      description: ''
-      authenticated: true
-      deprecated: false
-    headers:
-      Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
-      Content-Type: application/json
-      Accept: application/json
-    urlParameters: []
-    cleanUrlParameters: []
-    queryParameters: []
-    cleanQueryParameters: []
-    bodyParameters: []
-    cleanBodyParameters: []
-    fileParameters: []
-    responses:
-      -
-        custom: []
-        status: 200
-        content: '{"data": {"uuid": "0198f...", "name": "Sam", "email": "sam@example.com", "is_admin": false, "email_verified_at": "2026-07-16T10:00:00+00:00", "created_at": "2026-07-16T10:00:00+00:00"}}'
-        headers: []
-        description: ''
-    responseFields: []
-    auth:
-      - headers
-      - Authorization
-      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
-    controller: null
-    method: null
-    route: null
-  -
-    custom: []
-    httpMethods:
-      - POST
-    uri: api/v1/logout
-    metadata:
-      custom: []
-      groupName: Authentication
-      groupDescription: |-
-
-        Token auth for mobile and third-party clients. The Inertia frontend keeps
-        using session auth and is unaffected.
-      subgroup: ''
-      subgroupDescription: ''
-      title: 'Log out'
-      description: |-
-        Revokes **only the calling token**, so signing out on a phone leaves the
-        user's other devices signed in.
-      authenticated: true
-      deprecated: false
-    headers:
-      Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
-      Content-Type: application/json
-      Accept: application/json
-    urlParameters: []
-    cleanUrlParameters: []
-    queryParameters: []
-    cleanQueryParameters: []
-    bodyParameters: []
-    cleanBodyParameters: []
-    fileParameters: []
-    responses:
-      -
-        custom: []
-        status: 200
-        content: '{"message": "Logged out."}'
-        headers: []
-        description: ''
-    responseFields: []
-    auth:
-      - headers
-      - Authorization
-      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
     controller: null
     method: null
     route: null

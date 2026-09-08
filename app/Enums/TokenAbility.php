@@ -22,6 +22,12 @@ enum TokenAbility: string
     case CategoriesWrite = 'categories:write';
     case BudgetsRead = 'budgets:read';
     case BudgetsWrite = 'budgets:write';
+    // Income and savings sit beside expenses and budgets as baseline modules,
+    // each with its own read/write pair so a token can be scoped to one.
+    case IncomesRead = 'incomes:read';
+    case IncomesWrite = 'incomes:write';
+    case SavingsRead = 'savings:read';
+    case SavingsWrite = 'savings:write';
     case DashboardRead = 'dashboard:read';
     // Reports read the same expenses the dashboard does, but answer a different
     // question over a chosen period. Separate from dashboard:read so a client
@@ -69,6 +75,18 @@ enum TokenAbility: string
                 Permission::BudgetsCreate,
                 Permission::BudgetsUpdate,
                 Permission::BudgetsDelete,
+            ],
+            self::IncomesRead => [Permission::IncomesView],
+            self::IncomesWrite => [
+                Permission::IncomesCreate,
+                Permission::IncomesUpdate,
+                Permission::IncomesDelete,
+            ],
+            self::SavingsRead => [Permission::SavingsView],
+            self::SavingsWrite => [
+                Permission::SavingsCreate,
+                Permission::SavingsUpdate,
+                Permission::SavingsDelete,
             ],
             self::DashboardRead => [Permission::DashboardView],
             self::ReportsRead => [Permission::ReportsView],

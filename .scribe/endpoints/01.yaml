@@ -1,70 +1,50 @@
-name: Auth
+name: Authentication
 description: |-
 
-  The same OTP reset the web login uses, for API clients: request a six-digit
-  code by email, then trade code + new password for a reset. All the limits
-  live in one place (PasswordOtp), so the two doors cannot drift apart —
-  five guesses, ten minutes, one use, shared between web and API.
+  Token auth for mobile and third-party clients. The Inertia frontend keeps
+  using session auth and is unaffected.
 endpoints:
   -
     custom: []
     httpMethods:
-      - POST
-    uri: api/v1/forgot-password
+      - GET
+    uri: api/v1/me
     metadata:
       custom: []
-      groupName: Auth
+      groupName: Authentication
       groupDescription: |-
 
-        The same OTP reset the web login uses, for API clients: request a six-digit
-        code by email, then trade code + new password for a reset. All the limits
-        live in one place (PasswordOtp), so the two doors cannot drift apart —
-        five guesses, ten minutes, one use, shared between web and API.
+        Token auth for mobile and third-party clients. The Inertia frontend keeps
+        using session auth and is unaffected.
       subgroup: ''
       subgroupDescription: ''
-      title: 'Request a reset code'
-      description: |-
-        Emails a six-digit code to the account. One code per minute per email;
-        a fresh request inside that window is a 422, not a second email.
-      authenticated: false
+      title: 'Current user'
+      description: ''
+      authenticated: true
       deprecated: false
     headers:
+      Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
       Content-Type: application/json
       Accept: application/json
     urlParameters: []
     cleanUrlParameters: []
     queryParameters: []
     cleanQueryParameters: []
-    bodyParameters:
-      email:
-        custom: []
-        name: email
-        description: ''
-        required: true
-        example: koeukkos@gmail.com
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-    cleanBodyParameters:
-      email: koeukkos@gmail.com
+    bodyParameters: []
+    cleanBodyParameters: []
     fileParameters: []
     responses:
       -
         custom: []
         status: 200
-        content: '{"message": "We emailed you a 6-digit code."}'
+        content: '{"data": {"uuid": "0198f...", "name": "Sam", "email": "sam@example.com", "is_admin": false, "email_verified_at": "2026-07-16T10:00:00+00:00", "created_at": "2026-07-16T10:00:00+00:00"}}'
         headers: []
         description: ''
-      -
-        custom: []
-        status: 422
-        content: '{"message": "We can''t find a user with that email address.", "errors": {"email": ["We can''t find a user with that email address."]}}'
-        headers: []
-        description: 'unknown email, or asked again too soon'
     responseFields: []
-    auth: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
     controller: null
     method: null
     route: null
@@ -72,95 +52,45 @@ endpoints:
     custom: []
     httpMethods:
       - POST
-    uri: api/v1/reset-password
+    uri: api/v1/logout
     metadata:
       custom: []
-      groupName: Auth
+      groupName: Authentication
       groupDescription: |-
 
-        The same OTP reset the web login uses, for API clients: request a six-digit
-        code by email, then trade code + new password for a reset. All the limits
-        live in one place (PasswordOtp), so the two doors cannot drift apart —
-        five guesses, ten minutes, one use, shared between web and API.
+        Token auth for mobile and third-party clients. The Inertia frontend keeps
+        using session auth and is unaffected.
       subgroup: ''
       subgroupDescription: ''
-      title: 'Reset with the code'
-      description: ''
-      authenticated: false
+      title: 'Log out'
+      description: |-
+        Revokes **only the calling token**, so signing out on a phone leaves the
+        user's other devices signed in.
+      authenticated: true
       deprecated: false
     headers:
+      Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
       Content-Type: application/json
       Accept: application/json
     urlParameters: []
     cleanUrlParameters: []
     queryParameters: []
     cleanQueryParameters: []
-    bodyParameters:
-      email:
-        custom: []
-        name: email
-        description: ''
-        required: true
-        example: koeukkos@gmail.com
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-      code:
-        custom: []
-        name: code
-        description: 'The six digits from the email.'
-        required: true
-        example: '483291'
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-      password:
-        custom: []
-        name: password
-        description: ''
-        required: true
-        example: a-much-better-one
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-      password_confirmation:
-        custom: []
-        name: password_confirmation
-        description: ''
-        required: true
-        example: a-much-better-one
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-    cleanBodyParameters:
-      email: koeukkos@gmail.com
-      code: '483291'
-      password: a-much-better-one
-      password_confirmation: a-much-better-one
+    bodyParameters: []
+    cleanBodyParameters: []
     fileParameters: []
     responses:
       -
         custom: []
         status: 200
-        content: '{"message": "Your password has been reset."}'
+        content: '{"message": "Logged out."}'
         headers: []
         description: ''
-      -
-        custom: []
-        status: 422
-        content: '{"message": "That code is not valid.", "errors": {"code": ["That code is not valid. It may have expired — you can request a new one."]}}'
-        headers: []
-        description: 'wrong, expired or over-guessed code'
     responseFields: []
-    auth: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
     controller: null
     method: null
     route: null

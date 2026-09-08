@@ -46,6 +46,20 @@ enum Permission: string
     case BudgetsDelete = 'budgets.delete';
     case BudgetsManageAll = 'budgets.manage_all';
 
+    // --- Income -----------------------------------------------------------
+    case IncomesView = 'incomes.view';
+    case IncomesCreate = 'incomes.create';
+    case IncomesUpdate = 'incomes.update';
+    case IncomesDelete = 'incomes.delete';
+    case IncomesManageAll = 'incomes.manage_all';
+
+    // --- Savings ----------------------------------------------------------
+    case SavingsView = 'savings.view';
+    case SavingsCreate = 'savings.create';
+    case SavingsUpdate = 'savings.update';
+    case SavingsDelete = 'savings.delete';
+    case SavingsManageAll = 'savings.manage_all';
+
     // --- Account ----------------------------------------------------------
     case ProfileUpdate = 'profile.update';
     case PasswordUpdate = 'password.update';
@@ -80,6 +94,18 @@ enum Permission: string
             self::BudgetsUpdate => __('Change budgets'),
             self::BudgetsDelete => __('Remove budgets'),
             self::BudgetsManageAll => __('Manage anyone’s budgets'),
+
+            self::IncomesView => __('View own income'),
+            self::IncomesCreate => __('Add income'),
+            self::IncomesUpdate => __('Edit own income'),
+            self::IncomesDelete => __('Delete own income'),
+            self::IncomesManageAll => __('Edit and delete anyone’s income'),
+
+            self::SavingsView => __('View own savings goals'),
+            self::SavingsCreate => __('Add savings goals'),
+            self::SavingsUpdate => __('Edit own savings goals'),
+            self::SavingsDelete => __('Delete own savings goals'),
+            self::SavingsManageAll => __('Manage anyone’s savings goals'),
 
             self::ProfileUpdate => __('Change own name and email'),
             self::PasswordUpdate => __('Change own password'),
@@ -116,6 +142,18 @@ enum Permission: string
             self::BudgetsDelete => __('Clear a budget.'),
             self::BudgetsManageAll => __('Not just their own.'),
 
+            self::IncomesView => __('Their own income log.'),
+            self::IncomesCreate => __('Record a salary, a sale, a gift.'),
+            self::IncomesUpdate => __('Their own only, unless granted the one below.'),
+            self::IncomesDelete => __('Their own only, unless granted the one below.'),
+            self::IncomesManageAll => __('Not just their own.'),
+
+            self::SavingsView => __('Their own goals and what is put aside for each.'),
+            self::SavingsCreate => __('Start a goal.'),
+            self::SavingsUpdate => __('Edit a goal, deposit into it, withdraw from it.'),
+            self::SavingsDelete => __('Delete a goal and everything saved against it.'),
+            self::SavingsManageAll => __('Not just their own.'),
+
             self::ProfileUpdate => __('Revoke this where names and emails come from elsewhere.'),
             self::PasswordUpdate => __('Revoke this where passwords are managed centrally.'),
 
@@ -141,6 +179,12 @@ enum Permission: string
 
             self::BudgetsView, self::BudgetsCreate, self::BudgetsUpdate,
             self::BudgetsDelete, self::BudgetsManageAll => __('Budgets'),
+
+            self::IncomesView, self::IncomesCreate, self::IncomesUpdate,
+            self::IncomesDelete, self::IncomesManageAll => __('Income'),
+
+            self::SavingsView, self::SavingsCreate, self::SavingsUpdate,
+            self::SavingsDelete, self::SavingsManageAll => __('Savings'),
 
             self::ProfileUpdate, self::PasswordUpdate => __('Account'),
 
@@ -188,6 +232,18 @@ enum Permission: string
             self::BudgetsCreate->value,
             self::BudgetsUpdate->value,
             self::BudgetsDelete->value,
+
+            // Income and savings are part of the baseline app, like expenses
+            // and budgets: the plain verbs only, manage_all stays with admins.
+            self::IncomesView->value,
+            self::IncomesCreate->value,
+            self::IncomesUpdate->value,
+            self::IncomesDelete->value,
+
+            self::SavingsView->value,
+            self::SavingsCreate->value,
+            self::SavingsUpdate->value,
+            self::SavingsDelete->value,
 
             self::ProfileUpdate->value,
             self::PasswordUpdate->value,

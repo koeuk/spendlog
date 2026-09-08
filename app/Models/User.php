@@ -168,4 +168,23 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(Budget::class);
     }
+
+    public function incomes(): HasMany
+    {
+        return $this->hasMany(Income::class);
+    }
+
+    public function savingsGoals(): HasMany
+    {
+        return $this->hasMany(SavingsGoal::class);
+    }
+
+    /**
+     * Every deposit and withdrawal across all of this person's goals — the
+     * read path for "saved this month". Writes go through a goal's entries().
+     */
+    public function savingsEntries(): HasMany
+    {
+        return $this->hasMany(SavingsEntry::class);
+    }
 }

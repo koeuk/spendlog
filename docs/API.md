@@ -57,7 +57,8 @@ Two independent gates, and **both** must pass:
 A mobile token cannot write categories even when its owner is an admin; an admin
 token with `categories:write` still fails for a non-admin user. Abilities:
 `expenses:read`, `expenses:write`, `categories:read`, `categories:write`,
-`budgets:read`, `budgets:write`, `dashboard:read`, `profile:write`.
+`budgets:read`, `budgets:write`, `incomes:read`, `incomes:write`,
+`savings:read`, `savings:write`, `dashboard:read`, `profile:write`.
 
 A fresh token carries every ability the user's permissions justify and nothing
 more — both sides derive from one permission system (`TokenAbility::grantableTo`),
@@ -258,6 +259,174 @@ is capped at 100 so a bar cannot overflow its track; `percent` keeps the truth.
 
 ### `DELETE /api/v1/budgets/{uuid}` → `204`
 
+## Income
+
+Money coming in, beside expenses: the same owner scoping, the same currency
+handling, the same read/write split (`incomes:read` / `incomes:write`). There
+is no shared catalogue — `source` is free text ("Salary", "Freelance") and the
+summary groups on it as typed. There is no "everyone" view either;
+`incomes.manage_all` only lets an admin reach a single row by UUID.
+
+### `GET /api/v1/incomes`
+
+Paginated, newest first. Scoped to the caller's own rows.
+
+| Query | Meaning |
+|---|---|
+| `filter[source]` | partial match |
+| `filter[from]`, `filter[to]` | date range on `received_on` |
+| `sort` | `received_on`, `amount`, `source` (prefix `-` to reverse; default `-received_on,-id`) |
+| `per_page` | default 50, clamped to 100 |
+
+```json
+{
+  "data": [{
+    "uuid": "0198f...",
+    "source": "Salary",
+    "amount": "1200.00",
+    "received_on": "2026-09-01",
+    "note": null,
+    "created_at": "2026-09-01T10:00:00+00:00",
+    "updated_at": "2026-09-01T10:00:00+00:00"
+  }],
+  "links": { "next": null },
+  "meta": { "current_page": 1, "per_page": 50, "total": 1 }
+}
+```
+
+### `GET /api/v1/incomes/summary?month=2026-09`
+
+The month's total and count, split by source with the largest first. `month`
+defaults to the current one; a malformed value falls back rather than erroring.
+
+```json
+{
+  "data": {
+    "month": "2026-09",
+    "total": "1200.00",
+    "count": 3,
+    "by_source": [{ "source": "Salary", "total": "1000.00" },
+                  { "source": "Freelance", "total": "200.00" }]
+  }
+}
+```
+
+### `POST /api/v1/incomes` → `201`
+
+```bash
+curl -X POST https://spendlog.test/api/v1/incomes \
+  -H 'Authorization: Bearer 3|kR9x...' -H 'Accept: application/json' \
+  -d 'source=Salary' -d 'amount=1200' -d 'received_on=2026-09-01'
+```
+
+`source` (max 255), `amount` (0.01 – 99999999.99), `received_on` (cannot be in
+the future), optional `note` (max 500). `currency=KHR` converts the amount on
+the way in exactly as it does for expenses — every stored amount is USD, and
+`amount` in every response is dollars.
+
+### `GET|PATCH|DELETE /api/v1/incomes/{uuid}`
+
+`PATCH` takes the same fields as `POST` (the full shape — an omitted `note`
+clears it). `DELETE` returns `204`. Touching someone else's income is a `403`
+unless the caller holds `incomes.manage_all`.
+
+## Savings
+
+Goals to save towards, each with a ledger of deposits and withdrawals, behind
+`savings:read` / `savings:write`. A goal's balance is always the sum of its
+ledger — nothing is stored that could drift from it — and a withdrawal can
+never take out more than is there, so a balance is never negative.
+
+### `GET /api/v1/savings`
+
+The caller's own goals, newest first, each with its balance and progress. Not
+paginated.
+
+```json
+{
+  "data": [{
+    "uuid": "0198c...",
+    "name": "Emergency fund",
+    "target_amount": "500.00",
+    "saved": "120.00",
+    "remaining": "380.00",
+    "percent": 24,
+    "reached": false,
+    "deadline": null,
+    "color": "slate",
+    "created_at": "2026-09-01T10:00:00+00:00",
+    "updated_at": "2026-09-01T10:00:00+00:00"
+  }]
+}
+```
+
+`remaining` never goes below `"0.00"` and `percent` is capped at 100 — a goal
+can be over-saved, and `reached` says so, but a bar cannot overflow its track.
+`color` is one of the category palette names.
+
+### `GET /api/v1/savings/summary?month=2026-09`
+
+```json
+{
+  "data": {
+    "month": "2026-09",
+    "total_saved": "320.00",
+    "total_target": "1500.00",
+    "percent": 21,
+    "goals_count": 2,
+    "saved_this_month": "50.00"
+  }
+}
+```
+
+`total_saved` and `total_target` are across every goal; `percent` is the one
+over the other, 0 when nothing is targeted, capped at 100. `saved_this_month` is
+the month's deposits minus its withdrawals, across every goal.
+
+### `GET /api/v1/savings/{uuid}`
+
+The goal as above plus `entries` — its ledger, newest first (`saved_on`, then
+insertion order), capped at the latest 100.
+
+```json
+{ "data": { "uuid": "0198c...", "name": "Emergency fund", "saved": "120.00",
+            "entries": [{ "uuid": "0198e...", "type": "deposit", "amount": "120.00",
+                          "saved_on": "2026-09-05", "note": null,
+                          "created_at": "2026-09-05T10:00:00+00:00" }] } }
+```
+
+### `POST /api/v1/savings` → `201` · `PATCH /api/v1/savings/{uuid}`
+
+`name` (max 255), `target_amount` (0.01 – 99999999.99, `currency=KHR` converts
+it), optional `deadline` and `color`. A new goal's deadline cannot already be in
+the past; an existing goal's may — an overdue goal is still editable. Omitting
+`color` defaults it on create and leaves it alone on edit.
+
+### `DELETE /api/v1/savings/{uuid}` → `204`
+
+The ledger goes with it.
+
+### `POST /api/v1/savings/{uuid}/entries` → `201`
+
+```bash
+curl -X POST https://spendlog.test/api/v1/savings/0198c.../entries \
+  -H 'Authorization: Bearer 3|kR9x...' -H 'Accept: application/json' \
+  -d 'type=deposit' -d 'amount=50' -d 'saved_on=2026-09-05'
+```
+
+`type` is `deposit` or `withdraw`; `amount` is always positive on the wire and
+the server applies the sign. `saved_on` cannot be in the future; `currency=KHR`
+converts as everywhere else. A withdrawal larger than the goal's balance is a
+`422` with `errors.amount = ["You cannot withdraw more than is saved."]`.
+
+Entries are authorised through their goal: a deposit changes the balance, so it
+needs `update` on the goal, and someone else's goal is a `403`.
+
+### `DELETE /api/v1/savings/{uuid}/entries/{entryUuid}` → `204`
+
+The entry must belong to that goal; one from another goal is a `404`, not a
+`403`.
+
 ## Dashboard
 
 ### `GET /api/v1/dashboard`
@@ -289,12 +458,22 @@ how a client tells "now" apart from whichever month it is browsing.
     "breakdown": [{ "uuid": "0198a...", "name": "Food", "color": "amber",
                     "spent": "75.00", "share": 75 }],
     "breakdown_month": "2026-07",
-    "recent": [{ "uuid": "0198f...", "item": "Coffee", "price": "4.50" }]
+    "recent": [{ "uuid": "0198f...", "item": "Coffee", "price": "4.50" }],
+    "income": { "month": "2026-07", "total": "1200.00" },
+    "balance": "1125.00",
+    "savings": { "total_saved": "320.00", "total_target": "1500.00",
+                 "percent": 21, "goals_count": 2 }
   }
 }
 ```
 
 `breakdown` is empty when nothing was spent — the shares would be meaningless.
+
+`income` follows `budget_month`, and `balance` is that income minus
+`summary.overall.spent` for the same month — one month's in against the same
+month's out, so it may be negative. `savings` is not monthly: it is the standing
+position across every goal, the same figures as `GET /savings/summary` without
+`saved_this_month`.
 
 ## Reports
 

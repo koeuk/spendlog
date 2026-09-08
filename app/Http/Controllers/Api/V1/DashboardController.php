@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\BudgetSummaryResource;
 use App\Http\Resources\ExpenseResource;
 use App\Models\Expense;
+use App\Models\Income;
 use App\Models\User;
 use App\Services\BudgetSummary;
 use App\Services\CategoryBreakdown;
+use App\Services\SavingsSummary;
 use App\Support\CalendarOptions;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
@@ -29,6 +31,7 @@ class DashboardController extends Controller
     public function __construct(
         private readonly BudgetSummary $summary,
         private readonly CategoryBreakdown $breakdown,
+        private readonly SavingsSummary $savings,
     ) {}
 
     /**
@@ -42,7 +45,11 @@ class DashboardController extends Controller
      * `breakdown` is empty when nothing was spent this month — the shares would
      * be meaningless.
      *
-     * @response 200 {"data": {"today": {"date": "2026-07-16", "total": "12.50"}, "summary": {"month": "2026-07", "overall": {"spent": "75.00", "budget": "200.00", "remaining": "125.00", "percent": 38, "bar_percent": 38, "status": "ok"}, "categories": []}, "breakdown": [{"uuid": "0198a...", "name": "Food", "color": "amber", "icon": "utensils", "spent": "75.00", "share": 75}], "recent": [{"uuid": "0198f...", "item": "Coffee", "price": "4.50", "spent_on": "2026-07-16", "category": {"uuid": "0198a...", "name": "Food"}}]}}
+     * `income` and `balance` follow `budget_month`: what came in that month, and
+     * that minus what was spent in it. `balance` can be negative. `savings` is
+     * not monthly — it is the standing position across every goal.
+     *
+     * @response 200 {"data": {"today": {"date": "2026-07-16", "total": "12.50"}, "summary": {"month": "2026-07", "overall": {"spent": "75.00", "budget": "200.00", "remaining": "125.00", "percent": 38, "bar_percent": 38, "status": "ok"}, "categories": []}, "breakdown": [{"uuid": "0198a...", "name": "Food", "color": "amber", "icon": "utensils", "spent": "75.00", "share": 75}], "recent": [{"uuid": "0198f...", "item": "Coffee", "price": "4.50", "spent_on": "2026-07-16", "category": {"uuid": "0198a...", "name": "Food"}}], "income": {"month": "2026-07", "total": "1200.00"}, "balance": "1125.00", "savings": {"total_saved": "320.00", "total_target": "1500.00", "percent": 21, "goals_count": 2}}}
      *
      * @queryParam budget_month string YYYY-MM. Which month's budgets `summary` reports. Defaults to the current month. Example: 2026-06
      * @queryParam breakdown_month string YYYY-MM. Which month `breakdown` splits. Independent of budget_month. Example: 2026-03
@@ -68,6 +75,11 @@ class DashboardController extends Controller
         // the web Dashboard uses, so the two clients can never disagree.
         $summary = $this->summary->forMonth($user, $budgetMonth);
 
+        // Income sits beside the budget summary on the same month, so the
+        // balance is one month's in against the same month's out.
+        $income = $this->incomeTotal($user, $budgetMonth);
+        $savings = $this->savings->totals($user);
+
         return response()->json([
             'data' => [
                 'today' => [
@@ -82,8 +94,37 @@ class DashboardController extends Controller
                 'breakdown' => $this->breakdown($user, $breakdownMonth),
                 'breakdown_month' => $breakdownMonth->format('Y-m'),
                 'recent' => ExpenseResource::collection($this->recent($user)),
+                'income' => [
+                    'month' => $budgetMonth->format('Y-m'),
+                    'total' => $this->money($income),
+                ],
+                // May be negative: more went out than came in.
+                'balance' => $this->money($income - (float) $summary['overall']['spent']),
+                'savings' => [
+                    'total_saved' => $this->money($savings['total_saved']),
+                    'total_target' => $this->money($savings['total_target']),
+                    'percent' => $savings['percent'],
+                    'goals_count' => $savings['goals_count'],
+                ],
             ],
         ]);
+    }
+
+    private function incomeTotal(User $user, CarbonImmutable $month): float
+    {
+        return (float) Income::query()
+            ->forUser($user->id)
+            ->inMonth($month->toDateString())
+            ->sum('amount');
+    }
+
+    /**
+     * Money is a string across this API; sum() returns a float, so format it
+     * back to two decimals rather than leaking 12.5 for 12.50.
+     */
+    private function money(float $amount): string
+    {
+        return number_format($amount, 2, '.', '');
     }
 
     private function todayTotal(User $user, CarbonImmutable $today): string
@@ -93,9 +134,7 @@ class DashboardController extends Controller
             ->whereDate('spent_on', $today->toDateString())
             ->sum('price');
 
-        // Money is a string across this API; sum() returns a float, so format
-        // it back to two decimals rather than leaking 12.5 for 12.50.
-        return number_format((float) $total, 2, '.', '');
+        return $this->money((float) $total);
     }
 
     /**

@@ -7,10 +7,12 @@ use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\ExpenseController;
 use App\Http\Controllers\Api\V1\FaqAdminController;
+use App\Http\Controllers\Api\V1\IncomeController;
 use App\Http\Controllers\Api\V1\PasswordController;
 use App\Http\Controllers\Api\V1\PasswordResetController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\ReportController;
+use App\Http\Controllers\Api\V1\SavingsController;
 use App\Http\Controllers\Api\V1\SettingsAdminController;
 use App\Http\Controllers\Api\V1\UserAdminController;
 use App\Http\Controllers\ReportController as WebReportController;
@@ -102,6 +104,42 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             // Upserts the (category, month) slot, so no separate update route.
             Route::post('budgets', [BudgetController::class, 'store'])->name('budgets.store');
             Route::delete('budgets/{budget:uuid}', [BudgetController::class, 'destroy'])->name('budgets.destroy');
+        });
+
+        // Income, beside expenses: the same owner scoping, the same read/write
+        // split. The literal 'summary' segment is registered before the uuid
+        // route, or it binds as a uuid and 404s.
+        Route::middleware('abilities:'.TokenAbility::IncomesRead->value)->group(function () {
+            Route::get('incomes', [IncomeController::class, 'index'])->name('incomes.index');
+            Route::get('incomes/summary', [IncomeController::class, 'summary'])->name('incomes.summary');
+            Route::get('incomes/{income:uuid}', [IncomeController::class, 'show'])->name('incomes.show');
+        });
+
+        Route::middleware('abilities:'.TokenAbility::IncomesWrite->value)->group(function () {
+            Route::post('incomes', [IncomeController::class, 'store'])->name('incomes.store');
+            Route::patch('incomes/{income:uuid}', [IncomeController::class, 'update'])->name('incomes.update');
+            Route::delete('incomes/{income:uuid}', [IncomeController::class, 'destroy'])->name('incomes.destroy');
+        });
+
+        Route::middleware('abilities:'.TokenAbility::SavingsRead->value)->group(function () {
+            Route::get('savings', [SavingsController::class, 'index'])->name('savings.index');
+            Route::get('savings/summary', [SavingsController::class, 'summary'])->name('savings.summary');
+            // After the literal segment above, or 'summary' binds as a uuid.
+            Route::get('savings/{goal:uuid}', [SavingsController::class, 'show'])->name('savings.show');
+        });
+
+        Route::middleware('abilities:'.TokenAbility::SavingsWrite->value)->group(function () {
+            Route::post('savings', [SavingsController::class, 'store'])->name('savings.store');
+            Route::patch('savings/{goal:uuid}', [SavingsController::class, 'update'])->name('savings.update');
+            Route::delete('savings/{goal:uuid}', [SavingsController::class, 'destroy'])->name('savings.destroy');
+
+            // The ledger. Writes are authorised as an update of the goal, and
+            // the entry binding is scoped to it so an entry uuid from another
+            // goal is a 404 rather than a hit.
+            Route::post('savings/{goal:uuid}/entries', [SavingsController::class, 'storeEntry'])->name('savings.entries.store');
+            Route::delete('savings/{goal:uuid}/entries/{entry:uuid}', [SavingsController::class, 'destroyEntry'])
+                ->scopeBindings()
+                ->name('savings.entries.destroy');
         });
 
         // The account's own details. Both routes share one ability; the

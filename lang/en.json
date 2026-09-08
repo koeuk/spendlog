@@ -220,5 +220,7 @@
     "or": "or",
     "Google sign-in is not available.": "Google sign-in is not available.",
     "Could not sign you in with Google. Please try again.": "Could not sign you in with Google. Please try again.",
-    "Your Google account did not share an email address.": "Your Google account did not share an email address."
+    "Your Google account did not share an email address.": "Your Google account did not share an email address.",
+    "Income": "Income",
+    "Savings": "Savings"
 }

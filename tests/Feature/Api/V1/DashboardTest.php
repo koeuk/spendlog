@@ -6,6 +6,9 @@ use App\Enums\TokenAbility;
 use App\Models\Budget;
 use App\Models\Category;
 use App\Models\Expense;
+use App\Models\Income;
+use App\Models\SavingsEntry;
+use App\Models\SavingsGoal;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -62,8 +65,78 @@ class DashboardTest extends TestCase
                     'summary' => ['month', 'overall', 'categories'],
                     'breakdown',
                     'recent',
+                    'income' => ['month', 'total'],
+                    'balance',
+                    'savings' => ['total_saved', 'total_target', 'percent', 'goals_count'],
                 ],
             ]);
+    }
+
+    /**
+     * Income and balance sit on the budget month, so what came in and what
+     * went out are measured over the same days.
+     */
+    public function test_income_and_balance_follow_the_budget_month(): void
+    {
+        $user = User::factory()->create();
+        $category = Category::factory()->create();
+
+        Income::factory()->for($user)->create(['amount' => 1200, 'received_on' => '2026-07-01']);
+        Income::factory()->for($user)->create(['amount' => 900, 'received_on' => '2026-06-01']);
+        Expense::factory()->for($user)->for($category)->create(['price' => 75, 'spent_on' => '2026-07-10']);
+        Expense::factory()->for($user)->for($category)->create(['price' => 1000, 'spent_on' => '2026-06-10']);
+        // Someone else's income does not count.
+        Income::factory()->create(['amount' => 5000, 'received_on' => '2026-07-01']);
+
+        Sanctum::actingAs($user, [TokenAbility::DashboardRead->value]);
+
+        $this->getJson('/api/v1/dashboard')
+            ->assertOk()
+            ->assertJsonPath('data.income.month', '2026-07')
+            ->assertJsonPath('data.income.total', '1200.00')
+            ->assertJsonPath('data.balance', '1125.00');
+
+        // Pointing the budgets at June moves income and balance with them —
+        // and a balance may be negative.
+        $this->getJson('/api/v1/dashboard?budget_month=2026-06')
+            ->assertOk()
+            ->assertJsonPath('data.income.month', '2026-06')
+            ->assertJsonPath('data.income.total', '900.00')
+            ->assertJsonPath('data.balance', '-100.00');
+    }
+
+    public function test_savings_reports_the_standing_position_across_every_goal(): void
+    {
+        $user = User::factory()->create();
+        $fund = SavingsGoal::factory()->for($user)->create(['target_amount' => 1000]);
+        $trip = SavingsGoal::factory()->for($user)->create(['target_amount' => 500]);
+        SavingsEntry::factory()->for($fund, 'goal')->create(['amount' => 300, 'saved_on' => '2026-01-10']);
+        SavingsEntry::factory()->for($trip, 'goal')->create(['amount' => 50, 'saved_on' => '2026-07-10']);
+        SavingsEntry::factory()->for($trip, 'goal')->withdrawal(30)->create(['saved_on' => '2026-07-12']);
+        SavingsGoal::factory()->create(['target_amount' => 9999]);
+
+        Sanctum::actingAs($user, [TokenAbility::DashboardRead->value]);
+
+        $this->getJson('/api/v1/dashboard')
+            ->assertOk()
+            ->assertJsonPath('data.savings.total_saved', '320.00')
+            ->assertJsonPath('data.savings.total_target', '1500.00')
+            ->assertJsonPath('data.savings.percent', 21)
+            ->assertJsonPath('data.savings.goals_count', 2);
+    }
+
+    public function test_income_and_savings_are_zero_for_a_fresh_account(): void
+    {
+        $user = User::factory()->create();
+
+        Sanctum::actingAs($user, [TokenAbility::DashboardRead->value]);
+
+        $this->getJson('/api/v1/dashboard')
+            ->assertOk()
+            ->assertJsonPath('data.income.total', '0.00')
+            ->assertJsonPath('data.balance', '0.00')
+            ->assertJsonPath('data.savings.total_saved', '0.00')
+            ->assertJsonPath('data.savings.goals_count', 0);
     }
 
     public function test_today_total_counts_only_todays_spend(): void
