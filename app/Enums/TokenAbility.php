@@ -27,13 +27,6 @@ enum TokenAbility: string
     // question over a chosen period. Separate from dashboard:read so a client
     // scoped to the home screen does not silently gain the history with it.
     case ReportsRead = 'reports:read';
-    /*
-     * The exercise module. Nothing extra is needed to keep these locked: the
-     * abilities are derived from permissions by grantableTo below, and an
-     * account without exercise.view simply never has them to give.
-     */
-    case ExerciseRead = 'exercise:read';
-    case ExerciseWrite = 'exercise:write';
     // The account's own profile and password. One ability for both: they are
     // the same self-service surface, and the gates still rule separately.
     case ProfileWrite = 'profile:write';
@@ -79,12 +72,6 @@ enum TokenAbility: string
             ],
             self::DashboardRead => [Permission::DashboardView],
             self::ReportsRead => [Permission::ReportsView],
-            self::ExerciseRead => [Permission::ExerciseView],
-            self::ExerciseWrite => [
-                Permission::ExerciseCreate,
-                Permission::ExerciseUpdate,
-                Permission::ExerciseDelete,
-            ],
             self::ProfileWrite => [
                 Permission::ProfileUpdate,
                 Permission::PasswordUpdate,

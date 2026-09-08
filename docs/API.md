@@ -57,13 +57,12 @@ Two independent gates, and **both** must pass:
 A mobile token cannot write categories even when its owner is an admin; an admin
 token with `categories:write` still fails for a non-admin user. Abilities:
 `expenses:read`, `expenses:write`, `categories:read`, `categories:write`,
-`budgets:read`, `budgets:write`, `dashboard:read`, `exercise:read`,
-`exercise:write`, `profile:write`.
+`budgets:read`, `budgets:write`, `dashboard:read`, `profile:write`.
 
 A fresh token carries every ability the user's permissions justify and nothing
 more — both sides derive from one permission system (`TokenAbility::grantableTo`),
 so an admin's default token holds `categories:write` while a regular user's never
-does, and an account without the exercise module has no `exercise:*` to give. A
+does. A
 client may request a *narrower* token (a read-only dashboard widget, say);
 anything it asks for is intersected with what the user may grant, so asking for
 more never widens it.
@@ -348,43 +347,6 @@ spending had not changed.
 Every figure comes from the same `SpendingTrend` / `SpendingReport` services the
 web Reports page and its PDF export use, so the two clients cannot disagree
 about the same period.
-
-## Workouts (exercise module)
-
-Locked behind `exercise:read` / `exercise:write` — abilities an account only
-has once an admin grants the module, so for everyone else these routes are
-invisible rather than merely forbidden.
-
-### `GET /api/v1/workouts`
-
-The caller's own sessions, paginated newest first. `filter[from]` /
-`filter[to]` bound `performed_on`; `sort` takes `performed_on` or
-`duration_seconds`. Each row carries its `sets` with their exercise types.
-
-### `POST /api/v1/workouts` → `201`
-
-A workout is submitted whole: the session (`performed_on`, `duration_seconds`,
-`notes`) plus a `sets` array, each set naming an `exercise_type_uuid` with
-`reps`, `weight`, `distance_m`, `duration_seconds`, `rpe` as the movement
-needs. Conventions that mirror expenses' currency handling:
-
-- **Weights are stored in kilograms.** Send `weight_unit=lb` and every weight
-  in the payload converts on the way in; omit it and the app-configured
-  default applies. Responses always read back kilograms.
-- `set_no` is assigned from array order, never trusted from the client.
-- An `exercise_type_uuid` must be one the caller may log against — a guessed
-  UUID for someone else's private movement is a `422`, not a hit.
-
-`PATCH` replaces the session the same way; `DELETE` returns `204`.
-
-### `GET /api/v1/workouts/summary?month=YYYY-MM`
-
-Sessions, volume, time and current streak for the month (default: this one),
-plus the muscle-group split — what the exercise dashboard renders.
-
-### `GET /api/v1/exercises`
-
-The movements available to the caller: the global catalogue plus their own.
 
 ## Profile
 

@@ -3,9 +3,6 @@
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\Exercise\DashboardController as ExerciseDashboardController;
-use App\Http\Controllers\Exercise\ExerciseTypeController;
-use App\Http\Controllers\Exercise\WorkoutController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\HelpController;
@@ -51,37 +48,6 @@ Route::middleware('auth')->group(function () {
         ->only(['index', 'store', 'destroy']);
 
     /*
-     * The exercise module.
-     *
-     * Namespaced under an `exercise.` prefix, unlike the flat finance route
-     * names — the workspace switcher in AuthenticatedLayout decides which
-     * module you are in by matching `exercise.*`, so the prefix is load-bearing
-     * rather than cosmetic.
-     *
-     * Every route authorizes through WorkoutPolicy / ExerciseTypePolicy in its
-     * controller, both of which require exercise.view. The module ships locked
-     * (see Permission::forUser), so this is invisible until an admin grants it.
-     */
-    Route::prefix('exercise')->name('exercise.')->group(function () {
-        Route::get('/', [ExerciseDashboardController::class, 'index'])->name('dashboard');
-
-        // Own screens, not a dialog: a set list with a movement picker on every
-        // row cannot open a second modal layer on a phone. See Expenses.
-        Route::resource('workouts', WorkoutController::class)
-            ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
-
-        /*
-         * "Movements" in the UI, exercise_types in the code. The parameter is
-         * named explicitly because Laravel would otherwise bind {exercise_type}
-         * from the resource name and ExerciseTypeRequest reads the route
-         * parameter by that name when checking uniqueness on update.
-         */
-        Route::resource('types', ExerciseTypeController::class)
-            ->parameters(['types' => 'exercise_type'])
-            ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
-    });
-
-    /*
      * Settings. The route names stay as they were (profile.edit, password.update)
      * so existing links and tests keep working — only the URLs moved under /settings.
      */
@@ -118,14 +84,6 @@ Route::middleware('auth')->group(function () {
         // Admin only — enforced in the controller. Dashboard spending guidance.
         Route::get('/spending', [SettingsController::class, 'spending'])->name('spending.edit');
         Route::post('/spending', [SettingsController::class, 'updateSpending'])->name('spending.update');
-
-        /*
-         * Exercise preferences. Gated on exercise.view in the controller, not
-         * the admin check the pages around it use — the module is granted per
-         * person, so a non-admin who holds it still needs to set their unit.
-         */
-        Route::get('/exercise', [SettingsController::class, 'exercise'])->name('exercise-settings.edit');
-        Route::post('/exercise', [SettingsController::class, 'updateExercise'])->name('exercise-settings.update');
 
         // Gated on the settings.faq permission in the controller, not just the UI.
         Route::get('/faqs', [FaqController::class, 'index'])->name('faqs.index');

@@ -32,10 +32,8 @@ import {
     ChartColumn,
     Check,
     ChevronDown,
-    Dumbbell,
     Ellipsis,
     LayoutDashboard,
-    ListChecks,
     PiggyBank,
     Receipt,
     Shapes,
@@ -135,17 +133,18 @@ const granted = computed(() => page.props.auth?.permissions ?? []);
 const can = (permission) => granted.value.includes(permission);
 
 /*
- * The app is two modules sharing one shell: Finance and Exercise.
+ * The app is one module, Finance, in a shell built to hold several.
  *
- * Each owns its own nav, so the tabs swap wholesale when you switch rather than
- * growing into one long bar of unrelated pages. Which module you are in is read
- * off the route, not held in state — that way a deep link, a browser back and a
- * fresh page load all agree, and there is no "current module" to get out of sync
- * with the URL.
+ * Each module owns its own nav, so the tabs would swap wholesale on a switch
+ * rather than growing into one long bar of unrelated pages. Which module you
+ * are in is read off the route, not held in state — that way a deep link, a
+ * browser back and a fresh page load all agree, and there is no "current
+ * module" to get out of sync with the URL.
  *
  * Finance has no pattern on purpose: it is the default, so it is what you are in
- * whenever nothing more specific matches. Adding a third module means giving it
- * a pattern and leaving Finance last in the fallback.
+ * whenever nothing more specific matches. Adding a second module means giving
+ * it a pattern and a permission, and leaving Finance last in the fallback; the
+ * workspace switcher in the header then renders on its own.
  */
 const MODULES = [
     {
@@ -165,22 +164,6 @@ const MODULES = [
             { label: 'Expenses', route: 'expenses.index', active: 'expenses.*', permission: 'expenses.view', icon: Receipt },
             { label: 'Budgets', route: 'budgets.index', active: 'budgets.*', permission: 'budgets.view', icon: PiggyBank },
             { label: 'Reports', route: 'reports.index', active: 'reports.*', permission: 'reports.view', icon: ChartColumn },
-        ],
-    },
-    {
-        key: 'exercise',
-        label: 'Exercise',
-        icon: Dumbbell,
-        home: 'exercise.dashboard',
-        pattern: 'exercise.*',
-        // The module ships locked — an admin grants this per person. Without it
-        // the switcher never renders, so the module is invisible rather than
-        // merely unreachable.
-        permission: 'exercise.view',
-        links: [
-            { label: 'Dashboard', route: 'exercise.dashboard', active: 'exercise.dashboard', permission: 'exercise.view', icon: LayoutDashboard },
-            { label: 'Workouts', route: 'exercise.workouts.index', active: 'exercise.workouts.*', permission: 'exercise.view', icon: Dumbbell },
-            { label: 'Movements', route: 'exercise.types.index', active: 'exercise.types.*', permission: 'exercise.view', icon: ListChecks },
         ],
     },
 ];
@@ -210,7 +193,7 @@ const links = computed(() => activeModule.value.links.filter((link) => can(link.
  *
  * Split by position rather than by naming an overflow tab in MODULES, so a
  * module that grows a sixth page overflows on its own instead of needing the
- * bar rebalanced by hand. Exercise has three links and so overflows nothing —
+ * bar rebalanced by hand. A module with four links or fewer overflows nothing —
  * its More sheet is account settings only, which is still worth having, since
  * that content otherwise lives behind the header burger alone.
  */
@@ -227,7 +210,7 @@ const showMoreSheet = ref(false);
  *
  * Settings counts, and is matched on the URL rather than on route names: the
  * names never moved when the pages did, so the tree is profile.*, password.*,
- * users.*, branding.*, colors.*, spending.*, exercise-settings.*, faqs.* and
+ * users.*, branding.*, colors.*, spending.*, faqs.* and
  * pages.* with nothing in common to match on — a list this file would have to
  * be told about again every time a settings page is added. The URLs all sit
  * under /settings, which is the one thing they do share.

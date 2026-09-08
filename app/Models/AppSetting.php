@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Enums\BodyColor;
 use App\Enums\Currency;
-use App\Enums\WeightUnit;
 use App\Support\Color;
 use App\Support\Palette;
 use Illuminate\Database\Eloquent\Model;
@@ -73,7 +72,6 @@ class AppSetting extends Model
         'spending_advice',
         'khr_per_usd',
         'default_currency',
-        'default_weight_unit',
     ];
 
     /**
@@ -85,7 +83,6 @@ class AppSetting extends Model
             'spending_guidance_enabled' => 'boolean',
             'khr_per_usd' => 'decimal:2',
             'default_currency' => Currency::class,
-            'default_weight_unit' => WeightUnit::class,
         ];
     }
 
@@ -114,19 +111,6 @@ class AppSetting extends Model
     public function defaultCurrency(): Currency
     {
         return $this->default_currency ?? Currency::Usd;
-    }
-
-    /**
-     * The unit the weight fields start on, never null.
-     *
-     * Entry only — every weight is still stored in kilograms (see WeightUnit).
-     * Null-safe for the same reason defaultCurrency() is: the enum cast returns
-     * null for a value it does not recognise, so a row edited by hand falls back
-     * to kilograms rather than reaching the form as nothing.
-     */
-    public function defaultWeightUnit(): WeightUnit
-    {
-        return $this->default_weight_unit ?? WeightUnit::Kg;
     }
 
     /**

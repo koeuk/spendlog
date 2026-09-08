@@ -1,27 +1,29 @@
-name: Budgets
+name: Expenses
 description: |-
 
-  A budget is one `(category, month)` slot. **Omit `category_uuid` for the
-  overall budget** covering every category.
+  Daily expense tracking. Every listing is scoped to the caller's own rows
+  unless an admin explicitly opts out with `scope=all`.
 endpoints:
   -
     custom: []
     httpMethods:
       - GET
-    uri: api/v1/budgets
+    uri: api/v1/expenses
     metadata:
       custom: []
-      groupName: Budgets
+      groupName: Expenses
       groupDescription: |-
 
-        A budget is one `(category, month)` slot. **Omit `category_uuid` for the
-        overall budget** covering every category.
+        Daily expense tracking. Every listing is scoped to the caller's own rows
+        unless an admin explicitly opts out with `scope=all`.
       subgroup: ''
       subgroupDescription: ''
-      title: 'List budgets'
+      title: 'List expenses'
       description: |-
-        The stored budgets themselves. For spent-vs-budget figures use the
-        summary endpoint — that is what the Budgets screen renders.
+        Paginated, newest first.
+
+        `filter[user]` exists only while an admin is viewing everyone; for anyone
+        else it is a 400, not a silently empty result.
       authenticated: true
       deprecated: false
     headers:
@@ -31,19 +33,103 @@ endpoints:
     urlParameters: []
     cleanUrlParameters: []
     queryParameters:
-      month:
+      'filter[item]':
         custom: []
-        name: month
-        description: 'Restrict to one month, as YYYY-MM.'
+        name: 'filter[item]'
+        description: 'Partial match on the item name.'
         required: false
-        example: 2026-07
+        example: coffee
         type: string
         enumValues: []
         exampleWasSpecified: true
         nullable: false
         deprecated: false
+      'filter[category]':
+        custom: []
+        name: 'filter[category]'
+        description: 'Category UUID.'
+        required: false
+        example: 0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      'filter[from]':
+        custom: []
+        name: 'filter[from]'
+        description: 'date Only expenses on or after this day.'
+        required: false
+        example: '2026-07-01'
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      'filter[to]':
+        custom: []
+        name: 'filter[to]'
+        description: 'date Only expenses on or before this day.'
+        required: false
+        example: '2026-07-31'
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      'filter[user]':
+        custom: []
+        name: 'filter[user]'
+        description: 'Admin only, and only with scope=all. User UUID.'
+        required: false
+        example: architecto
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      sort:
+        custom: []
+        name: sort
+        description: 'spent_on, price or item. Prefix with - to reverse.'
+        required: false
+        example: '-price'
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      scope:
+        custom: []
+        name: scope
+        description: 'Admin only. Set to "all" to list every user''s expenses and include `owner`.'
+        required: false
+        example: all
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      per_page:
+        custom: []
+        name: per_page
+        description: 'Default 50, clamped to 100.'
+        required: false
+        example: 25
+        type: integer
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
     cleanQueryParameters:
-      month: 2026-07
+      'filter[item]': coffee
+      'filter[category]': 0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+      'filter[from]': '2026-07-01'
+      'filter[to]': '2026-07-31'
+      'filter[user]': architecto
+      sort: '-price'
+      scope: all
+      per_page: 25
     bodyParameters: []
     cleanBodyParameters: []
     fileParameters: []
@@ -51,9 +137,15 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data": [{"uuid": "0198b...", "amount": "250.00", "month": "2026-07", "category": {"uuid": "0198a...", "name": "Food", "color": "amber", "icon": "utensils"}, "created_at": "2026-07-16T10:00:00+00:00", "updated_at": "2026-07-16T10:00:00+00:00"}]}'
+        content: '{"data": [{"uuid": "0198f...", "item": "Coffee", "item_translations": {"en": "Coffee"}, "price": "4.50", "spent_on": "2026-07-16", "category": {"uuid": "0198a...", "name": "Food", "color": "amber", "icon": "utensils"}, "created_at": "2026-07-16T10:00:00+00:00", "updated_at": "2026-07-16T10:00:00+00:00"}], "links": {"first": "...", "last": "...", "prev": null, "next": null}, "meta": {"current_page": 1, "per_page": 50, "total": 1}}'
         headers: []
-        description: ''
+        description: success
+      -
+        custom: []
+        status: 400
+        content: '{"message": "Requested filter(s) `user` are not allowed."}'
+        headers: []
+        description: 'non-admin used filter[user]'
     responseFields: []
     auth:
       - headers
@@ -66,190 +158,17 @@ endpoints:
     custom: []
     httpMethods:
       - GET
-    uri: api/v1/budgets/summary
+    uri: 'api/v1/expenses/{uuid}'
     metadata:
       custom: []
-      groupName: Budgets
+      groupName: Expenses
       groupDescription: |-
 
-        A budget is one `(category, month)` slot. **Omit `category_uuid` for the
-        overall budget** covering every category.
+        Daily expense tracking. Every listing is scoped to the caller's own rows
+        unless an admin explicitly opts out with `scope=all`.
       subgroup: ''
       subgroupDescription: ''
-      title: 'Spend vs budget'
-      description: |-
-        Spend against budget for one month, per category and overall — the same
-        service the web Dashboard and Budgets page use, so the three can never
-        disagree.
-
-        `status` is `ok` | `warning` (>=80%) | `over` (>100%) | `none` (no budget
-        set). `budget: null` means no budget, which is different from `"0.00"`.
-        `bar_percent` is capped at 100 so a progress bar cannot overflow its
-        track; `percent` keeps the truth.
-      authenticated: true
-      deprecated: false
-    headers:
-      Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
-      Content-Type: application/json
-      Accept: application/json
-    urlParameters: []
-    cleanUrlParameters: []
-    queryParameters:
-      month:
-        custom: []
-        name: month
-        description: 'YYYY-MM. Anything malformed falls back to the current month rather than erroring.'
-        required: false
-        example: 2026-07
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-    cleanQueryParameters:
-      month: 2026-07
-    bodyParameters: []
-    cleanBodyParameters: []
-    fileParameters: []
-    responses:
-      -
-        custom: []
-        status: 200
-        content: '{"data": {"month": "2026-07", "overall": {"budget_uuid": "0198b...", "spent": "106.00", "budget": "100.00", "remaining": "-6.00", "percent": 106, "bar_percent": 100, "status": "over"}, "categories": [{"uuid": "0198a...", "name": "Food", "color": "amber", "icon": "utensils", "budget_uuid": "0198b...", "spent": "106.00", "budget": "100.00", "remaining": "-6.00", "percent": 106, "bar_percent": 100, "status": "over"}]}}'
-        headers: []
-        description: ''
-    responseFields: []
-    auth:
-      - headers
-      - Authorization
-      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
-    controller: null
-    method: null
-    route: null
-  -
-    custom: []
-    httpMethods:
-      - POST
-    uri: api/v1/budgets
-    metadata:
-      custom: []
-      groupName: Budgets
-      groupDescription: |-
-
-        A budget is one `(category, month)` slot. **Omit `category_uuid` for the
-        overall budget** covering every category.
-      subgroup: ''
-      subgroupDescription: ''
-      title: 'Set a budget'
-      description: |-
-        Upserts the `(category, month)` slot, so this is idempotent — there is no
-        separate update route and the client never needs to know whether a row
-        already exists. Returns 201 when the slot was empty, 200 when it was not.
-      authenticated: true
-      deprecated: false
-    headers:
-      Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
-      Content-Type: application/json
-      Accept: application/json
-    urlParameters: []
-    cleanUrlParameters: []
-    queryParameters: []
-    cleanQueryParameters: []
-    bodyParameters:
-      category_uuid:
-        custom: []
-        name: category_uuid
-        description: 'Omit entirely for the overall budget covering every category.'
-        required: false
-        example: 0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-      month:
-        custom: []
-        name: month
-        description: 'YYYY-MM. A full date is a 422.'
-        required: true
-        example: 2026-07
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-      amount:
-        custom: []
-        name: amount
-        description: 'Max 99999999.99.'
-        required: true
-        example: 250.0
-        type: number
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-      currency:
-        custom: []
-        name: currency
-        description: ''
-        required: false
-        example: KHR
-        type: string
-        enumValues:
-          - USD
-          - KHR
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-    cleanBodyParameters:
-      category_uuid: 0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
-      month: 2026-07
-      amount: 250.0
-      currency: KHR
-    fileParameters: []
-    responses:
-      -
-        custom: []
-        status: 200
-        content: '{"data": {"uuid": "0198b...", "amount": "400.00", "month": "2026-07", "category": {"uuid": "0198a...", "name": "Food"}}}'
-        headers: []
-        description: 'slot already set'
-      -
-        custom: []
-        status: 201
-        content: '{"data": {"uuid": "0198b...", "amount": "250.00", "month": "2026-07", "category": {"uuid": "0198a...", "name": "Food"}}}'
-        headers: []
-        description: 'slot was empty'
-      -
-        custom: []
-        status: 422
-        content: '{"message": "The month must look like 2026-07.", "errors": {"month": ["The month must look like 2026-07."]}}'
-        headers: []
-        description: 'month was a full date'
-    responseFields: []
-    auth:
-      - headers
-      - Authorization
-      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
-    controller: null
-    method: null
-    route: null
-  -
-    custom: []
-    httpMethods:
-      - DELETE
-    uri: 'api/v1/budgets/{uuid}'
-    metadata:
-      custom: []
-      groupName: Budgets
-      groupDescription: |-
-
-        A budget is one `(category, month)` slot. **Omit `category_uuid` for the
-        overall budget** covering every category.
-      subgroup: ''
-      subgroupDescription: ''
-      title: 'Delete a budget'
+      title: 'Get an expense'
       description: ''
       authenticated: true
       deprecated: false
@@ -263,26 +182,392 @@ endpoints:
         name: uuid
         description: ''
         required: true
-        example: a24a2b8a-aced-4373-9aa8-5b60f747228a
+        example: a24a2b8a-3246-4cf8-a701-c75f08e05ca9
         type: string
         enumValues: []
         exampleWasSpecified: false
         nullable: false
         deprecated: false
-      budget:
+      expense:
         custom: []
-        name: budget
-        description: 'The budget UUID.'
+        name: expense
+        description: 'The expense UUID.'
         required: true
-        example: 0198b1c2-d3e4-7f5a-8b9c-0d1e2f3a4b5c
+        example: 0198f1a2-b3c4-7d5e-8f9a-0b1c2d3e4f5a
         type: string
         enumValues: []
         exampleWasSpecified: true
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      uuid: a24a2b8a-aced-4373-9aa8-5b60f747228a
-      budget: 0198b1c2-d3e4-7f5a-8b9c-0d1e2f3a4b5c
+      uuid: a24a2b8a-3246-4cf8-a701-c75f08e05ca9
+      expense: 0198f1a2-b3c4-7d5e-8f9a-0b1c2d3e4f5a
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"data": {"uuid": "0198f...", "item": "Coffee", "item_translations": {"en": "Coffee"}, "price": "4.50", "spent_on": "2026-07-16", "category": {"uuid": "0198a...", "name": "Food", "color": "amber", "icon": "utensils"}}}'
+        headers: []
+        description: ''
+      -
+        custom: []
+        status: 403
+        content: '{"message": "This action is unauthorized."}'
+        headers: []
+        description: "someone else's expense"
+      -
+        custom: []
+        status: 404
+        content: '{"message": "Not found."}'
+        headers: []
+        description: 'unknown or non-UUID'
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: api/v1/expenses
+    metadata:
+      custom: []
+      groupName: Expenses
+      groupDescription: |-
+
+        Daily expense tracking. Every listing is scoped to the caller's own rows
+        unless an admin explicitly opts out with `scope=all`.
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Create an expense'
+      description: |-
+        The owner always comes from the token — a `user_id` in the payload is
+        ignored, not honoured.
+
+        The item is a plain string, stored under the fallback locale. A per-locale
+        object is still accepted for compatibility: its fallback-locale value is
+        taken and the rest ignored.
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      item:
+        custom: []
+        name: item
+        description: ''
+        required: true
+        example: Coffee
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      price:
+        custom: []
+        name: price
+        description: 'Max 99999999.99.'
+        required: true
+        example: 4.5
+        type: number
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      currency:
+        custom: []
+        name: currency
+        description: 'USD (default) or KHR. A riel amount is converted and stored in USD.'
+        required: false
+        example: KHR
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: true
+        deprecated: false
+      spent_on:
+        custom: []
+        name: spent_on
+        description: 'Cannot be in the future.'
+        required: true
+        example: '2026-07-16'
+        type: date
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      category_uuid:
+        custom: []
+        name: category_uuid
+        description: 'Must be an existing category.'
+        required: true
+        example: 0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      new_category:
+        custom: []
+        name: new_category
+        description: 'Must not be greater than 255 characters.'
+        required: false
+        example: z
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+    cleanBodyParameters:
+      item: Coffee
+      price: 4.5
+      currency: KHR
+      spent_on: '2026-07-16'
+      category_uuid: 0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+      new_category: z
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 201
+        content: '{"data": {"uuid": "0198f...", "item": "Coffee", "item_translations": {"en": "Coffee"}, "price": "4.50", "spent_on": "2026-07-16", "category": {"uuid": "0198a...", "name": "Food"}}}'
+        headers: []
+        description: ''
+      -
+        custom: []
+        status: 403
+        content: '{"message": "Invalid ability provided."}'
+        headers: []
+        description: 'token lacks expenses:write'
+      -
+        custom: []
+        status: 403
+        content: '{"message": "This action is unauthorized."}'
+        headers: []
+        description: 'new_category without categories.create'
+      -
+        custom: []
+        status: 422
+        content: '{"message": "You cannot log an expense in the future.", "errors": {"spent_on": ["You cannot log an expense in the future."]}}'
+        headers: []
+        description: 'future date'
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - PATCH
+    uri: 'api/v1/expenses/{uuid}'
+    metadata:
+      custom: []
+      groupName: Expenses
+      groupDescription: |-
+
+        Daily expense tracking. Every listing is scoped to the caller's own rows
+        unless an admin explicitly opts out with `scope=all`.
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Update an expense'
+      description: "Admins may edit anyone's; everyone else only their own."
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      uuid:
+        custom: []
+        name: uuid
+        description: ''
+        required: true
+        example: a24a2b8a-3246-4cf8-a701-c75f08e05ca9
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      expense:
+        custom: []
+        name: expense
+        description: 'The expense UUID.'
+        required: true
+        example: 0198f1a2-b3c4-7d5e-8f9a-0b1c2d3e4f5a
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      uuid: a24a2b8a-3246-4cf8-a701-c75f08e05ca9
+      expense: 0198f1a2-b3c4-7d5e-8f9a-0b1c2d3e4f5a
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      item:
+        custom: []
+        name: item
+        description: ''
+        required: true
+        example: Coffee
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      price:
+        custom: []
+        name: price
+        description: ''
+        required: true
+        example: 4.5
+        type: number
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      currency:
+        custom: []
+        name: currency
+        description: 'USD (default) or KHR. A riel amount is converted and stored in USD.'
+        required: false
+        example: KHR
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: true
+        deprecated: false
+      spent_on:
+        custom: []
+        name: spent_on
+        description: 'Cannot be in the future.'
+        required: true
+        example: '2026-07-16'
+        type: date
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      category_uuid:
+        custom: []
+        name: category_uuid
+        description: ''
+        required: true
+        example: 0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      new_category:
+        custom: []
+        name: new_category
+        description: 'Must not be greater than 255 characters.'
+        required: false
+        example: z
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+    cleanBodyParameters:
+      item: Coffee
+      price: 4.5
+      currency: KHR
+      spent_on: '2026-07-16'
+      category_uuid: 0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b
+      new_category: z
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"data": {"uuid": "0198f...", "item": "Coffee", "item_translations": {"en": "Coffee"}, "price": "4.50", "spent_on": "2026-07-16"}}'
+        headers: []
+        description: ''
+      -
+        custom: []
+        status: 403
+        content: '{"message": "This action is unauthorized."}'
+        headers: []
+        description: "someone else's expense"
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - DELETE
+    uri: 'api/v1/expenses/{uuid}'
+    metadata:
+      custom: []
+      groupName: Expenses
+      groupDescription: |-
+
+        Daily expense tracking. Every listing is scoped to the caller's own rows
+        unless an admin explicitly opts out with `scope=all`.
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Delete an expense'
+      description: ''
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      uuid:
+        custom: []
+        name: uuid
+        description: ''
+        required: true
+        example: a24a2b8a-3246-4cf8-a701-c75f08e05ca9
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      expense:
+        custom: []
+        name: expense
+        description: 'The expense UUID.'
+        required: true
+        example: 0198f1a2-b3c4-7d5e-8f9a-0b1c2d3e4f5a
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      uuid: a24a2b8a-3246-4cf8-a701-c75f08e05ca9
+      expense: 0198f1a2-b3c4-7d5e-8f9a-0b1c2d3e4f5a
     queryParameters: []
     cleanQueryParameters: []
     bodyParameters: []
@@ -300,7 +585,7 @@ endpoints:
         status: 403
         content: '{"message": "This action is unauthorized."}'
         headers: []
-        description: "someone else's budget"
+        description: "someone else's expense"
     responseFields: []
     auth:
       - headers

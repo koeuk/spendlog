@@ -13,7 +13,6 @@ use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\SettingsAdminController;
 use App\Http\Controllers\Api\V1\UserAdminController;
-use App\Http\Controllers\Api\V1\WorkoutController;
 use App\Http\Controllers\ReportController as WebReportController;
 use Illuminate\Support\Facades\Route;
 
@@ -103,29 +102,6 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             // Upserts the (category, month) slot, so no separate update route.
             Route::post('budgets', [BudgetController::class, 'store'])->name('budgets.store');
             Route::delete('budgets/{budget:uuid}', [BudgetController::class, 'destroy'])->name('budgets.destroy');
-        });
-
-        /*
-         * The exercise module.
-         *
-         * Nothing here needs a special guard for the module being opt-in: the
-         * ability is derived from exercise.* permissions (TokenAbility::
-         * grantableTo), so an account that was never granted the module cannot
-         * hold a token carrying these in the first place. The policies check
-         * again behind them.
-         */
-        Route::middleware('abilities:'.TokenAbility::ExerciseRead->value)->group(function () {
-            Route::get('workouts', [WorkoutController::class, 'index'])->name('workouts.index');
-            Route::get('workouts/summary', [WorkoutController::class, 'summary'])->name('workouts.summary');
-            Route::get('exercises', [WorkoutController::class, 'exercises'])->name('exercises.index');
-            // After the literal segments above, or 'summary' binds as a uuid.
-            Route::get('workouts/{workout:uuid}', [WorkoutController::class, 'show'])->name('workouts.show');
-        });
-
-        Route::middleware('abilities:'.TokenAbility::ExerciseWrite->value)->group(function () {
-            Route::post('workouts', [WorkoutController::class, 'store'])->name('workouts.store');
-            Route::patch('workouts/{workout:uuid}', [WorkoutController::class, 'update'])->name('workouts.update');
-            Route::delete('workouts/{workout:uuid}', [WorkoutController::class, 'destroy'])->name('workouts.destroy');
         });
 
         // The account's own details. Both routes share one ability; the
