@@ -63,6 +63,21 @@ class IncomeTest extends TestCase
         $this->assertArrayNotHasKey('id', $response->json('data.0'));
     }
 
+    public function test_sources_lists_the_callers_sources_most_used_first(): void
+    {
+        $user = User::factory()->create();
+        Income::factory()->for($user)->count(2)->create(['source' => 'Freelance']);
+        Income::factory()->for($user)->count(3)->create(['source' => 'Salary']);
+        Income::factory()->for($user)->create(['source' => 'Bonus']);
+        Income::factory()->create(['source' => 'Theirs']);
+
+        Sanctum::actingAs($user, [TokenAbility::IncomesRead->value]);
+
+        $this->getJson('/api/v1/incomes/sources')
+            ->assertOk()
+            ->assertExactJson(['data' => ['Salary', 'Freelance', 'Bonus']]);
+    }
+
     public function test_index_filters_by_source_and_date_range(): void
     {
         $user = User::factory()->create();

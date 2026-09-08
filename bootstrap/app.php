@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\SetApiLocale;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -40,6 +41,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // that come back for a new token.
         $middleware->api(append: [
             EnsureUserIsActive::class,
+            // Accept-Language picks the locale for translatable columns.
+            SetApiLocale::class,
         ]);
 
         // Sanctum ships these but registers no aliases in Laravel 11+, so

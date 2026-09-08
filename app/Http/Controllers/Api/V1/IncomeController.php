@@ -75,6 +75,32 @@ class IncomeController extends Controller
      *
      * @response 200 {"data": {"month": "2026-09", "total": "1200.00", "count": 3, "by_source": [{"source": "Salary", "total": "1000.00"}, {"source": "Freelance", "total": "200.00"}]}}
      */
+    /**
+     * Income sources
+     *
+     * The sources this person has used, most frequent first, for a picker.
+     * A source is only ever the string on each row — there is no catalogue —
+     * so the list is whatever has been typed before, and a new one is just a
+     * new string on the next POST.
+     *
+     * @response 200 {"data": ["Salary", "Freelance"]}
+     */
+    public function sources(Request $request): JsonResponse
+    {
+        Gate::authorize('viewAny', Income::class);
+
+        $sources = Income::query()
+            ->forUser($request->user()->id)
+            ->groupBy('source')
+            ->selectRaw('source, COUNT(*) as uses')
+            ->orderByDesc('uses')
+            ->orderBy('source')
+            ->pluck('source')
+            ->all();
+
+        return response()->json(['data' => $sources]);
+    }
+
     public function summary(Request $request): JsonResponse
     {
         Gate::authorize('viewAny', Income::class);
