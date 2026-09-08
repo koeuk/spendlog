@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasUuidRouteKey;
+use App\Models\Concerns\LogsActivity;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Budget extends Model
 {
-    use HasFactory, HasUuidRouteKey;
+    use HasFactory, HasUuidRouteKey, LogsActivity;
 
     /**
      * The attributes that are mass assignable.
@@ -62,5 +63,21 @@ class Budget extends Model
     public function scopeForMonth(Builder $query, string $month): Builder
     {
         return $query->whereDate('month', CarbonImmutable::parse($month)->startOfMonth());
+    }
+
+    public function activityLabel(): string
+    {
+        $scope = $this->category?->name ?? 'Overall';
+
+        return $scope.' · '.$this->month?->format('M Y').' · $'.number_format((float) $this->amount, 2);
+    }
+
+    protected function activityRelated(string $attribute, mixed $value): mixed
+    {
+        if ($attribute !== 'category_id') {
+            return null;
+        }
+
+        return $value === null ? 'Overall' : Category::find($value)?->name;
     }
 }

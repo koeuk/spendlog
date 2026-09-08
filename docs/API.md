@@ -116,6 +116,16 @@ than a second email. Wrong, expired and over-guessed codes all return the same
 `422` on `code` — distinguishing them would confirm which emails have a reset
 in flight.
 
+## Branding
+
+### `GET /api/v1/branding` · public
+
+The name, `copyright`, `logo` / `favicon` URLs, and the colours chosen under
+Settings: `button_color` with `branded` (false at the stock colour, meaning the
+client keeps its own accent), and `body_color` with `plain_background` (false
+only for White, the ambient look a client renders its own way). No token: it
+is what the sign-in screen is painted with.
+
 ## Expenses
 
 ### `GET /api/v1/expenses`
@@ -527,6 +537,25 @@ Every figure comes from the same `SpendingTrend` / `SpendingReport` services the
 web Reports page and its PDF export use, so the two clients cannot disagree
 about the same period.
 
+## Activity
+
+### `GET /api/v1/activity`
+
+Every create, update and delete the account has made — expenses, income,
+budgets, categories, savings goals and entries — newest first, paginated like
+the other lists. Each line carries the `subject` kind, a `label` frozen at the
+time ("Lunch · $3.00", so it still reads after the row is gone), and for
+updates a `changes` map of `{field: {from, to}}` with foreign keys already
+rendered as names and dates without their midnight.
+
+Your own log needs no ability beyond being signed in. `?scope=all` lists
+everyone's, with the actor under `user`, and is refused with a 403 unless the
+caller is an admin.
+
+Lines are written from model events, so the web forms and the API are logged
+alike. Nothing is written without a signed-in actor: seeders and console jobs
+leave no trace, and neither do cascade deletes.
+
 ## Profile
 
 The account's own details, behind the `profile:write` ability — a deliberately
@@ -564,6 +593,27 @@ Admins can do the same for any account they may edit:
 web form's reasoning: accounts here are made by an admin for a small known
 group, and the ability plus the `updatePassword` gate already bound who can
 reach this. Existing tokens stay valid.
+
+## Admin · appearance
+
+Behind the `settings:write` ability and an admin check, like the spending
+settings they sit beside.
+
+### `GET|POST /api/v1/admin/settings/branding`
+
+`app_name`, `copyright_holder`, and `logo` / `favicon` as absolute URLs or
+`null`. The update is **multipart on POST** (files do not parse on PUT):
+`app_name` is required, `copyright_holder` blank falls back to the app name,
+and each image is replaced by sending a file, cleared with `remove_logo` /
+`remove_favicon`, or left alone by sending neither. SVG is refused; the favicon
+is squared and shrunk on the way in, exactly as the web form does.
+
+### `GET|PUT /api/v1/admin/settings/colors`
+
+`button_color` (any `#rrggbb` that can carry a readable label) and
+`body_color` (one of the `body_presets`). Both reads return the presets too —
+`button_presets` with `is_default`, `body_presets` with labels — so a client
+draws the same swatches the web page does.
 
 ## Configuration
 

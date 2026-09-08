@@ -6,6 +6,7 @@ use App\Enums\CategoryColor;
 use App\Enums\CategoryIcon;
 use App\Enums\Locale;
 use App\Models\Concerns\HasUuidRouteKey;
+use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,7 +15,7 @@ use Spatie\Translatable\HasTranslations;
 
 class Category extends Model
 {
-    use HasFactory, HasTranslations, HasUuidRouteKey;
+    use HasFactory, HasTranslations, HasUuidRouteKey, LogsActivity;
 
     /**
      * Reading $category->name returns the active locale's value, falling back
@@ -102,5 +103,10 @@ class Category extends Model
     public function budgets(): HasMany
     {
         return $this->hasMany(Budget::class);
+    }
+
+    public function activityLabel(): string
+    {
+        return (string) $this->name;
     }
 }

@@ -282,5 +282,19 @@
     "Add “:name”": "Add “:name”",
     "Will be offered as a source next time.": "Will be offered as a source next time.",
     "new": "new",
-    "Search or type a new one…": "Search or type a new one…"
+    "Search or type a new one…": "Search or type a new one…",
+    "Activity": "Activity",
+    "Activity log": "Activity log",
+    "What you have created, changed and removed, newest first.": "What you have created, changed and removed, newest first.",
+    "Nothing logged yet.": "Nothing logged yet.",
+    "Created": "Created",
+    "Updated": "Updated",
+    "Deleted": "Deleted",
+    "expense": "expense",
+    "income": "income",
+    "budget": "budget",
+    "category": "category",
+    "savings goal": "savings goal",
+    "savings entry": "savings entry",
+    "by :name": "by :name"
 }

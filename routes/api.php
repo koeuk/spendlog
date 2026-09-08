@@ -1,7 +1,9 @@
 <?php
 
 use App\Enums\TokenAbility;
+use App\Http\Controllers\Api\V1\ActivityController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\BrandingController;
 use App\Http\Controllers\Api\V1\BudgetController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\DashboardController;
@@ -46,6 +48,10 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::post('reset-password', [PasswordResetController::class, 'reset'])
         ->middleware('throttle:api-login')
         ->name('password.reset');
+
+    // The name, marks and colours, readable before sign-in so a client can
+    // paint its first screen the way the admin set it.
+    Route::get('branding', BrandingController::class)->name('branding');
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('me', [AuthController::class, 'me'])->name('me');
@@ -142,6 +148,10 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
                 ->name('savings.entries.destroy');
         });
 
+        // Your own activity log needs no ability: it is a record of what this
+        // account did, not a way to do more. ?scope=all is admin-checked inside.
+        Route::get('activity', [ActivityController::class, 'index'])->name('activity.index');
+
         // The profile photo is open to every signed-in account — no ability,
         // no gate. It is cosmetic: unlike the name or email it cannot be used
         // to impersonate or lock anyone out, so a narrow token may still set it.
@@ -183,6 +193,13 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
             Route::get('admin/settings/spending', [SettingsAdminController::class, 'spending'])->name('admin.settings.spending');
             Route::put('admin/settings/spending', [SettingsAdminController::class, 'updateSpending'])->name('admin.settings.spending.update');
+
+            // POST, not PUT: multipart bodies only parse on POST in PHP.
+            Route::get('admin/settings/branding', [SettingsAdminController::class, 'branding'])->name('admin.settings.branding');
+            Route::post('admin/settings/branding', [SettingsAdminController::class, 'updateBranding'])->name('admin.settings.branding.update');
+
+            Route::get('admin/settings/colors', [SettingsAdminController::class, 'colors'])->name('admin.settings.colors');
+            Route::put('admin/settings/colors', [SettingsAdminController::class, 'updateColors'])->name('admin.settings.colors.update');
         });
     });
 });

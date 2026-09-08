@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
@@ -83,6 +84,10 @@ Route::middleware('auth')->group(function () {
         Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
         Route::get('/password', [SettingsController::class, 'password'])->name('password.edit');
+
+        // Open to any signed-in account for their own log; ?scope=all is
+        // admin-checked in the controller.
+        Route::get('/activity', [ActivityController::class, 'index'])->name('activity.index');
 
         // Admin only — enforced in the controller, not just hidden in the UI.
         Route::get('/branding', [SettingsController::class, 'branding'])->name('branding.edit');

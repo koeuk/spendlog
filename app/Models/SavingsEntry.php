@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasUuidRouteKey;
+use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class SavingsEntry extends Model
 {
-    use HasFactory, HasUuidRouteKey;
+    use HasFactory, HasUuidRouteKey, LogsActivity;
 
     /**
      * The attributes that are mass assignable.
@@ -59,5 +60,12 @@ class SavingsEntry extends Model
     public function isWithdrawal(): bool
     {
         return (float) $this->amount < 0;
+    }
+
+    public function activityLabel(): string
+    {
+        $sign = $this->isWithdrawal() ? '-' : '+';
+
+        return ($this->goal?->name ?? 'Savings').' · '.$sign.'$'.number_format(abs((float) $this->amount), 2);
     }
 }

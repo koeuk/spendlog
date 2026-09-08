@@ -18,7 +18,7 @@ let lastMarker = null;
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
-import { CircleHelp, FileText, HandCoins, Palette, ShieldCheck, SwatchBook, UserRound, Users } from 'lucide-vue-next';
+import { CircleHelp, FileText, HandCoins, History, Palette, ShieldCheck, SwatchBook, UserRound, Users } from 'lucide-vue-next';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { CARD, EYEBROW, MUTED } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
@@ -58,6 +58,8 @@ const items = computed(() =>
     [
         { key: 'profile', label: trans('Profile'), href: route('profile.edit'), icon: UserRound, pattern: 'profile.*' },
         { key: 'password', label: trans('Password'), href: route('password.edit'), icon: ShieldCheck, pattern: 'password.edit' },
+        // Everyone has a log of their own, so no permission check here.
+        { key: 'activity', label: trans('Activity'), href: route('activity.index'), icon: History, pattern: 'activity.*' },
         can('users.view')
             ? { key: 'users', label: trans('Users'), href: route('users.index'), icon: Users, pattern: 'users.*' }
             : null,

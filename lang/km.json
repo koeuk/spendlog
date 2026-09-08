@@ -282,5 +282,19 @@
     "Add “:name”": "បន្ថែម “:name”",
     "Will be offered as a source next time.": "នឹងត្រូវផ្តល់ជាប្រភពនៅពេលក្រោយ។",
     "new": "ថ្មី",
-    "Search or type a new one…": "ស្វែងរក ឬវាយបញ្ចូលថ្មី…"
+    "Search or type a new one…": "ស្វែងរក ឬវាយបញ្ចូលថ្មី…",
+    "Activity": "សកម្មភាព",
+    "Activity log": "កំណត់ហេតុសកម្មភាព",
+    "What you have created, changed and removed, newest first.": "អ្វីដែលអ្នកបានបង្កើត កែប្រែ និងលុប ថ្មីបំផុតមុន។",
+    "Nothing logged yet.": "មិនទាន់មានកំណត់ត្រាទេ។",
+    "Created": "បានបង្កើត",
+    "Updated": "បានកែប្រែ",
+    "Deleted": "បានលុប",
+    "expense": "ចំណាយ",
+    "income": "ចំណូល",
+    "budget": "ថវិកា",
+    "category": "ប្រភេទ",
+    "savings goal": "គោលដៅសន្សំ",
+    "savings entry": "កំណត់ត្រាសន្សំ",
+    "by :name": "ដោយ :name"
 }

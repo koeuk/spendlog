@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\CategoryColor;
 use App\Models\Concerns\HasUuidRouteKey;
+use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -19,7 +20,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class SavingsGoal extends Model
 {
-    use HasFactory, HasUuidRouteKey;
+    use HasFactory, HasUuidRouteKey, LogsActivity;
 
     /**
      * The attributes that are mass assignable.
@@ -76,5 +77,10 @@ class SavingsGoal extends Model
     public function scopeWithSaved(Builder $query): Builder
     {
         return $query->withSum('entries as saved_total', 'amount');
+    }
+
+    public function activityLabel(): string
+    {
+        return $this->name.' · $'.number_format((float) $this->target_amount, 2);
     }
 }

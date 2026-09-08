@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasUuidRouteKey;
+use App\Models\Concerns\LogsActivity;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -18,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class Income extends Model
 {
-    use HasFactory, HasUuidRouteKey;
+    use HasFactory, HasUuidRouteKey, LogsActivity;
 
     /**
      * The attributes that are mass assignable.
@@ -71,5 +72,10 @@ class Income extends Model
             $date->startOfMonth()->toDateString(),
             $date->endOfMonth()->toDateString(),
         ]);
+    }
+
+    public function activityLabel(): string
+    {
+        return $this->source.' · $'.number_format((float) $this->amount, 2);
     }
 }

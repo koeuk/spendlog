@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasUuidRouteKey;
+use App\Models\Concerns\LogsActivity;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,7 +13,7 @@ use Spatie\Translatable\HasTranslations;
 
 class Expense extends Model
 {
-    use HasFactory, HasTranslations, HasUuidRouteKey;
+    use HasFactory, HasTranslations, HasUuidRouteKey, LogsActivity;
 
     /**
      * Reading $expense->item returns the active locale's value, falling back to
@@ -77,5 +78,15 @@ class Expense extends Model
             $date->startOfMonth()->toDateString(),
             $date->endOfMonth()->toDateString(),
         ]);
+    }
+
+    public function activityLabel(): string
+    {
+        return $this->item.' · $'.number_format((float) $this->price, 2);
+    }
+
+    protected function activityRelated(string $attribute, mixed $value): mixed
+    {
+        return $attribute === 'category_id' ? Category::find($value)?->name : null;
     }
 }
