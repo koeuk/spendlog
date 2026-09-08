@@ -11,6 +11,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\HasApiTokens;
@@ -69,6 +70,39 @@ class User extends Authenticatable implements MustVerifyEmail
      *
      * @return array<string, string>
      */
+    /** Where profile photos live on the 'public' disk. */
+    public const AVATAR_DIR = 'avatars';
+
+    /**
+     * Replace the profile photo with this upload, deleting the old file so
+     * the disk does not fill with orphans. Shared by the self-service and
+     * admin endpoints so the two cannot drift on where photos go.
+     */
+    public function storeAvatar(UploadedFile $file): void
+    {
+        $previous = $this->avatar_path;
+
+        $this->avatar_path = $file->store(self::AVATAR_DIR, 'public');
+        $this->save();
+
+        if ($previous && $previous !== $this->avatar_path) {
+            Storage::disk('public')->delete($previous);
+        }
+    }
+
+    /** Delete the file and clear the path. A no-op without a photo. */
+    public function removeAvatar(): void
+    {
+        if (! $this->avatar_path) {
+            return;
+        }
+
+        Storage::disk('public')->delete($this->avatar_path);
+
+        $this->avatar_path = null;
+        $this->save();
+    }
+
     protected function casts(): array
     {
         return [

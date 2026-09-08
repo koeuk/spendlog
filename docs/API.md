@@ -552,6 +552,12 @@ These two sit **outside** the `profile:write` ability and the `updateProfile`
 gate on purpose: a photo is cosmetic, so every signed-in account may set one
 even when it may not rotate its own email.
 
+Admins can do the same for any account they may edit:
+`POST /api/v1/admin/users/{uuid}/avatar` (multipart `avatar`) and
+`DELETE /api/v1/admin/users/{uuid}/avatar`, under `users:write` and
+`UserPolicy::update`. Both return the admin row, which now also carries
+`avatar_url`.
+
 ### `PUT /api/v1/password`
 
 `password` + `password_confirmation`. No current-password check, mirroring the

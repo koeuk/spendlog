@@ -8,6 +8,8 @@ use App\Models\Faq;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -55,6 +57,50 @@ class AdminTest extends TestCase
         $this->getJson('/api/v1/admin/users')
             ->assertOk()
             ->assertJsonStructure(['data' => [['uuid', 'name', 'email', 'role', 'status']]]);
+    }
+
+    public function test_an_admin_sets_and_removes_a_users_photo(): void
+    {
+        Storage::fake('public');
+
+        $admin = $this->admin();
+        $user = $this->user();
+
+        Sanctum::actingAs($admin, [TokenAbility::UsersWrite->value]);
+
+        $this->post("/api/v1/admin/users/{$user->uuid}/avatar", [
+            'avatar' => UploadedFile::fake()->image('them.jpg', 300, 300),
+        ], ['Accept' => 'application/json'])
+            ->assertOk()
+            ->assertJsonPath('data.uuid', $user->uuid)
+            ->assertJsonPath('data.avatar_url', fn ($url) => str_contains($url, '/storage/avatars/'));
+
+        $path = $user->fresh()->avatar_path;
+        Storage::disk('public')->assertExists($path);
+
+        $this->deleteJson("/api/v1/admin/users/{$user->uuid}/avatar")
+            ->assertOk()
+            ->assertJsonPath('data.avatar_url', null);
+
+        Storage::disk('public')->assertMissing($path);
+        $this->assertNull($user->fresh()->avatar_path);
+    }
+
+    public function test_a_regular_user_cannot_set_someone_elses_photo(): void
+    {
+        Storage::fake('public');
+
+        $me = $this->user();
+        $them = $this->user();
+
+        // Even with the ability forged onto the token, the policy still says no.
+        Sanctum::actingAs($me, [TokenAbility::UsersWrite->value]);
+
+        $this->post("/api/v1/admin/users/{$them->uuid}/avatar", [
+            'avatar' => UploadedFile::fake()->image('x.jpg'),
+        ], ['Accept' => 'application/json'])->assertForbidden();
+
+        $this->assertNull($them->fresh()->avatar_path);
     }
 
     public function test_a_regular_users_token_never_carries_the_users_abilities(): void

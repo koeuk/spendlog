@@ -150,6 +150,49 @@ class UserAdminController extends Controller
     }
 
     /**
+     * Set a user's photo
+     *
+     * Multipart, field `avatar`. The same store as the self-service endpoint,
+     * gated by UserPolicy::update — so a super admin's photo is as out of
+     * reach as the rest of their account.
+     *
+     * @urlParam user string required The user UUID.
+     *
+     * @bodyParam avatar file required A JPEG, PNG or WebP up to 4 MB.
+     *
+     * @response 200 {"data": {"uuid": "0198a...", "name": "Sam", "avatar_url": "http://.../storage/avatars/abc.jpg?v=1725000000", "role": "user", "status": "active"}}
+     * @response 403 scenario="target out of reach or missing users.manage" {"message": "This action is unauthorized."}
+     */
+    public function storeAvatar(Request $request, User $user): JsonResponse
+    {
+        Gate::authorize('update', $user);
+
+        $request->validate([
+            'avatar' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+        ]);
+
+        $user->storeAvatar($request->file('avatar'));
+
+        return response()->json(['data' => $this->row($user->load('roles'))]);
+    }
+
+    /**
+     * Remove a user's photo
+     *
+     * @urlParam user string required The user UUID.
+     *
+     * @response 200 {"data": {"uuid": "0198a...", "name": "Sam", "avatar_url": null, "role": "user", "status": "active"}}
+     */
+    public function destroyAvatar(User $user): JsonResponse
+    {
+        Gate::authorize('update', $user);
+
+        $user->removeAvatar();
+
+        return response()->json(['data' => $this->row($user->load('roles'))]);
+    }
+
+    /**
      * One row, shaped for an admin list — carries what UserResource hides
      * from ordinary callers: the role and the status.
      *
@@ -162,6 +205,7 @@ class UserAdminController extends Controller
             'name' => $user->name,
             'username' => $user->username,
             'email' => $user->email,
+            'avatar_url' => $user->avatar_url,
             'role' => $user->roles->first()?->name ?? RoleName::User->value,
             'status' => $user->status->value ?? UserStatus::Active->value,
             'email_verified_at' => $user->email_verified_at?->toIso8601String(),

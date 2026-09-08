@@ -7,7 +7,6 @@ use App\Http\Requests\ProfileUpdateRequest;
 use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * @group Profile
@@ -51,9 +50,6 @@ class ProfileController extends Controller
         return new UserResource($request->user());
     }
 
-    /** Where profile photos live on the 'public' disk. */
-    private const AVATAR_DIR = 'avatars';
-
     /**
      * Upload a profile photo
      *
@@ -72,17 +68,9 @@ class ProfileController extends Controller
             'avatar' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
         ]);
 
-        $user = $request->user();
-        $previous = $user->avatar_path;
+        $request->user()->storeAvatar($request->file('avatar'));
 
-        $user->avatar_path = $request->file('avatar')->store(self::AVATAR_DIR, 'public');
-        $user->save();
-
-        if ($previous && $previous !== $user->avatar_path) {
-            Storage::disk('public')->delete($previous);
-        }
-
-        return new UserResource($user);
+        return new UserResource($request->user());
     }
 
     /**
@@ -95,15 +83,8 @@ class ProfileController extends Controller
      */
     public function destroyAvatar(Request $request): UserResource
     {
-        $user = $request->user();
+        $request->user()->removeAvatar();
 
-        if ($user->avatar_path) {
-            Storage::disk('public')->delete($user->avatar_path);
-
-            $user->avatar_path = null;
-            $user->save();
-        }
-
-        return new UserResource($user);
+        return new UserResource($request->user());
     }
 }

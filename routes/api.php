@@ -168,6 +168,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::post('admin/users', [UserAdminController::class, 'store'])->name('admin.users.store');
             Route::patch('admin/users/{user:uuid}', [UserAdminController::class, 'update'])->name('admin.users.update');
             Route::delete('admin/users/{user:uuid}', [UserAdminController::class, 'destroy'])->name('admin.users.destroy');
+            // An admin setting someone's photo for them; UserPolicy::update rules.
+            Route::post('admin/users/{user:uuid}/avatar', [UserAdminController::class, 'storeAvatar'])->name('admin.users.avatar.store');
+            Route::delete('admin/users/{user:uuid}/avatar', [UserAdminController::class, 'destroyAvatar'])->name('admin.users.avatar.destroy');
         });
 
         // FAQ reads are open to any token — the Help screen is for everyone.
