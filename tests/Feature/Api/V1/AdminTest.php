@@ -237,4 +237,23 @@ class AdminTest extends TestCase
         $this->getJson('/api/v1/admin/users')->assertForbidden();
         $this->getJson('/api/v1/admin/settings/spending')->assertForbidden();
     }
+
+    public function test_any_signed_in_account_reads_the_money_settings(): void
+    {
+        // Not admin-only: a client needs the rate to show what riel amount it
+        // is about to send, and only an admin may change it.
+        $user = $this->user();
+
+        Sanctum::actingAs($user, [TokenAbility::DashboardRead->value]);
+
+        $this->getJson('/api/v1/settings/money')
+            ->assertOk()
+            ->assertJsonStructure(['data' => ['khr_per_usd', 'default_currency']])
+            ->assertJsonPath('data.khr_per_usd', fn ($rate) => is_numeric($rate) && $rate > 0);
+    }
+
+    public function test_the_money_settings_still_need_a_session(): void
+    {
+        $this->getJson('/api/v1/settings/money')->assertUnauthorized();
+    }
 }

@@ -56,6 +56,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('me', [AuthController::class, 'me'])->name('me');
+        // The rate and default currency, for any signed-in client: they are
+        // needed to *enter* money, not to administer it.
+        Route::get('settings/money', [SettingsAdminController::class, 'money'])->name('settings.money');
         Route::post('logout', [AuthController::class, 'logout'])->name('logout');
 
         Route::get('dashboard', DashboardController::class)

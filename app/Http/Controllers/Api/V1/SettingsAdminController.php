@@ -38,6 +38,31 @@ class SettingsAdminController extends Controller
     }
 
     /**
+     * Money settings
+     *
+     * The two figures a client needs to *enter* money, readable by any
+     * signed-in account: the rate a riel amount converts at, and which
+     * currency the amount fields start on.
+     *
+     * Not admin-only, though only an admin may change them. Without the rate
+     * a client cannot show what "៛" it is about to send, so switching an
+     * amount field to riel had to clear it rather than convert — a client
+     * that cannot read the rate can only guess, and guessing at money is
+     * worse than asking again.
+     *
+     * @response 200 {"data": {"khr_per_usd": 4100, "default_currency": "USD"}}
+     */
+    public function money(): JsonResponse
+    {
+        $settings = AppSetting::current();
+
+        return response()->json(['data' => [
+            'khr_per_usd' => (float) $settings->khrPerUsd(),
+            'default_currency' => $settings->defaultCurrency()->value,
+        ]]);
+    }
+
+    /**
      * Update spending settings
      *
      * Fields are optional except the toggle — omitting the rate leaves it
