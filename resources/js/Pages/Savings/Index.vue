@@ -24,10 +24,10 @@ import { ChevronLeft, ChevronRight } from 'lucide-vue-next';
 /**
  * Savings, a month at a time — the same shape as the Budgets page.
  *
- * The headline is the all-time balance, because savings carry over: what is
- * put aside in September is still there in October. Under it, this month's
- * deposits and withdrawals against what was planned for the month, then the
- * ledger that produced them.
+ * Two summary cards lead. The all-time balance stands alone, because savings
+ * carry over: what is put aside in September is still there in October, and no
+ * single month can state it. Beside it, this month against its plan. Then the
+ * ledger of deposits and withdrawals that produced the month's figure.
  */
 const props = defineProps({
     // SavingsSummary::forMonth for the month being viewed.
@@ -268,66 +268,87 @@ const isEmpty = computed(() => props.entries.length === 0);
         </template>
 
         <div class="space-y-4 pb-8 pt-2">
-            <!-- The balance leads: it is the figure that answers "how much do
-                 I have put aside", which no single month can. -->
-            <div :class="[CARD, 'p-5']">
-                <p :class="EYEBROW">{{ __('Total saved') }}</p>
-                <div class="mt-1 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                    <span>
+            <!--
+                Two cards, not one. The balance answers "how much have I put
+                aside", which no single month can, and the month answers "am I
+                keeping to my plan". Together in one card the percent sat
+                beside the all-time figure and read as a share of it, which it
+                is not.
+            -->
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div :class="[CARD, 'p-5']">
+                    <p :class="EYEBROW">{{ __('Total saved') }}</p>
+                    <p class="mt-1">
                         <span :class="FIGURE">{{ money.format(summary.total_saved) }}</span>
-                        <span class="ms-2 text-sm" :class="MUTED">{{ riel(summary.total_saved) }}</span>
-                    </span>
-                    <span class="text-sm font-medium" :class="percentClass">
-                        {{ summary.percent }}%
-                    </span>
+                    </p>
+                    <p class="mt-1 text-sm" :class="MUTED">
+                        {{ riel(summary.total_saved) }}
+                    </p>
+                    <p class="mt-3 text-xs" :class="MUTED">{{ __('All months') }}</p>
                 </div>
 
-                <div class="mt-4 mb-1.5 flex items-baseline justify-between text-sm">
-                    <span class="text-gray-900 dark:text-neutral-100">
-                        {{ money.format(summary.saved_this_month) }}
-                        <span class="text-gray-500 dark:text-neutral-400">
-                            {{ __('of :amount this month', { amount: money.format(summary.planned) }) }}
+                <div :class="[CARD, 'p-5']">
+                    <div class="flex items-start justify-between gap-3">
+                        <p :class="EYEBROW">{{ __('This month') }}</p>
+                        <Button
+                            v-if="can.create"
+                            variant="outline"
+                            size="xs"
+                            class="rounded-xl max-sm:h-8"
+                            @click="openPlan"
+                        >
+                            {{ plan ? __('Edit plan') : __('Set plan') }}
+                        </Button>
+                    </div>
+
+                    <div class="mt-1 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                        <span :class="FIGURE">{{ money.format(summary.saved_this_month) }}</span>
+                        <span
+                            v-if="summary.planned > 0"
+                            class="text-sm font-medium"
+                            :class="percentClass"
+                        >
+                            {{ summary.percent }}%
                         </span>
-                    </span>
-                    <Button
-                        v-if="can.create"
-                        variant="outline"
-                        size="xs"
-                        class="rounded-xl max-sm:h-8"
-                        @click="openPlan"
-                    >
-                        {{ plan ? __('Edit plan') : __('Set plan') }}
-                    </Button>
-                </div>
+                    </div>
 
-                <div
-                    class="h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-neutral-800"
-                    role="progressbar"
-                    :aria-valuenow="summary.percent"
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                >
-                    <div
-                        class="h-full rounded-full"
-                        :class="barClass"
-                        :style="{ width: `${summary.percent}%` }"
-                    />
-                </div>
+                    <template v-if="summary.planned > 0">
+                        <p class="mt-1 text-sm" :class="MUTED">
+                            {{ __('of :amount this month', { amount: money.format(summary.planned) }) }}
+                        </p>
 
-                <p class="mt-2 flex flex-wrap justify-between gap-x-3 text-xs" :class="MUTED">
-                    <span v-if="summary.planned > 0">
-                        {{ __(':amount to go', { amount: money.format(summary.remaining) }) }}
-                    </span>
-                    <span v-else>{{ __('No savings plan set for this month.') }}</span>
-                    <button
-                        v-if="plan && can.create"
-                        type="button"
-                        class="underline-offset-2 hover:underline"
-                        @click="confirmClearPlan"
-                    >
-                        {{ __('Clear plan') }}
-                    </button>
-                </p>
+                        <div
+                            class="mt-4 h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-neutral-800"
+                            role="progressbar"
+                            :aria-valuenow="summary.percent"
+                            aria-valuemin="0"
+                            aria-valuemax="100"
+                        >
+                            <div
+                                class="h-full rounded-full"
+                                :class="barClass"
+                                :style="{ width: `${summary.percent}%` }"
+                            />
+                        </div>
+
+                        <p class="mt-2 flex flex-wrap justify-between gap-x-3 text-xs" :class="MUTED">
+                            <span>
+                                {{ __(':amount to go', { amount: money.format(summary.remaining) }) }}
+                            </span>
+                            <button
+                                v-if="plan && can.create"
+                                type="button"
+                                class="underline-offset-2 hover:underline"
+                                @click="confirmClearPlan"
+                            >
+                                {{ __('Clear plan') }}
+                            </button>
+                        </p>
+                    </template>
+                    <p v-else class="mt-3 text-xs" :class="MUTED">
+                        {{ __('No savings plan set for this month.') }}
+                    </p>
+                </div>
             </div>
 
             <div v-if="isEmpty" :class="[CARD, 'p-10 text-center']">
