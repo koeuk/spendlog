@@ -465,7 +465,7 @@ intention goes.
 ```bash
 curl -X POST https://spendlog.test/api/v1/savings/entries \
   -H 'Authorization: Bearer 3|kR9x...' -H 'Accept: application/json' \
-  -d 'type=deposit' -d 'amount=50' -d 'saved_on=2026-09-05'
+  -d 'type=deposit' -d 'amount=50' -d 'source=Salary' -d 'saved_on=2026-09-05'
 ```
 
 `type` is `deposit` or `withdraw`; `amount` is always positive on the wire
@@ -473,6 +473,14 @@ curl -X POST https://spendlog.test/api/v1/savings/entries \
 future; `note` is up to 500 characters; `currency=KHR` converts as everywhere
 else. A withdrawal larger than `total_saved` is a `422` with
 `errors.amount = ["You cannot withdraw more than is saved."]`.
+
+`source` is an optional label saying where a deposit came from — trimmed, up
+to 255 characters, blank stored as `null`. It is a plain string, not a key
+into `incomes`: what goes into savings in a month is rarely one payment, so
+naming a single income as its origin would claim a precision nobody has.
+`GET /api/v1/incomes/sources` returns the account's own sources, most used
+first, to populate a picker. A `source` sent with a `withdraw` is dropped —
+money leaving savings has no origin to name.
 
 ### `PATCH /api/v1/savings/entries/{uuid}` → `200`
 

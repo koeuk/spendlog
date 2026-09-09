@@ -7,6 +7,7 @@ import DateField from '@/Components/DateField.vue';
 import FormActions from '@/Components/FormActions.vue';
 import { MUTED } from '@/lib/appStyles';
 import { Button } from '@/Components/ui/button';
+import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
 import { Textarea } from '@/Components/ui/textarea';
 import { trans } from '@/lib/i18n';
@@ -26,6 +27,9 @@ const props = defineProps({
     total_saved: { type: Number, default: 0 },
     // Present when editing an existing line.
     entry: { type: Object, default: null },
+    // Labels to offer for "where did this come from" — the account's own
+    // income sources, most used first.
+    sources: { type: Array, default: () => [] },
 });
 
 function todayString() {
@@ -46,6 +50,7 @@ const form = useForm({
     // than relabelling a dollar figure as riel.
     amount: props.entry ? String(props.entry.amount) : '',
     currency: props.entry ? 'USD' : defaultCurrency,
+    source: props.entry?.source ?? '',
     saved_on: props.entry?.saved_on ?? todayString(),
     note: props.entry?.note ?? '',
 });
@@ -129,6 +134,31 @@ function submit() {
 
                 <div>
                     <Label>{{ __('Date') }}</Label>
+                    <!-- Only a deposit has an origin to name; a withdrawal
+                         is money leaving, and the server drops a source sent
+                         with one anyway. -->
+                    <div v-if="!withdrawing" class="space-y-1.5">
+                        <Label for="source">{{ __('Where from') }}</Label>
+                        <Input
+                            id="source"
+                            v-model="form.source"
+                            list="savings-sources"
+                            maxlength="255"
+                            autocomplete="off"
+                            :placeholder="__('Salary, Freelance… (optional)')"
+                            :aria-invalid="!!form.errors.source"
+                        />
+                        <datalist id="savings-sources">
+                            <option v-for="s in sources" :key="s" :value="s" />
+                        </datalist>
+                        <p
+                            v-if="form.errors.source"
+                            class="text-sm text-red-600 dark:text-red-400"
+                        >
+                            {{ form.errors.source }}
+                        </p>
+                    </div>
+
                     <DateField v-model="form.saved_on" no-future />
                     <p
                         v-if="form.errors.saved_on"

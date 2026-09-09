@@ -33,6 +33,7 @@ class SavingsEntry extends Model
      */
     protected $fillable = [
         'amount',
+        'source',
         'saved_on',
         'note',
     ];

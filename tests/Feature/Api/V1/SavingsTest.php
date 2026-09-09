@@ -423,4 +423,70 @@ class SavingsTest extends TestCase
         $this->getJson('/api/v1/savings/summary')->assertForbidden();
         $this->getJson('/api/v1/savings/plan')->assertForbidden();
     }
+
+    public function test_a_deposit_records_where_it_came_from(): void
+    {
+        $user = User::factory()->create();
+
+        Sanctum::actingAs($user, [TokenAbility::SavingsWrite->value, TokenAbility::SavingsRead->value]);
+
+        $this->postJson('/api/v1/savings/entries', [
+            'type' => 'deposit',
+            'amount' => '100',
+            'source' => '  Salary  ',
+            'saved_on' => '2026-09-05',
+        ])
+            ->assertCreated()
+            // Trimmed, not stored with the whitespace someone pasted in.
+            ->assertJsonPath('data.source', 'Salary');
+
+        $this->assertSame('Salary', $user->savingsEntries()->sole()->source);
+    }
+
+    public function test_a_withdrawal_never_carries_a_source(): void
+    {
+        $user = User::factory()->create();
+
+        Sanctum::actingAs($user, [TokenAbility::SavingsWrite->value]);
+
+        $this->postJson('/api/v1/savings/entries', [
+            'type' => 'deposit',
+            'amount' => '100',
+            'saved_on' => '2026-09-01',
+        ])->assertCreated();
+
+        // Money leaving savings has no origin to name, so one sent anyway is
+        // dropped rather than stored as a claim that is not true.
+        $this->postJson('/api/v1/savings/entries', [
+            'type' => 'withdraw',
+            'amount' => '20',
+            'source' => 'Salary',
+            'saved_on' => '2026-09-05',
+        ])
+            ->assertCreated()
+            ->assertJsonPath('data.source', null);
+    }
+
+    public function test_a_source_can_be_cleared_on_edit(): void
+    {
+        $user = User::factory()->create();
+
+        Sanctum::actingAs($user, [TokenAbility::SavingsWrite->value]);
+
+        $uuid = $this->postJson('/api/v1/savings/entries', [
+            'type' => 'deposit',
+            'amount' => '100',
+            'source' => 'Salary',
+            'saved_on' => '2026-09-05',
+        ])->json('data.uuid');
+
+        $this->patchJson("/api/v1/savings/entries/{$uuid}", [
+            'type' => 'deposit',
+            'amount' => '100',
+            'source' => '',
+            'saved_on' => '2026-09-05',
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.source', null);
+    }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\SavingsEntryRequest;
 use App\Http\Requests\SavingsPlanRequest;
+use App\Models\Income;
 use App\Models\SavingsEntry;
 use App\Models\SavingsPlan;
 use App\Models\User;
@@ -127,6 +128,7 @@ class SavingsController extends Controller
 
         return Inertia::render('Savings/EntryForm', [
             'total_saved' => $this->summary->totalSaved($request->user()),
+            'sources' => $this->sources($request->user()),
             'type' => $request->query('type') === SavingsEntryRequest::WITHDRAW
                 ? SavingsEntryRequest::WITHDRAW
                 : SavingsEntryRequest::DEPOSIT,
@@ -139,14 +141,43 @@ class SavingsController extends Controller
 
         return Inertia::render('Savings/EntryForm', [
             'total_saved' => $this->summary->totalSaved($request->user()),
+            'sources' => $this->sources($request->user()),
             'type' => $entry->isWithdrawal() ? SavingsEntryRequest::WITHDRAW : SavingsEntryRequest::DEPOSIT,
             'entry' => [
                 'uuid' => $entry->uuid,
                 'amount' => abs((float) $entry->amount),
+                'source' => $entry->source,
                 'saved_on' => $entry->saved_on->toDateString(),
                 'note' => $entry->note,
             ],
         ]);
+    }
+
+    /**
+     * The labels to offer for "where did this come from": the account's own
+     * income sources, most used first, plus anything it has already typed on
+     * a deposit — so a one-off name survives to the next entry.
+     *
+     * @return array<int, string>
+     */
+    private function sources(User $user): array
+    {
+        $income = Income::query()
+            ->forUser($user->id)
+            ->groupBy('source')
+            ->selectRaw('source, COUNT(*) as uses')
+            ->orderByDesc('uses')
+            ->orderBy('source')
+            ->pluck('source');
+
+        $saved = SavingsEntry::query()
+            ->where('user_id', $user->id)
+            ->whereNotNull('source')
+            ->distinct()
+            ->orderBy('source')
+            ->pluck('source');
+
+        return $income->concat($saved)->unique()->values()->all();
     }
 
     public function storeEntry(SavingsEntryRequest $request): RedirectResponse

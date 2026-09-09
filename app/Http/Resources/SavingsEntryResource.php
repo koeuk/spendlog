@@ -23,6 +23,8 @@ class SavingsEntryResource extends JsonResource
             // absolute amount, the same shape the client sent.
             'type' => $this->isWithdrawal() ? SavingsEntryRequest::WITHDRAW : SavingsEntryRequest::DEPOSIT,
             'amount' => number_format(abs((float) $this->amount), 2, '.', ''),
+            // Where a deposit came from, or null. Withdrawals never carry one.
+            'source' => $this->source,
             'saved_on' => $this->saved_on?->toDateString(),
             'note' => $this->note,
             'created_at' => $this->created_at?->toIso8601String(),

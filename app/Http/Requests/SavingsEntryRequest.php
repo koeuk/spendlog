@@ -36,6 +36,10 @@ class SavingsEntryRequest extends FormRequest
             'amount' => ['required', 'numeric', 'min:0.01', 'max:99999999.99'],
             'currency' => ['nullable', Rule::enum(Currency::class)],
             'saved_on' => ['required', 'date', 'before_or_equal:today'],
+            // Where a deposit came from. A free label offered from the
+            // account's own income sources, not a key into them — see the
+            // migration for why.
+            'source' => ['nullable', 'string', 'max:255'],
             'note' => ['nullable', 'string', 'max:500'],
         ];
     }
@@ -66,14 +70,18 @@ class SavingsEntryRequest extends FormRequest
     /**
      * The validated input as the ledger stores it: signed amount, no type.
      *
-     * @return array{amount: float, saved_on: string, note: string|null}
+     * @return array{amount: float, source: string|null, saved_on: string, note: string|null}
      */
     public function entryAttributes(): array
     {
         $amount = $this->usdAmount();
+        $source = trim((string) $this->validated('source'));
 
         return [
             'amount' => $this->isWithdrawal() ? -$amount : $amount,
+            // Money leaving savings has no origin to name, so a source sent
+            // with a withdrawal is dropped rather than stored misleadingly.
+            'source' => ($this->isWithdrawal() || $source === '') ? null : $source,
             'saved_on' => $this->validated('saved_on'),
             'note' => $this->validated('note') ?? null,
         ];
