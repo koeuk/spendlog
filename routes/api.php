@@ -156,23 +156,28 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         });
 
         Route::middleware('abilities:'.TokenAbility::SavingsRead->value)->group(function () {
-            Route::get('savings', [SavingsController::class, 'index'])->name('savings.index');
+            // Literal segments first: 'summary', 'plan' and 'entries' would
+            // otherwise bind as a uuid to whatever came before them.
             Route::get('savings/summary', [SavingsController::class, 'summary'])->name('savings.summary');
-            // After the literal segment above, or 'summary' binds as a uuid.
-            Route::get('savings/{goal:uuid}', [SavingsController::class, 'show'])->name('savings.show');
+            Route::get('savings/plan', [SavingsController::class, 'plan'])->name('savings.plan');
+            // The month's ledger, not the plans: savings is read a month at a
+            // time, like budgets.
+            Route::get('savings', [SavingsController::class, 'index'])->name('savings.index');
         });
 
         Route::middleware('abilities:'.TokenAbility::SavingsWrite->value)->group(function () {
-            Route::post('savings', [SavingsController::class, 'store'])->name('savings.store');
-            Route::patch('savings/{goal:uuid}', [SavingsController::class, 'update'])->name('savings.update');
-            Route::delete('savings/{goal:uuid}', [SavingsController::class, 'destroy'])->name('savings.destroy');
+            // Upserts the (user, month) slot, like POST /budgets — there is no
+            // separate update route.
+            Route::post('savings/plan', [SavingsController::class, 'storePlan'])->name('savings.plan.store');
+            Route::delete('savings/plan/{plan:uuid}', [SavingsController::class, 'destroyPlan'])
+                ->name('savings.plan.destroy');
 
-            // The ledger. Writes are authorised as an update of the goal, and
-            // the entry binding is scoped to it so an entry uuid from another
-            // goal is a 404 rather than a hit.
-            Route::post('savings/{goal:uuid}/entries', [SavingsController::class, 'storeEntry'])->name('savings.entries.store');
-            Route::delete('savings/{goal:uuid}/entries/{entry:uuid}', [SavingsController::class, 'destroyEntry'])
-                ->scopeBindings()
+            // The ledger. Entries stand on their own now that goals are gone,
+            // and are authorised by SavingsEntryPolicy.
+            Route::post('savings/entries', [SavingsController::class, 'storeEntry'])->name('savings.entries.store');
+            Route::patch('savings/entries/{entry:uuid}', [SavingsController::class, 'updateEntry'])
+                ->name('savings.entries.update');
+            Route::delete('savings/entries/{entry:uuid}', [SavingsController::class, 'destroyEntry'])
                 ->name('savings.entries.destroy');
         });
 

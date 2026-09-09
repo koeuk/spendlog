@@ -240,9 +240,10 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Income::class);
     }
 
-    public function savingsGoals(): HasMany
+    /** The monthly "put this much aside" rows, one per month at most. */
+    public function savingsPlans(): HasMany
     {
-        return $this->hasMany(SavingsGoal::class);
+        return $this->hasMany(SavingsPlan::class);
     }
 
     /** The expense and income templates that repeat on this person's behalf. */
@@ -251,10 +252,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(RecurringRule::class);
     }
 
-    /**
-     * Every deposit and withdrawal across all of this person's goals — the
-     * read path for "saved this month". Writes go through a goal's entries().
-     */
+    /** Every deposit and withdrawal this person has recorded. */
     public function savingsEntries(): HasMany
     {
         return $this->hasMany(SavingsEntry::class);

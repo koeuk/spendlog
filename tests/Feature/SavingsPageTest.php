@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Enums\Permission;
 use App\Enums\RoleName;
 use App\Models\SavingsEntry;
-use App\Models\SavingsGoal;
+use App\Models\SavingsPlan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -13,8 +13,8 @@ use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
 /**
- * The Savings pages: goals with their balances, the ledger behind each, and
- * the rules on what can go in and out.
+ * The Savings page: one month's plan, the money that actually moved against
+ * it, and the rules on what can go in and out.
  */
 class SavingsPageTest extends TestCase
 {
@@ -53,9 +53,15 @@ class SavingsPageTest extends TestCase
         return json_decode(html_entity_decode($matches[1], ENT_QUOTES), true)['props'];
     }
 
-    private function goalFor(User $user, array $attributes = []): SavingsGoal
+    /** @return array<string, mixed> */
+    private function entryPayload(string $type, string $amount, array $overrides = []): array
     {
-        return SavingsGoal::factory()->for($user)->create(['target_amount' => 500, ...$attributes]);
+        return [
+            'type' => $type,
+            'amount' => $amount,
+            'saved_on' => '2026-09-05',
+            ...$overrides,
+        ];
     }
 
     public function test_the_page_requires_authentication(): void
@@ -63,32 +69,55 @@ class SavingsPageTest extends TestCase
         $this->get(route('savings.index'))->assertRedirect(route('login'));
     }
 
-    public function test_the_page_lists_only_the_viewers_goals_with_their_balances(): void
+    public function test_the_page_shows_the_months_plan_entries_and_the_all_time_balance(): void
     {
         $me = $this->ordinaryUser();
         $someoneElse = $this->ordinaryUser();
 
-        $goal = $this->goalFor($me, ['name' => 'Laptop']);
-        SavingsEntry::factory()->for($goal, 'goal')->create(['amount' => 150, 'saved_on' => '2026-09-01']);
-        SavingsEntry::factory()->for($goal, 'goal')->create(['amount' => -50, 'saved_on' => '2026-09-02']);
-        $this->goalFor($someoneElse, ['name' => 'Theirs']);
+        SavingsPlan::factory()->for($me)->forMonth('2026-09')->create(['amount' => 100]);
+        SavingsEntry::factory()->for($me)->create(['amount' => 200, 'saved_on' => '2026-08-10']);
+        SavingsEntry::factory()->for($me)->create(['amount' => 80, 'saved_on' => '2026-09-01']);
+        SavingsEntry::factory()->for($me)->withdrawal(20)->create(['saved_on' => '2026-09-02']);
+        SavingsEntry::factory()->for($someoneElse)->create(['amount' => 999, 'saved_on' => '2026-09-03']);
 
         $response = $this->actingAs($me)->get(route('savings.index'));
 
         $response->assertOk();
         $props = $this->props($response);
 
-        $this->assertCount(1, $props['goals']);
-        $this->assertSame('Laptop', $props['goals'][0]['name']);
-        $this->assertEqualsWithDelta(100.0, $props['goals'][0]['saved'], 0.001);
-        $this->assertEqualsWithDelta(400.0, $props['goals'][0]['remaining'], 0.001);
-        $this->assertSame(20, $props['goals'][0]['percent']);
-        $this->assertFalse($props['goals'][0]['reached']);
+        $this->assertSame('2026-09', $props['month']);
+        $this->assertEqualsWithDelta(100.0, $props['summary']['planned'], 0.001);
+        $this->assertEqualsWithDelta(60.0, $props['summary']['saved_this_month'], 0.001);
+        // All time, August included; the other account's money is not.
+        $this->assertEqualsWithDelta(260.0, $props['summary']['total_saved'], 0.001);
+        $this->assertSame(60, $props['summary']['percent']);
+        $this->assertSame('ok', $props['summary']['status']);
 
-        $this->assertSame(1, $props['totals']['goals_count']);
-        $this->assertEqualsWithDelta(100.0, $props['totals']['total_saved'], 0.001);
-        $this->assertEqualsWithDelta(100.0, $props['totals']['saved_this_month'], 0.001);
+        // The month's ledger only, newest first.
+        $this->assertCount(2, $props['entries']);
+        $this->assertSame('2026-09-02', $props['entries'][0]['saved_on']);
+        $this->assertSame('withdraw', $props['entries'][0]['type']);
+        $this->assertEqualsWithDelta(20.0, $props['entries'][0]['amount'], 0.001);
+        $this->assertSame('deposit', $props['entries'][1]['type']);
+
+        $this->assertEqualsWithDelta(100.0, $props['plan']['amount'], 0.001);
         $this->assertTrue($props['can']['create']);
+    }
+
+    public function test_another_month_can_be_opened_from_the_query_string(): void
+    {
+        $me = $this->ordinaryUser();
+        SavingsEntry::factory()->for($me)->create(['amount' => 40, 'saved_on' => '2026-08-10']);
+
+        $props = $this->props($this->actingAs($me)->get(route('savings.index', ['month' => '2026-08'])));
+
+        $this->assertSame('2026-08', $props['month']);
+        $this->assertSame('2026-07', $props['prev_month']);
+        $this->assertSame('2026-09', $props['next_month']);
+        $this->assertCount(1, $props['entries']);
+        // No plan for August: null rather than a zero row.
+        $this->assertNull($props['plan']);
+        $this->assertEqualsWithDelta(0.0, $props['summary']['planned'], 0.001);
     }
 
     public function test_an_account_without_the_permission_is_refused(): void
@@ -99,151 +128,125 @@ class SavingsPageTest extends TestCase
         $this->actingAs($me->fresh())->get(route('savings.index'))->assertForbidden();
     }
 
-    public function test_storing_a_goal_lands_on_its_page(): void
-    {
-        $me = $this->ordinaryUser();
-
-        $response = $this->actingAs($me)->post(route('savings.store'), [
-            'name' => 'Emergency fund',
-            'target_amount' => '500',
-            'deadline' => '2027-01-01',
-            'color' => 'teal',
-        ]);
-
-        $goal = SavingsGoal::query()->forUser($me->id)->firstOrFail();
-
-        $response->assertRedirect(route('savings.show', $goal));
-
-        $this->assertSame('Emergency fund', $goal->name);
-        $this->assertSame('teal', $goal->color->value);
-        $this->assertSame('2027-01-01', $goal->deadline->toDateString());
-    }
-
-    public function test_a_new_goal_cannot_already_be_overdue(): void
+    public function test_setting_the_plan_twice_updates_the_same_row(): void
     {
         $me = $this->ordinaryUser();
 
         $this->actingAs($me)
-            ->from(route('savings.create'))
-            ->post(route('savings.store'), [
-                'name' => 'Late',
-                'target_amount' => '10',
-                'deadline' => '2026-09-07',
-            ])
-            ->assertRedirect(route('savings.create'))
-            ->assertSessionHasErrors('deadline');
-
-        $this->assertDatabaseCount('savings_goals', 0);
-    }
-
-    public function test_the_goal_page_shows_the_ledger_newest_first(): void
-    {
-        $me = $this->ordinaryUser();
-        $goal = $this->goalFor($me);
-        SavingsEntry::factory()->for($goal, 'goal')->create(['amount' => 100, 'saved_on' => '2026-09-01', 'note' => 'First']);
-        SavingsEntry::factory()->for($goal, 'goal')->create(['amount' => -30, 'saved_on' => '2026-09-03', 'note' => 'Taken']);
-
-        $props = $this->props($this->actingAs($me)->get(route('savings.show', $goal))->assertOk());
-
-        $this->assertSame(['Taken', 'First'], array_column($props['entries'], 'note'));
-        $this->assertSame(['withdraw', 'deposit'], array_column($props['entries'], 'type'));
-        // The page speaks in absolute amounts; the sign is the type.
-        $this->assertEqualsWithDelta(30.0, $props['entries'][0]['amount'], 0.001);
-        $this->assertEqualsWithDelta(70.0, $props['goal']['saved'], 0.001);
-        $this->assertTrue($props['can']['update']);
-    }
-
-    public function test_someone_elses_goal_is_forbidden(): void
-    {
-        $me = $this->ordinaryUser();
-        $theirs = $this->goalFor($this->ordinaryUser());
-
-        $this->actingAs($me)->get(route('savings.show', $theirs))->assertForbidden();
-        $this->actingAs($me)->get(route('savings.edit', $theirs))->assertForbidden();
-        $this->actingAs($me)->delete(route('savings.destroy', $theirs))->assertForbidden();
-        $this->actingAs($me)->post(route('savings.entries.store', $theirs), [
-            'type' => 'deposit', 'amount' => '10', 'saved_on' => '2026-09-01',
-        ])->assertForbidden();
-    }
-
-    public function test_a_deposit_is_added_to_the_ledger_under_the_goals_owner(): void
-    {
-        $me = $this->ordinaryUser();
-        $goal = $this->goalFor($me);
-
-        $this->actingAs($me)
-            ->post(route('savings.entries.store', $goal), [
-                'type' => 'deposit',
-                'amount' => '50',
-                'saved_on' => '2026-09-05',
-                'note' => 'Leftover',
-            ])
-            ->assertRedirect(route('savings.show', $goal));
-
-        $this->assertDatabaseHas('savings_entries', [
-            'savings_goal_id' => $goal->id,
-            'user_id' => $me->id,
-            'amount' => '50.0000',
-            'saved_on' => '2026-09-05',
-            'note' => 'Leftover',
-        ]);
-    }
-
-    public function test_a_withdrawal_is_stored_negative_and_cannot_exceed_the_balance(): void
-    {
-        $me = $this->ordinaryUser();
-        $goal = $this->goalFor($me);
-        SavingsEntry::factory()->for($goal, 'goal')->create(['amount' => 40, 'saved_on' => '2026-09-01']);
-
-        $this->actingAs($me)
-            ->from(route('savings.entries.create', $goal))
-            ->post(route('savings.entries.store', $goal), [
-                'type' => 'withdraw', 'amount' => '50', 'saved_on' => '2026-09-05',
-            ])
-            ->assertRedirect(route('savings.entries.create', $goal))
-            ->assertSessionHasErrors('amount');
-
-        $this->assertDatabaseCount('savings_entries', 1);
-
-        $this->actingAs($me)
-            ->post(route('savings.entries.store', $goal), [
-                'type' => 'withdraw', 'amount' => '40', 'saved_on' => '2026-09-05',
-            ])
-            ->assertRedirect(route('savings.show', $goal));
-
-        $this->assertDatabaseHas('savings_entries', ['savings_goal_id' => $goal->id, 'amount' => '-40.0000']);
-    }
-
-    public function test_deleting_an_entry_is_scoped_to_its_goal(): void
-    {
-        $me = $this->ordinaryUser();
-        $goal = $this->goalFor($me);
-        $otherGoal = $this->goalFor($me);
-        $entry = SavingsEntry::factory()->for($goal, 'goal')->create(['amount' => 20]);
-
-        // Right entry, wrong goal in the URL: a 404, not a delete.
-        $this->actingAs($me)
-            ->delete(route('savings.entries.destroy', ['goal' => $otherGoal, 'entry' => $entry]))
-            ->assertNotFound();
-
-        $this->assertDatabaseHas('savings_entries', ['id' => $entry->id]);
-
-        $this->actingAs($me)
-            ->delete(route('savings.entries.destroy', ['goal' => $goal, 'entry' => $entry]))
+            ->post(route('savings.plan.store'), ['month' => '2026-09', 'amount' => '100'])
             ->assertRedirect();
 
-        $this->assertDatabaseMissing('savings_entries', ['id' => $entry->id]);
+        $this->actingAs($me)
+            ->post(route('savings.plan.store'), ['month' => '2026-09', 'amount' => '250'])
+            ->assertRedirect();
+
+        $this->assertSame(1, SavingsPlan::query()->forUser($me->id)->count());
+        $this->assertEqualsWithDelta(
+            250.0,
+            (float) SavingsPlan::query()->forUser($me->id)->firstOrFail()->amount,
+            0.001,
+        );
     }
 
-    public function test_deleting_a_goal_takes_its_ledger_with_it(): void
+    public function test_a_riel_plan_is_stored_in_dollars(): void
     {
         $me = $this->ordinaryUser();
-        $goal = $this->goalFor($me);
-        SavingsEntry::factory()->for($goal, 'goal')->create(['amount' => 20]);
 
-        $this->actingAs($me)->delete(route('savings.destroy', $goal))->assertRedirect(route('savings.index'));
+        $this->actingAs($me)->post(route('savings.plan.store'), [
+            'month' => '2026-09',
+            'amount' => '410000',
+            'currency' => 'KHR',
+        ])->assertRedirect();
 
-        $this->assertDatabaseMissing('savings_goals', ['id' => $goal->id]);
-        $this->assertDatabaseCount('savings_entries', 0);
+        $this->assertEqualsWithDelta(
+            100.0,
+            (float) SavingsPlan::query()->forUser($me->id)->firstOrFail()->amount,
+            0.01,
+        );
+    }
+
+    public function test_clearing_the_plan_leaves_the_money_alone(): void
+    {
+        $me = $this->ordinaryUser();
+        $plan = SavingsPlan::factory()->for($me)->forMonth('2026-09')->create();
+        SavingsEntry::factory()->for($me)->create(['amount' => 60, 'saved_on' => '2026-09-05']);
+
+        $this->actingAs($me)->delete(route('savings.plan.destroy', $plan))->assertRedirect();
+
+        $this->assertDatabaseMissing('savings_plans', ['id' => $plan->id]);
+        $this->assertSame(1, SavingsEntry::query()->forUser($me->id)->count());
+    }
+
+    public function test_someone_elses_plan_or_entry_cannot_be_touched(): void
+    {
+        $me = $this->ordinaryUser();
+        $theirs = $this->ordinaryUser();
+        $plan = SavingsPlan::factory()->for($theirs)->create();
+        $entry = SavingsEntry::factory()->for($theirs)->create(['amount' => 25]);
+
+        $this->actingAs($me)->delete(route('savings.plan.destroy', $plan))->assertForbidden();
+        $this->actingAs($me)->get(route('savings.entries.edit', $entry))->assertForbidden();
+        $this->actingAs($me)->delete(route('savings.entries.destroy', $entry))->assertForbidden();
+
+        $this->assertDatabaseHas('savings_plans', ['id' => $plan->id]);
+        $this->assertDatabaseHas('savings_entries', ['id' => $entry->id]);
+    }
+
+    public function test_a_deposit_and_a_withdrawal_are_recorded_with_their_sign(): void
+    {
+        $me = $this->ordinaryUser();
+
+        $this->actingAs($me)
+            ->post(route('savings.entries.store'), $this->entryPayload('deposit', '150'))
+            ->assertRedirect(route('savings.index', ['month' => '2026-09']));
+
+        $this->actingAs($me)
+            ->post(route('savings.entries.store'), $this->entryPayload('withdraw', '50'))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('savings_entries', ['user_id' => $me->id, 'amount' => 150]);
+        $this->assertDatabaseHas('savings_entries', ['user_id' => $me->id, 'amount' => -50]);
+    }
+
+    public function test_a_withdrawal_is_capped_by_the_all_time_balance(): void
+    {
+        $me = $this->ordinaryUser();
+        // Saved in August; still there to take out in September.
+        SavingsEntry::factory()->for($me)->create(['amount' => 40, 'saved_on' => '2026-08-10']);
+
+        $this->actingAs($me)
+            ->post(route('savings.entries.store'), $this->entryPayload('withdraw', '40.01'))
+            ->assertSessionHasErrors('amount');
+
+        $this->actingAs($me)
+            ->post(route('savings.entries.store'), $this->entryPayload('withdraw', '40'))
+            ->assertRedirect();
+
+        $this->assertSame(2, SavingsEntry::query()->forUser($me->id)->count());
+    }
+
+    public function test_an_entry_can_be_edited_and_deleted(): void
+    {
+        $me = $this->ordinaryUser();
+        $entry = SavingsEntry::factory()->for($me)->create(['amount' => 60, 'saved_on' => '2026-09-02']);
+
+        $this->actingAs($me)->get(route('savings.entries.edit', $entry))->assertOk();
+
+        $this->actingAs($me)
+            ->patch(route('savings.entries.update', $entry), $this->entryPayload('deposit', '90', [
+                'saved_on' => '2026-09-06',
+                'note' => 'Payday',
+            ]))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('savings_entries', [
+            'id' => $entry->id,
+            'amount' => 90,
+            'saved_on' => '2026-09-06',
+            'note' => 'Payday',
+        ]);
+
+        $this->actingAs($me)->delete(route('savings.entries.destroy', $entry))->assertRedirect();
+        $this->assertDatabaseMissing('savings_entries', ['id' => $entry->id]);
     }
 }

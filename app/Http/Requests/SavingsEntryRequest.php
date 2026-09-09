@@ -8,12 +8,12 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * A deposit into, or withdrawal from, one goal.
+ * A deposit into, or withdrawal from, savings.
  *
  * The client always sends a positive amount and says which way it goes; the
  * sign is applied here so the stored ledger is a plain signed column. Whether
- * a withdrawal is *affordable* is not validated here — that needs the goal's
- * current balance under a row lock, which is the controller's job.
+ * a withdrawal is *affordable* is not validated here — that needs the
+ * all-time balance under a row lock, which is the controller's job.
  */
 class SavingsEntryRequest extends FormRequest
 {
@@ -22,7 +22,7 @@ class SavingsEntryRequest extends FormRequest
     public const WITHDRAW = 'withdraw';
 
     /**
-     * Authorization is handled by SavingsGoalPolicy via the controller.
+     * Authorization is handled by SavingsEntryPolicy via the controller.
      */
     public function authorize(): bool
     {

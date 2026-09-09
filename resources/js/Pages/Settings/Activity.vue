@@ -23,7 +23,7 @@ const ICONS = {
     income: HandCoins,
     budget: PiggyBank,
     category: FolderOpen,
-    savings_goal: Flag,
+    savings_plan: Flag,
     savings_entry: Repeat,
 };
 

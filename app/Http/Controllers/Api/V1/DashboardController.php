@@ -47,11 +47,13 @@ class DashboardController extends Controller
      * `breakdown` is empty when nothing was spent this month — the shares would
      * be meaningless.
      *
-     * `income` and `balance` follow `budget_month`: what came in that month, and
-     * that minus what was spent in it. `balance` can be negative. `savings` is
-     * not monthly — it is the standing position across every goal.
+     * `income`, `balance` and `savings` follow `budget_month`: what came in
+     * that month, that minus what was spent in it, and what was put aside
+     * against the month's savings plan. `balance` can be negative.
+     * `savings.total_saved` is the exception — savings carry over between
+     * months, so it is the all-time balance.
      *
-     * @response 200 {"data": {"today": {"date": "2026-07-16", "total": "12.50"}, "summary": {"month": "2026-07", "overall": {"spent": "75.00", "budget": "200.00", "remaining": "125.00", "percent": 38, "bar_percent": 38, "status": "ok"}, "categories": []}, "breakdown": [{"uuid": "0198a...", "name": "Food", "color": "amber", "icon": "utensils", "spent": "75.00", "share": 75}], "recent": [{"uuid": "0198f...", "item": "Coffee", "price": "4.50", "spent_on": "2026-07-16", "category": {"uuid": "0198a...", "name": "Food"}}], "income": {"month": "2026-07", "total": "1200.00"}, "balance": "1125.00", "savings": {"total_saved": "320.00", "total_target": "1500.00", "percent": 21, "goals_count": 2}}}
+     * @response 200 {"data": {"today": {"date": "2026-07-16", "total": "12.50"}, "summary": {"month": "2026-07", "overall": {"spent": "75.00", "budget": "200.00", "remaining": "125.00", "percent": 38, "bar_percent": 38, "status": "ok"}, "categories": []}, "breakdown": [{"uuid": "0198a...", "name": "Food", "color": "amber", "icon": "utensils", "spent": "75.00", "share": 75}], "recent": [{"uuid": "0198f...", "item": "Coffee", "price": "4.50", "spent_on": "2026-07-16", "category": {"uuid": "0198a...", "name": "Food"}}], "income": {"month": "2026-07", "total": "1200.00"}, "balance": "1125.00", "savings": {"month": "2026-07", "planned": "100.00", "saved_this_month": "60.00", "percent": 60, "total_saved": "1240.00"}}}
      *
      * @queryParam budget_month string YYYY-MM. Which month's budgets `summary` reports. Defaults to the current month. Example: 2026-06
      * @queryParam breakdown_month string YYYY-MM. Which month `breakdown` splits. Independent of budget_month. Example: 2026-03
@@ -85,7 +87,10 @@ class DashboardController extends Controller
         // Income sits beside the budget summary on the same month, so the
         // balance is one month's in against the same month's out.
         $income = $this->incomeTotal($user, $budgetMonth);
-        $savings = $this->savings->totals($user);
+        // Savings follow the same month as the budget card, so a client
+        // stepping back a month gets a consistent page. total_saved is the
+        // exception: savings carry over, so it is all time.
+        $savings = $this->savings->forMonth($user, $budgetMonth);
 
         return response()->json([
             'data' => [
@@ -108,10 +113,11 @@ class DashboardController extends Controller
                 // May be negative: more went out than came in.
                 'balance' => $this->money($income - (float) $summary['overall']['spent']),
                 'savings' => [
-                    'total_saved' => $this->money($savings['total_saved']),
-                    'total_target' => $this->money($savings['total_target']),
+                    'month' => $savings['month'],
+                    'planned' => $this->money($savings['planned']),
+                    'saved_this_month' => $this->money($savings['saved_this_month']),
                     'percent' => $savings['percent'],
-                    'goals_count' => $savings['goals_count'],
+                    'total_saved' => $this->money($savings['total_saved']),
                 ],
             ],
         ]);

@@ -369,100 +369,122 @@ unless the caller holds `incomes.manage_all`.
 
 ## Savings
 
-Goals to save towards, each with a ledger of deposits and withdrawals, behind
-`savings:read` / `savings:write`. A goal's balance is always the sum of its
-ledger — nothing is stored that could drift from it — and a withdrawal can
-never take out more than is there, so a balance is never negative.
+A **monthly plan**, exactly like budgets: you say how much to put aside this
+month, and the API reports what actually went aside against it. There are no
+goals and no long-term targets — only the plan for a month and the ledger of
+deposits and withdrawals behind it. Behind `savings:read` / `savings:write`.
 
-### `GET /api/v1/savings`
-
-The caller's own goals, newest first, each with its balance and progress. Not
-paginated.
-
-```json
-{
-  "data": [{
-    "uuid": "0198c...",
-    "name": "Emergency fund",
-    "target_amount": "500.00",
-    "saved": "120.00",
-    "remaining": "380.00",
-    "percent": 24,
-    "reached": false,
-    "deadline": null,
-    "color": "slate",
-    "created_at": "2026-09-01T10:00:00+00:00",
-    "updated_at": "2026-09-01T10:00:00+00:00"
-  }]
-}
-```
-
-`remaining` never goes below `"0.00"` and `percent` is capped at 100 — a goal
-can be over-saved, and `reached` says so, but a bar cannot overflow its track.
-`color` is one of the category palette names.
+Two figures do the work. `saved_this_month` is what moved inside one month,
+signed, so a month that took more out than it put in is negative.
+`total_saved` is the running balance across **every** entry, all time — the
+headline, because savings carry over. A withdrawal is checked against that
+balance, never the month's: money saved in September can come out in October.
 
 ### `GET /api/v1/savings/summary?month=2026-09`
+
+`month` defaults to the current one; anything malformed falls back to it rather
+than erroring.
 
 ```json
 {
   "data": {
     "month": "2026-09",
-    "total_saved": "320.00",
-    "total_target": "1500.00",
-    "percent": 21,
-    "goals_count": 2,
-    "saved_this_month": "50.00"
+    "planned": "100.00",
+    "saved_this_month": "60.00",
+    "remaining": "40.00",
+    "percent": 60,
+    "percent_raw": 60,
+    "status": "ok",
+    "total_saved": "1240.00",
+    "entries_count": 2
   }
 }
 ```
 
-`total_saved` and `total_target` are across every goal; `percent` is the one
-over the other, 0 when nothing is targeted, capped at 100. `saved_this_month` is
-the month's deposits minus its withdrawals, across every goal.
+`planned` is `"0.00"` when the month has no plan. `remaining` is
+`planned - saved_this_month` floored at `"0.00"`. `percent` is capped at 100 so
+a bar cannot overflow its track; `percent_raw` keeps the truth and may exceed
+it. `status` is `ok` | `close` (>=80) | `met` (>=100). `entries_count` counts
+this month only.
 
-### `GET /api/v1/savings/{uuid}`
+### `GET /api/v1/savings?month=2026-09`
 
-The goal as above plus `entries` — its ledger, newest first (`saved_on`, then
-insertion order), capped at the latest 100.
+The month's entries, newest first (`saved_on`, then insertion order). Not
+paginated — a month holds a handful of these.
 
 ```json
-{ "data": { "uuid": "0198c...", "name": "Emergency fund", "saved": "120.00",
-            "entries": [{ "uuid": "0198e...", "type": "deposit", "amount": "120.00",
-                          "saved_on": "2026-09-05", "note": null,
-                          "created_at": "2026-09-05T10:00:00+00:00" }] } }
+{
+  "data": [{
+    "uuid": "0198e...",
+    "type": "deposit",
+    "amount": "60.00",
+    "saved_on": "2026-09-05",
+    "note": null,
+    "created_at": "2026-09-05T10:00:00+00:00"
+  }]
+}
 ```
 
-### `POST /api/v1/savings` → `201` · `PATCH /api/v1/savings/{uuid}`
+`amount` is always the absolute value and `type` says which way it went; the
+sign is storage.
 
-`name` (max 255), `target_amount` (0.01 – 99999999.99, `currency=KHR` converts
-it), optional `deadline` and `color`. A new goal's deadline cannot already be in
-the past; an existing goal's may — an overdue goal is still editable. Omitting
-`color` defaults it on create and leaves it alone on edit.
+### `GET /api/v1/savings/plan?month=2026-09`
 
-### `DELETE /api/v1/savings/{uuid}` → `204`
+The stored plan row, or `{"data": null}` when that month has none — which is
+not the same as a plan of `"0.00"`.
 
-The ledger goes with it.
+```json
+{ "data": { "uuid": "0198d...", "month": "2026-09", "amount": "100.00",
+            "created_at": "2026-09-01T10:00:00+00:00",
+            "updated_at": "2026-09-01T10:00:00+00:00" } }
+```
 
-### `POST /api/v1/savings/{uuid}/entries` → `201`
+### `POST /api/v1/savings/plan` → `201` / `200`
+
+Upserts the `(user, month)` slot, like `POST /budgets`, so this is idempotent
+and there is **no separate update route**. `201` when the month was empty,
+`200` when it was already planned.
 
 ```bash
-curl -X POST https://spendlog.test/api/v1/savings/0198c.../entries \
+curl -X POST https://spendlog.test/api/v1/savings/plan \
+  -H 'Authorization: Bearer 3|kR9x...' -H 'Accept: application/json' \
+  -d 'month=2026-09' -d 'amount=100'
+```
+
+`month` is required and must be `YYYY-MM` — a full date is a `422` with
+`errors.month = ["The month must look like 2026-07."]`. `amount` is required,
+`0` – `99999999.99`; `currency=KHR` converts it as everywhere else.
+
+### `DELETE /api/v1/savings/plan/{uuid}` → `204`
+
+Clears the month's plan. The entries are untouched — the money stays, only the
+intention goes.
+
+### `POST /api/v1/savings/entries` → `201`
+
+```bash
+curl -X POST https://spendlog.test/api/v1/savings/entries \
   -H 'Authorization: Bearer 3|kR9x...' -H 'Accept: application/json' \
   -d 'type=deposit' -d 'amount=50' -d 'saved_on=2026-09-05'
 ```
 
-`type` is `deposit` or `withdraw`; `amount` is always positive on the wire and
-the server applies the sign. `saved_on` cannot be in the future; `currency=KHR`
-converts as everywhere else. A withdrawal larger than the goal's balance is a
-`422` with `errors.amount = ["You cannot withdraw more than is saved."]`.
+`type` is `deposit` or `withdraw`; `amount` is always positive on the wire
+(min `0.01`) and the server applies the sign. `saved_on` cannot be in the
+future; `note` is up to 500 characters; `currency=KHR` converts as everywhere
+else. A withdrawal larger than `total_saved` is a `422` with
+`errors.amount = ["You cannot withdraw more than is saved."]`.
 
-Entries are authorised through their goal: a deposit changes the balance, so it
-needs `update` on the goal, and someone else's goal is a `403`.
+### `PATCH /api/v1/savings/entries/{uuid}` → `200`
 
-### `DELETE /api/v1/savings/{uuid}/entries/{entryUuid}` → `204`
+The same body and the same rules — the full shape, so an omitted `note` clears
+it. The withdrawal ceiling is the balance *without* this entry: the line being
+edited is about to be replaced, so what it currently contributes comes off
+first.
 
-The entry must belong to that goal; one from another goal is a `404`, not a
-`403`.
+### `DELETE /api/v1/savings/entries/{uuid}` → `204`
+
+Someone else's plan or entry is a `403` unless the caller holds
+`savings.manage_all`.
 
 ## Recurring
 
@@ -611,8 +633,9 @@ how a client tells "now" apart from whichever month it is browsing.
     "recent": [{ "uuid": "0198f...", "item": "Coffee", "price": "4.50" }],
     "income": { "month": "2026-07", "total": "1200.00" },
     "balance": "1125.00",
-    "savings": { "total_saved": "320.00", "total_target": "1500.00",
-                 "percent": 21, "goals_count": 2 }
+    "savings": { "month": "2026-07", "planned": "100.00",
+                 "saved_this_month": "60.00", "percent": 60,
+                 "total_saved": "1240.00" }
   }
 }
 ```
@@ -621,9 +644,10 @@ how a client tells "now" apart from whichever month it is browsing.
 
 `income` follows `budget_month`, and `balance` is that income minus
 `summary.overall.spent` for the same month — one month's in against the same
-month's out, so it may be negative. `savings` is not monthly: it is the standing
-position across every goal, the same figures as `GET /savings/summary` without
-`saved_this_month`.
+month's out, so it may be negative. `savings` follows `budget_month` too: the
+month's plan and what went aside against it, from the same service as
+`GET /savings/summary`. Its `total_saved` is the exception — savings carry over
+between months, so that one is the all-time balance.
 
 ## Reports
 
@@ -682,7 +706,7 @@ about the same period.
 ### `GET /api/v1/activity`
 
 Every create, update and delete the account has made — expenses, income,
-budgets, categories, savings goals and entries — newest first, paginated like
+budgets, categories, savings plans and entries — newest first, paginated like
 the other lists. Each line carries the `subject` kind, a `label` frozen at the
 time ("Lunch · $3.00", so it still reads after the row is gone), and for
 updates a `changes` map of `{field: {from, to}}` with foreign keys already

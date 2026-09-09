@@ -57,20 +57,19 @@ Route::middleware('auth')->group(function () {
         ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
 
     /*
-     * Savings goals, each with a ledger. The parameter is named `goal` so the
-     * controller reads as it does in the API. The ledger routes are declared
-     * after the resource: `savings/{goal}/entries/...` cannot collide with
-     * `savings/create`, but keeping them together says what they belong to.
+     * Savings: one page, a month at a time, like Budgets. The month's plan is
+     * upserted rather than created and edited, and the ledger hangs off the
+     * account rather than a goal. Every literal segment is declared before the
+     * routes that bind a uuid, so 'plan' and 'entries' cannot bind as one.
      */
-    Route::resource('savings', SavingsController::class)
-        ->parameters(['savings' => 'goal'])
-        ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
-    Route::get('/savings/{goal}/entries/create', [SavingsController::class, 'createEntry'])->name('savings.entries.create');
-    Route::post('/savings/{goal}/entries', [SavingsController::class, 'storeEntry'])->name('savings.entries.store');
-    // Scoped so an entry uuid from another goal is a 404 rather than a hit.
-    Route::delete('/savings/{goal}/entries/{entry}', [SavingsController::class, 'destroyEntry'])
-        ->scopeBindings()
-        ->name('savings.entries.destroy');
+    Route::get('/savings', [SavingsController::class, 'index'])->name('savings.index');
+    Route::post('/savings/plan', [SavingsController::class, 'storePlan'])->name('savings.plan.store');
+    Route::delete('/savings/plan/{plan}', [SavingsController::class, 'destroyPlan'])->name('savings.plan.destroy');
+    Route::get('/savings/entries/create', [SavingsController::class, 'createEntry'])->name('savings.entries.create');
+    Route::post('/savings/entries', [SavingsController::class, 'storeEntry'])->name('savings.entries.store');
+    Route::get('/savings/entries/{entry}/edit', [SavingsController::class, 'editEntry'])->name('savings.entries.edit');
+    Route::patch('/savings/entries/{entry}', [SavingsController::class, 'updateEntry'])->name('savings.entries.update');
+    Route::delete('/savings/entries/{entry}', [SavingsController::class, 'destroyEntry'])->name('savings.entries.destroy');
 
     /*
      * Settings. The route names stay as they were (profile.edit, password.update)

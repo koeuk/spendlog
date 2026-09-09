@@ -8,7 +8,7 @@ use App\Models\Category;
 use App\Models\Expense;
 use App\Models\Income;
 use App\Models\SavingsEntry;
-use App\Models\SavingsGoal;
+use App\Models\SavingsPlan;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -67,7 +67,7 @@ class DashboardTest extends TestCase
                     'recent',
                     'income' => ['month', 'total'],
                     'balance',
-                    'savings' => ['total_saved', 'total_target', 'percent', 'goals_count'],
+                    'savings' => ['month', 'planned', 'saved_this_month', 'percent', 'total_saved'],
                 ],
             ]);
     }
@@ -105,24 +105,34 @@ class DashboardTest extends TestCase
             ->assertJsonPath('data.balance', '-100.00');
     }
 
-    public function test_savings_reports_the_standing_position_across_every_goal(): void
+    public function test_savings_reports_the_month_against_its_plan_and_the_all_time_balance(): void
     {
         $user = User::factory()->create();
-        $fund = SavingsGoal::factory()->for($user)->create(['target_amount' => 1000]);
-        $trip = SavingsGoal::factory()->for($user)->create(['target_amount' => 500]);
-        SavingsEntry::factory()->for($fund, 'goal')->create(['amount' => 300, 'saved_on' => '2026-01-10']);
-        SavingsEntry::factory()->for($trip, 'goal')->create(['amount' => 50, 'saved_on' => '2026-07-10']);
-        SavingsEntry::factory()->for($trip, 'goal')->withdrawal(30)->create(['saved_on' => '2026-07-12']);
-        SavingsGoal::factory()->create(['target_amount' => 9999]);
+        SavingsPlan::factory()->for($user)->forMonth('2026-07')->create(['amount' => 100]);
+        SavingsEntry::factory()->for($user)->create(['amount' => 1180, 'saved_on' => '2026-01-10']);
+        SavingsEntry::factory()->for($user)->create(['amount' => 80, 'saved_on' => '2026-07-10']);
+        SavingsEntry::factory()->for($user)->withdrawal(20)->create(['saved_on' => '2026-07-12']);
+        // Someone else's ledger does not count.
+        SavingsEntry::factory()->create(['amount' => 9999, 'saved_on' => '2026-07-10']);
 
         Sanctum::actingAs($user, [TokenAbility::DashboardRead->value]);
 
         $this->getJson('/api/v1/dashboard')
             ->assertOk()
-            ->assertJsonPath('data.savings.total_saved', '320.00')
-            ->assertJsonPath('data.savings.total_target', '1500.00')
-            ->assertJsonPath('data.savings.percent', 21)
-            ->assertJsonPath('data.savings.goals_count', 2);
+            ->assertJsonPath('data.savings.month', '2026-07')
+            ->assertJsonPath('data.savings.planned', '100.00')
+            ->assertJsonPath('data.savings.saved_this_month', '60.00')
+            ->assertJsonPath('data.savings.percent', 60)
+            // All time, not the month: savings carry over.
+            ->assertJsonPath('data.savings.total_saved', '1240.00');
+
+        // The savings card follows budget_month like income and balance do.
+        $this->getJson('/api/v1/dashboard?budget_month=2026-01')
+            ->assertOk()
+            ->assertJsonPath('data.savings.month', '2026-01')
+            ->assertJsonPath('data.savings.planned', '0.00')
+            ->assertJsonPath('data.savings.saved_this_month', '1180.00')
+            ->assertJsonPath('data.savings.total_saved', '1240.00');
     }
 
     public function test_income_and_savings_are_zero_for_a_fresh_account(): void
@@ -136,7 +146,8 @@ class DashboardTest extends TestCase
             ->assertJsonPath('data.income.total', '0.00')
             ->assertJsonPath('data.balance', '0.00')
             ->assertJsonPath('data.savings.total_saved', '0.00')
-            ->assertJsonPath('data.savings.goals_count', 0);
+            ->assertJsonPath('data.savings.planned', '0.00')
+            ->assertJsonPath('data.savings.saved_this_month', '0.00');
     }
 
     public function test_today_total_counts_only_todays_spend(): void

@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\CategoryColor;
 use App\Http\Requests\SavingsEntryRequest;
-use App\Http\Requests\SavingsGoalRequest;
+use App\Http\Requests\SavingsPlanRequest;
 use App\Models\SavingsEntry;
-use App\Models\SavingsGoal;
+use App\Models\SavingsPlan;
+use App\Models\User;
 use App\Services\SavingsSummary;
-use Carbon\CarbonImmutable;
+use App\Support\CalendarOptions;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,53 +18,38 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * The Savings pages — the web counterpart to Api\V1\SavingsController.
+ * The Savings page — the web counterpart to Api\V1\SavingsController.
  *
- * A goal's balance is always the sum of its ledger, and every figure on these
- * pages comes from the same SavingsSummary the API uses, so the two clients
- * cannot disagree about how far along a goal is.
+ * One month at a time, like Budgets: the month's plan, what actually went
+ * aside against it, and the ledger behind that. Every figure comes from the
+ * same SavingsSummary the API uses, so the two clients cannot disagree.
  */
 class SavingsController extends Controller
 {
-    /** How much of a goal's ledger the detail page shows. */
-    private const ENTRY_LIMIT = 100;
-
     public function __construct(private readonly SavingsSummary $summary) {}
 
     public function index(Request $request): Response
     {
-        Gate::authorize('viewAny', SavingsGoal::class);
+        Gate::authorize('viewAny', SavingsPlan::class);
 
-        $goals = SavingsGoal::query()
-            ->forUser($request->user()->id)
-            ->withSaved()
-            ->orderByDesc('created_at')
-            ->orderByDesc('id')
-            ->get();
+        $user = $request->user();
+        $month = CalendarOptions::resolveMonth($request->query('month'));
 
-        return Inertia::render('Savings/Index', [
-            'goals' => $goals->map(fn (SavingsGoal $goal) => $this->goalRow($goal))->all(),
-            'totals' => $this->summary->forMonth($request->user(), CarbonImmutable::now()),
-            'can' => [
-                'create' => $request->user()->can('create', SavingsGoal::class),
-            ],
-        ]);
-    }
-
-    public function show(Request $request, SavingsGoal $goal): Response
-    {
-        Gate::authorize('view', $goal);
-
-        $goal->loadSum('entries as saved_total', 'amount');
-
-        $entries = $goal->entries()
+        $entries = SavingsEntry::query()
+            ->forUser($user->id)
+            ->inMonth($month->toDateString())
             ->orderByDesc('saved_on')
             ->orderByDesc('id')
-            ->limit(self::ENTRY_LIMIT)
             ->get();
 
-        return Inertia::render('Savings/Show', [
-            'goal' => $this->goalRow($goal),
+        $plan = $this->summary->planFor($user, $month);
+
+        return Inertia::render('Savings/Index', [
+            'summary' => $this->summary->forMonth($user, $month),
+            'plan' => $plan ? [
+                'uuid' => $plan->uuid,
+                'amount' => (float) $plan->amount,
+            ] : null,
             'entries' => $entries->map(fn (SavingsEntry $entry) => [
                 'uuid' => $entry->uuid,
                 // The ledger is signed; the page speaks in deposit/withdraw
@@ -74,47 +59,37 @@ class SavingsController extends Controller
                 'saved_on' => $entry->saved_on->toDateString(),
                 'note' => $entry->note,
             ])->all(),
-            // Deposits, withdrawals and deleting a line all change the balance,
-            // so they hang off update — see SavingsGoalPolicy.
+            'month' => $month->format('Y-m'),
+            'prev_month' => $month->subMonth()->format('Y-m'),
+            'next_month' => $month->addMonth()->format('Y-m'),
+            // Month names come from the server so they follow the app locale.
+            'months' => CalendarOptions::months(),
+            'years' => CalendarOptions::years($user, $month),
             'can' => [
-                'update' => $request->user()->can('update', $goal),
-                'delete' => $request->user()->can('delete', $goal),
+                'create' => $user->can('create', SavingsPlan::class),
+                'createEntry' => $user->can('create', SavingsEntry::class),
             ],
         ]);
     }
 
-    public function create(): Response
+    /**
+     * Set or clear the month's plan — one endpoint, because the page always
+     * knows the month and does not care whether a row exists yet.
+     */
+    public function storePlan(SavingsPlanRequest $request): RedirectResponse
     {
-        Gate::authorize('create', SavingsGoal::class);
+        // SavingsPlanRequest::authorize() only settles that there is no
+        // cross-user target here, which is a different question from whether
+        // this user may write plans at all.
+        Gate::authorize('create', SavingsPlan::class);
 
-        return Inertia::render('Savings/Form', [
-            'colors' => $this->colorOptions(),
-        ]);
-    }
-
-    public function edit(SavingsGoal $goal): Response
-    {
-        Gate::authorize('update', $goal);
-
-        return Inertia::render('Savings/Form', [
-            'goal' => [
-                'uuid' => $goal->uuid,
-                'name' => $goal->name,
-                'target_amount' => (float) $goal->target_amount,
-                'deadline' => $goal->deadline?->toDateString(),
-                'color' => $goal->color?->value,
-            ],
-            'colors' => $this->colorOptions(),
-        ]);
-    }
-
-    public function store(SavingsGoalRequest $request): RedirectResponse
-    {
-        Gate::authorize('create', SavingsGoal::class);
+        $attributes = $request->planAttributes();
 
         try {
-            // Created through the relationship so user_id is never mass-assignable.
-            $goal = DB::transaction(fn () => $request->user()->savingsGoals()->create($request->goalAttributes()));
+            DB::transaction(fn () => $request->user()->savingsPlans()->updateOrCreate(
+                ['month' => $attributes['month']],
+                ['amount' => $attributes['amount']],
+            ));
         } catch (\Throwable $e) {
             // getMessage() on a QueryException is the SQLSTATE, the whole
             // parameterised query and its bound values. That is a log entry,
@@ -124,88 +99,67 @@ class SavingsController extends Controller
             return redirect()->back()->withError(__('Something went wrong. Please try again.'))->withInput();
         }
 
-        return redirect()
-            ->route('savings.show', $goal)
-            ->withSuccess(__('Savings goal added successfully.'));
+        return redirect()->back()->withSuccess(__('Savings plan saved successfully.'));
     }
 
-    public function update(SavingsGoalRequest $request, SavingsGoal $goal): RedirectResponse
+    public function destroyPlan(SavingsPlan $plan): RedirectResponse
     {
-        Gate::authorize('update', $goal);
+        Gate::authorize('delete', $plan);
 
         try {
-            DB::transaction(fn () => $goal->update($request->goalAttributes()));
-        } catch (\Throwable $e) {
-            report($e);
-
-            return redirect()->back()->withError(__('Something went wrong. Please try again.'))->withInput();
-        }
-
-        return redirect()
-            ->route('savings.show', $goal)
-            ->withSuccess(__('Savings goal updated successfully.'));
-    }
-
-    public function destroy(SavingsGoal $goal): RedirectResponse
-    {
-        Gate::authorize('delete', $goal);
-
-        try {
-            // The ledger goes with it — the FK is cascadeOnDelete.
-            DB::transaction(fn () => $goal->delete());
+            DB::transaction(fn () => $plan->delete());
         } catch (\Throwable $e) {
             report($e);
 
             return redirect()->back()->withError(__('Something went wrong. Please try again.'));
         }
 
-        return redirect()
-            ->route('savings.index')
-            ->withSuccess(__('Savings goal deleted successfully.'));
+        return redirect()->back()->withSuccess(__('Savings plan removed successfully.'));
     }
 
     /**
      * The deposit / withdrawal screen. Which way the money goes is preselected
-     * from ?type=, so the two buttons on the goal page open the right form.
+     * from ?type=, so the two buttons on the page open the right form.
      */
-    public function createEntry(Request $request, SavingsGoal $goal): Response
+    public function createEntry(Request $request): Response
     {
-        Gate::authorize('update', $goal);
-
-        $goal->loadSum('entries as saved_total', 'amount');
+        Gate::authorize('create', SavingsEntry::class);
 
         return Inertia::render('Savings/EntryForm', [
-            'goal' => $this->goalRow($goal),
+            'total_saved' => $this->summary->totalSaved($request->user()),
             'type' => $request->query('type') === SavingsEntryRequest::WITHDRAW
                 ? SavingsEntryRequest::WITHDRAW
                 : SavingsEntryRequest::DEPOSIT,
         ]);
     }
 
-    public function storeEntry(SavingsEntryRequest $request, SavingsGoal $goal): RedirectResponse
+    public function editEntry(Request $request, SavingsEntry $entry): Response
     {
-        // A deposit or withdrawal changes the goal's balance, so it is an
-        // update of the goal — there is no separate entry policy.
-        Gate::authorize('update', $goal);
+        Gate::authorize('update', $entry);
+
+        return Inertia::render('Savings/EntryForm', [
+            'total_saved' => $this->summary->totalSaved($request->user()),
+            'type' => $entry->isWithdrawal() ? SavingsEntryRequest::WITHDRAW : SavingsEntryRequest::DEPOSIT,
+            'entry' => [
+                'uuid' => $entry->uuid,
+                'amount' => abs((float) $entry->amount),
+                'saved_on' => $entry->saved_on->toDateString(),
+                'note' => $entry->note,
+            ],
+        ]);
+    }
+
+    public function storeEntry(SavingsEntryRequest $request): RedirectResponse
+    {
+        Gate::authorize('create', SavingsEntry::class);
+
+        $user = $request->user();
 
         try {
-            DB::transaction(function () use ($request, $goal) {
-                // Locked so two withdrawals racing each other cannot both read
-                // the same balance and together take out more than was there.
-                $locked = SavingsGoal::query()->whereKey($goal->id)->lockForUpdate()->firstOrFail();
+            DB::transaction(function () use ($request, $user) {
+                $this->guardWithdrawal($request, $user);
 
-                if ($request->isWithdrawal()
-                    && ! $this->summary->canWithdraw($this->summary->saved($locked), $request->usdAmount())) {
-                    throw ValidationException::withMessages([
-                        'amount' => __('You cannot withdraw more than is saved.'),
-                    ]);
-                }
-
-                $entry = $goal->entries()->make($request->entryAttributes());
-                // The goal's owner, not the caller: an admin depositing on
-                // someone's behalf records it under the account it belongs to.
-                $entry->user()->associate($goal->user_id);
-                $entry->save();
+                $user->savingsEntries()->create($request->entryAttributes());
             });
         } catch (ValidationException $e) {
             // Inertia turns this into the field error under the amount box.
@@ -217,19 +171,41 @@ class SavingsController extends Controller
         }
 
         return redirect()
-            ->route('savings.show', $goal)
+            ->route('savings.index', ['month' => substr($request->entryAttributes()['saved_on'], 0, 7)])
             ->withSuccess($request->isWithdrawal()
                 ? __('Withdrawal recorded successfully.')
                 : __('Deposit recorded successfully.'));
     }
 
-    /**
-     * The entry must belong to the goal in the URL — the route is
-     * scopeBindings(), so one from another goal is a 404, not a 403.
-     */
-    public function destroyEntry(SavingsGoal $goal, SavingsEntry $entry): RedirectResponse
+    public function updateEntry(SavingsEntryRequest $request, SavingsEntry $entry): RedirectResponse
     {
-        Gate::authorize('update', $goal);
+        Gate::authorize('update', $entry);
+
+        try {
+            DB::transaction(function () use ($request, $entry) {
+                // The row being edited is not part of its own ceiling: it is
+                // about to be replaced, so what it currently contributes comes
+                // off the balance first.
+                $this->guardWithdrawal($request, $entry->user, (float) $entry->amount);
+
+                $entry->update($request->entryAttributes());
+            });
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            report($e);
+
+            return redirect()->back()->withError(__('Something went wrong. Please try again.'))->withInput();
+        }
+
+        return redirect()
+            ->route('savings.index', ['month' => substr($request->entryAttributes()['saved_on'], 0, 7)])
+            ->withSuccess(__('Entry updated successfully.'));
+    }
+
+    public function destroyEntry(SavingsEntry $entry): RedirectResponse
+    {
+        Gate::authorize('delete', $entry);
 
         try {
             DB::transaction(fn () => $entry->delete());
@@ -243,37 +219,22 @@ class SavingsController extends Controller
     }
 
     /**
-     * One goal as the pages render it: the row plus every figure the summary
-     * derives from its balance.
-     *
-     * Expects the goal to carry saved_total (withSaved() / loadSum()) so a
-     * list pays one query rather than one per card.
-     *
-     * @return array<string, mixed>
+     * Refuse a withdrawal larger than the all-time balance, under a row-level
+     * lock on the account so two racing withdrawals cannot both read the same
+     * figure. Mirrors Api\V1\SavingsController.
      */
-    private function goalRow(SavingsGoal $goal): array
+    private function guardWithdrawal(SavingsEntryRequest $request, User $user, float $excluding = 0.0): void
     {
-        $saved = $this->summary->saved($goal);
-        $target = (float) $goal->target_amount;
+        if (! $request->isWithdrawal()) {
+            return;
+        }
 
-        return [
-            'uuid' => $goal->uuid,
-            'name' => $goal->name,
-            'target_amount' => $target,
-            'saved' => $saved,
-            'remaining' => $this->summary->remaining($saved, $target),
-            'percent' => $this->summary->percent($saved, $target),
-            'reached' => $this->summary->reached($saved, $target),
-            'deadline' => $goal->deadline?->toDateString(),
-            'color' => $goal->color?->value,
-        ];
-    }
+        $locked = User::query()->whereKey($user->id)->lockForUpdate()->firstOrFail();
 
-    /**
-     * @return array<int, string>
-     */
-    private function colorOptions(): array
-    {
-        return array_map(fn (CategoryColor $color) => $color->value, CategoryColor::cases());
+        if (! $this->summary->canWithdraw($locked, $request->usdAmount() + $excluding)) {
+            throw ValidationException::withMessages([
+                'amount' => __('You cannot withdraw more than is saved.'),
+            ]);
+        }
     }
 }

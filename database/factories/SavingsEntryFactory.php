@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\SavingsEntry;
-use App\Models\SavingsGoal;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -12,16 +12,14 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class SavingsEntryFactory extends Factory
 {
     /**
-     * A deposit by default. user_id follows the goal's owner, so a factory
-     * entry can never belong to a goal someone else holds.
+     * A deposit by default.
      *
      * @return array<string, mixed>
      */
     public function definition(): array
     {
         return [
-            'savings_goal_id' => SavingsGoal::factory(),
-            'user_id' => fn (array $attributes) => SavingsGoal::find($attributes['savings_goal_id'])->user_id,
+            'user_id' => User::factory(),
             'amount' => fake()->randomFloat(2, 5, 200),
             'saved_on' => fake()->dateTimeBetween('-3 months', 'now')->format('Y-m-d'),
             'note' => null,

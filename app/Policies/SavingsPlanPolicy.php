@@ -3,7 +3,7 @@
 namespace App\Policies;
 
 use App\Enums\Permission;
-use App\Models\SavingsGoal;
+use App\Models\SavingsPlan;
 use App\Models\User;
 
 /**
@@ -11,12 +11,8 @@ use App\Models\User;
  * they may do this kind of thing at all, ownership says whether they may do it
  * to *this* row. Holding savings.update edits your own; editing someone else's
  * needs manage_all.
- *
- * Entries have no policy of their own. A deposit or withdrawal changes the
- * goal's balance, so it is authorised as an update *of the goal* — the
- * controller asks `update` on the goal before touching its ledger.
  */
-class SavingsGoalPolicy
+class SavingsPlanPolicy
 {
     public function viewAny(User $user): bool
     {
@@ -28,35 +24,35 @@ class SavingsGoalPolicy
         return $user->hasPermissionTo(Permission::SavingsCreate->value);
     }
 
-    public function view(User $user, SavingsGoal $goal): bool
+    public function view(User $user, SavingsPlan $plan): bool
     {
-        if ($this->owns($user, $goal)) {
+        if ($this->owns($user, $plan)) {
             return $user->hasPermissionTo(Permission::SavingsView->value);
         }
 
         return $user->hasPermissionTo(Permission::SavingsManageAll->value);
     }
 
-    public function update(User $user, SavingsGoal $goal): bool
+    public function update(User $user, SavingsPlan $plan): bool
     {
-        if ($this->owns($user, $goal)) {
+        if ($this->owns($user, $plan)) {
             return $user->hasPermissionTo(Permission::SavingsUpdate->value);
         }
 
         return $user->hasPermissionTo(Permission::SavingsManageAll->value);
     }
 
-    public function delete(User $user, SavingsGoal $goal): bool
+    public function delete(User $user, SavingsPlan $plan): bool
     {
-        if ($this->owns($user, $goal)) {
+        if ($this->owns($user, $plan)) {
             return $user->hasPermissionTo(Permission::SavingsDelete->value);
         }
 
         return $user->hasPermissionTo(Permission::SavingsManageAll->value);
     }
 
-    private function owns(User $user, SavingsGoal $goal): bool
+    private function owns(User $user, SavingsPlan $plan): bool
     {
-        return $goal->user_id === $user->id;
+        return $plan->user_id === $user->id;
     }
 }

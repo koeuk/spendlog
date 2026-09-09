@@ -12,16 +12,20 @@ import { Textarea } from '@/Components/ui/textarea';
 import { trans } from '@/lib/i18n';
 
 /**
- * A deposit into, or withdrawal from, one goal.
+ * A deposit into, or withdrawal from, savings.
  *
  * Which way the money goes is a toggle, preselected from the button that
  * opened this screen. The amount is always typed positive; the server applies
- * the sign, and refuses a withdrawal larger than what the goal holds.
+ * the sign, and refuses a withdrawal larger than the all-time balance — money
+ * saved in September can still come out in October.
  */
 const props = defineProps({
-    goal: { type: Object, required: true },
     // 'deposit' | 'withdraw'
     type: { type: String, default: 'deposit' },
+    // The all-time balance, which is the withdrawal ceiling.
+    total_saved: { type: Number, default: 0 },
+    // Present when editing an existing line.
+    entry: { type: Object, default: null },
 });
 
 function todayString() {
@@ -34,12 +38,16 @@ function todayString() {
 
 const defaultCurrency = usePage().props.default_currency ?? 'USD';
 
+const editing = computed(() => props.entry !== null);
+
 const form = useForm({
     type: props.type,
-    amount: '',
-    currency: defaultCurrency,
-    saved_on: todayString(),
-    note: '',
+    // An existing amount is stored in USD, so the field starts on USD rather
+    // than relabelling a dollar figure as riel.
+    amount: props.entry ? String(props.entry.amount) : '',
+    currency: props.entry ? 'USD' : defaultCurrency,
+    saved_on: props.entry?.saved_on ?? todayString(),
+    note: props.entry?.note ?? '',
 });
 
 const TYPES = [
@@ -54,16 +62,24 @@ const money = new Intl.NumberFormat('en-US', {
     currency: 'USD',
 });
 
-const title = computed(() =>
-    withdrawing.value
-        ? trans('Withdraw from :goal', { goal: props.goal.name })
-        : trans('Deposit to :goal', { goal: props.goal.name }),
-);
+const title = computed(() => {
+    if (editing.value) {
+        return trans('Edit entry');
+    }
 
-const backHref = route('savings.show', props.goal.uuid);
+    return withdrawing.value ? trans('Withdraw from savings') : trans('Add to savings');
+});
+
+const backHref = route('savings.index');
 
 function submit() {
-    form.post(route('savings.entries.store', props.goal.uuid));
+    if (editing.value) {
+        form.patch(route('savings.entries.update', props.entry.uuid));
+
+        return;
+    }
+
+    form.post(route('savings.entries.store'));
 }
 </script>
 
@@ -73,7 +89,7 @@ function submit() {
     <FormScreenLayout
         :back-href="backHref"
         :title="title"
-        :back-label="__('Back to goal')"
+        :back-label="__('Back to savings')"
     >
         <form class="flex flex-1 flex-col" @submit.prevent="submit">
             <div class="grid gap-4">
@@ -104,9 +120,9 @@ function submit() {
                     <AmountField :form="form" field="amount" :label="__('Amount')" />
                     <!-- Says the ceiling before the server has to refuse it. -->
                     <p class="mt-1 text-xs" :class="MUTED">
-                        {{ __('Saved so far') }}: {{ money.format(goal.saved) }}
+                        {{ __('Total saved') }}: {{ money.format(total_saved) }}
                         <template v-if="withdrawing">
-                            · {{ __('Up to :amount can be withdrawn.', { amount: money.format(goal.saved) }) }}
+                            · {{ __('Up to :amount can be withdrawn.', { amount: money.format(total_saved) }) }}
                         </template>
                     </p>
                 </div>

@@ -54,7 +54,7 @@ class ActivityLog extends Model
     }
 
     /**
-     * The subject's short, stable name for clients: "expense", "savings_goal".
+     * The subject's short, stable name for clients: "expense", "savings_plan".
      * The class name is an implementation detail that a rename would break.
      */
     public function subjectKind(): string
