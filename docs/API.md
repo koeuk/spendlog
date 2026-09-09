@@ -65,7 +65,7 @@ A mobile token cannot write categories even when its owner is an admin; an admin
 token with `categories:write` still fails for a non-admin user. Abilities:
 `expenses:read`, `expenses:write`, `categories:read`, `categories:write`,
 `budgets:read`, `budgets:write`, `incomes:read`, `incomes:write`,
-`savings:read`, `savings:write`, `recurring:read`, `recurring:write`,
+`savings:read`, `savings:write`,
 `dashboard:read`, `profile:write`.
 
 A fresh token carries every ability the user's permissions justify and nothing
@@ -469,8 +469,13 @@ The entry must belong to that goal; one from another goal is a `404`, not a
 Expenses and income that repeat — rent, a salary, a subscription. A **rule** is
 a template: it holds no money of its own. On schedule the system writes real
 `expenses` / `incomes` rows from it, badged `recurring: true`, and every list,
-report, budget and total sees them as ordinary rows. Behind `recurring:read` /
-`recurring:write`.
+report, budget and total sees them as ordinary rows.
+
+These endpoints carry **no ability of their own**: a rule is a deferred expense
+or income, so reading them needs `expenses:read` *or* `incomes:read`, and
+writing them `expenses:write` *or* `incomes:write` — whichever kind the rule is,
+with `RecurringRulePolicy` ruling on the specific kind. A token scoped to income
+alone can schedule a salary and nothing else.
 
 **Permissions.** A rule has none of its own; it is guarded like the rows it
 writes. An expense rule needs `expenses.view` / `expenses.create` /

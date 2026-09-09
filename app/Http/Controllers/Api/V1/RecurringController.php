@@ -43,7 +43,7 @@ class RecurringController extends Controller
      * @queryParam kind string expense or income. Example: expense
      *
      * @response 200 {"data": [{"uuid": "0198f...", "kind": "expense", "title": "Rent", "amount": "450.00", "category": {"uuid": "0198a...", "name": "Housing", "color": "amber", "icon": "home"}, "frequency": "monthly", "starts_on": "2026-09-01", "ends_on": null, "next_run_on": "2026-10-01", "last_run_on": "2026-09-01", "active": true, "note": null, "created_at": "2026-09-01T10:00:00+00:00", "updated_at": "2026-09-01T10:00:00+00:00"}]}
-     * @response 403 scenario="token lacks recurring:read" {"message": "Invalid ability provided."}
+     * @response 403 scenario="token carries neither expenses:read nor incomes:read" {"message": "Invalid ability provided."}
      */
     public function index(Request $request): AnonymousResourceCollection
     {
@@ -111,11 +111,13 @@ class RecurringController extends Controller
      * @bodyParam note string Up to 500 characters. Example: Paid to the landlord
      *
      * @response 201 {"data": {"uuid": "0198f...", "kind": "expense", "title": "Rent", "amount": "450.00", "category": {"uuid": "0198a...", "name": "Housing", "color": "amber", "icon": "home"}, "frequency": "monthly", "starts_on": "2026-09-01", "ends_on": null, "next_run_on": "2026-10-01", "last_run_on": "2026-09-01", "active": true, "note": null}}
-     * @response 403 scenario="token lacks recurring:write" {"message": "Invalid ability provided."}
+     * @response 403 scenario="token carries neither expenses:write nor incomes:write" {"message": "Invalid ability provided."}
      * @response 422 scenario="income rule with a category" {"message": "An income rule has no category.", "errors": {"category_uuid": ["An income rule has no category."]}}
      */
     public function store(RecurringRuleRequest $request): JsonResponse
     {
+        $this->authorizeTokenForKind($request, $request->kind());
+
         Gate::authorize('create', [RecurringRule::class, $request->kind()]);
 
         // Created through the relationship so user_id comes from the token's
@@ -166,6 +168,8 @@ class RecurringController extends Controller
      */
     public function update(RecurringRuleRequest $request, RecurringRule $rule): RecurringRuleResource
     {
+        $this->authorizeTokenForKind($request, $rule->kind);
+
         Gate::authorize('update', $rule);
 
         DB::transaction(function () use ($request, $rule) {
@@ -203,5 +207,22 @@ class RecurringController extends Controller
         DB::transaction(fn () => $rule->delete());
 
         return response()->json([], 204);
+    }
+
+    /**
+     * The route's ability gate is an any-of over both row kinds, because a
+     * rule may be either. That is deliberately coarse: it lets a token scoped
+     * to income alone through to the endpoint. This is the second half — the
+     * rule's *own* kind must also be in the token's scope, or a token narrowed
+     * to income could schedule expense rows it may not write by hand.
+     *
+     * The user's permission is a separate question, and the policy still asks
+     * it. Both must pass.
+     */
+    private function authorizeTokenForKind(Request $request, RecurringKind $kind): void
+    {
+        if (! $request->user()->tokenCan($kind->writeAbility()->value)) {
+            abort(403, 'Invalid ability provided.');
+        }
     }
 }

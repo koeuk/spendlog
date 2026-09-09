@@ -65,7 +65,12 @@ class RecurringTest extends TestCase
     /** @return array<int, string> */
     private function readWrite(): array
     {
-        return [TokenAbility::RecurringRead->value, TokenAbility::RecurringWrite->value];
+        return [
+            TokenAbility::ExpensesRead->value,
+            TokenAbility::ExpensesWrite->value,
+            TokenAbility::IncomesRead->value,
+            TokenAbility::IncomesWrite->value,
+        ];
     }
 
     public function test_index_requires_authentication(): void
@@ -290,7 +295,7 @@ class RecurringTest extends TestCase
         $income = RecurringRule::factory()->for($user)->income()->create(['starts_on' => '2026-09-15', 'next_run_on' => '2026-09-15']);
         RecurringRule::factory()->create(['starts_on' => '2026-09-09', 'next_run_on' => '2026-09-09']);
 
-        Sanctum::actingAs($user, [TokenAbility::RecurringRead->value]);
+        Sanctum::actingAs($user, [TokenAbility::ExpensesRead->value, TokenAbility::IncomesRead->value]);
 
         $response = $this->getJson('/api/v1/recurring')->assertOk()->assertJsonCount(4, 'data');
 
@@ -338,8 +343,10 @@ class RecurringTest extends TestCase
         $category = Category::factory()->create();
         $rule = RecurringRule::factory()->for($user)->create();
 
-        // Logging rows by hand says nothing about scheduling them.
-        Sanctum::actingAs($user, [TokenAbility::ExpensesRead->value, TokenAbility::ExpensesWrite->value]);
+        // A token scoped away from both row kinds has no business here. A rule
+        // is a deferred expense or income, so the row kind's own scope is what
+        // gates it — see the note over the /recurring routes.
+        Sanctum::actingAs($user, [TokenAbility::BudgetsRead->value, TokenAbility::BudgetsWrite->value]);
 
         $this->getJson('/api/v1/recurring')
             ->assertForbidden()
@@ -347,13 +354,53 @@ class RecurringTest extends TestCase
         $this->postJson('/api/v1/recurring', $this->expensePayload($category))->assertForbidden();
 
         // And a read-only recurring token cannot write.
-        Sanctum::actingAs($user, [TokenAbility::RecurringRead->value]);
+        Sanctum::actingAs($user, [TokenAbility::ExpensesRead->value, TokenAbility::IncomesRead->value]);
 
         $this->getJson('/api/v1/recurring')->assertOk();
         $this->postJson('/api/v1/recurring', $this->expensePayload($category))
             ->assertForbidden()
             ->assertJsonPath('message', 'Invalid ability provided.');
         $this->deleteJson("/api/v1/recurring/{$rule->uuid}")->assertForbidden();
+    }
+
+    /**
+     * Tokens are minted with the abilities that existed at the time, and
+     * Sanctum freezes them there. Recurring shipped after every live token was
+     * issued, so gating it behind a *new* ability string 403'd every one of
+     * them until its holder signed in again — which is why it is gated on the
+     * row kinds instead. This pins that: a token from before the feature
+     * existed still works.
+     */
+    public function test_a_token_minted_before_recurring_existed_still_works(): void
+    {
+        $user = User::factory()->create();
+        $category = Category::factory()->create();
+
+        Sanctum::actingAs($user, [
+            TokenAbility::ExpensesRead->value,
+            TokenAbility::ExpensesWrite->value,
+            TokenAbility::IncomesRead->value,
+            TokenAbility::IncomesWrite->value,
+            TokenAbility::BudgetsRead->value,
+            TokenAbility::DashboardRead->value,
+        ]);
+
+        $this->getJson('/api/v1/recurring')->assertOk();
+        $this->postJson('/api/v1/recurring', $this->expensePayload($category))->assertCreated();
+    }
+
+    /** Income-only scope schedules a salary, and nothing on the expense side. */
+    public function test_an_income_scoped_token_may_schedule_income_only(): void
+    {
+        $user = User::factory()->create();
+        $category = Category::factory()->create();
+
+        Sanctum::actingAs($user, [TokenAbility::IncomesRead->value, TokenAbility::IncomesWrite->value]);
+
+        $this->postJson('/api/v1/recurring', $this->incomePayload())->assertCreated();
+        // The ability passes (it is an any-of gate); the policy is what refuses
+        // the expense kind.
+        $this->postJson('/api/v1/recurring', $this->expensePayload($category))->assertForbidden();
     }
 
     public function test_the_policy_bites_when_the_row_kinds_permission_is_revoked(): void
@@ -490,7 +537,7 @@ class RecurringTest extends TestCase
     {
         $user = User::factory()->create();
 
-        Sanctum::actingAs($user, [TokenAbility::RecurringRead->value]);
+        Sanctum::actingAs($user, [TokenAbility::ExpensesRead->value, TokenAbility::IncomesRead->value]);
 
         $this->getJson('/api/v1/recurring/1')->assertNotFound();
         $this->getJson('/api/v1/recurring/0198f1a2-b3c4-7d5e-8f9a-0b1c2d3e4f5a')->assertNotFound();

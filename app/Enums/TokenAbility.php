@@ -28,11 +28,10 @@ enum TokenAbility: string
     case IncomesWrite = 'incomes:write';
     case SavingsRead = 'savings:read';
     case SavingsWrite = 'savings:write';
-    // Recurring rules are templates for expense and income rows, so they carry
-    // no permissions of their own: the pair is justified by either row kind's
-    // permissions, and RecurringRulePolicy checks the specific kind per rule.
-    case RecurringRead = 'recurring:read';
-    case RecurringWrite = 'recurring:write';
+    // Recurring rules deliberately have no ability of their own — a rule is a
+    // deferred expense or income and can create nothing its holder could not
+    // create by hand, so the row kind's pair above already scopes it. See the
+    // note over the /recurring routes.
     case DashboardRead = 'dashboard:read';
     // Reports read the same expenses the dashboard does, but answer a different
     // question over a chosen period. Separate from dashboard:read so a client
@@ -92,14 +91,6 @@ enum TokenAbility: string
                 Permission::SavingsCreate,
                 Permission::SavingsUpdate,
                 Permission::SavingsDelete,
-            ],
-            self::RecurringRead => [
-                Permission::ExpensesView,
-                Permission::IncomesView,
-            ],
-            self::RecurringWrite => [
-                Permission::ExpensesCreate,
-                Permission::IncomesCreate,
             ],
             self::DashboardRead => [Permission::DashboardView],
             self::ReportsRead => [Permission::ReportsView],

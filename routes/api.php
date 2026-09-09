@@ -129,16 +129,27 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::delete('incomes/{income:uuid}', [IncomeController::class, 'destroy'])->name('incomes.destroy');
         });
 
-        // Recurring rules: templates that write expenses and incomes on a
-        // schedule. Their own read/write pair, so a token scoped to logging
-        // rows by hand does not also get to schedule them; the policy then
-        // rules per rule on the row kind's permissions.
-        Route::middleware('abilities:'.TokenAbility::RecurringRead->value)->group(function () {
+        /*
+         * Recurring rules: templates that write expense and income rows on a
+         * schedule. They deliberately carry no ability of their own.
+         *
+         * A rule is not a third kind of money — it is a *deferred* expense or
+         * income, and it can create nothing its holder could not create by
+         * hand a moment later. So the scope that already covers those rows
+         * covers scheduling them, and RecurringRulePolicy still rules per rule
+         * on the row kind's permissions.
+         *
+         * 'ability' (any), not 'abilities' (all): someone scoped to income
+         * alone must still be able to schedule a salary. It is also what keeps
+         * tokens minted before this feature working — a new ability string
+         * would have 403'd every one of them until the holder signed in again.
+         */
+        Route::middleware('ability:'.TokenAbility::ExpensesRead->value.','.TokenAbility::IncomesRead->value)->group(function () {
             Route::get('recurring', [RecurringController::class, 'index'])->name('recurring.index');
             Route::get('recurring/{rule:uuid}', [RecurringController::class, 'show'])->name('recurring.show');
         });
 
-        Route::middleware('abilities:'.TokenAbility::RecurringWrite->value)->group(function () {
+        Route::middleware('ability:'.TokenAbility::ExpensesWrite->value.','.TokenAbility::IncomesWrite->value)->group(function () {
             Route::post('recurring', [RecurringController::class, 'store'])->name('recurring.store');
             Route::patch('recurring/{rule:uuid}', [RecurringController::class, 'update'])->name('recurring.update');
             Route::delete('recurring/{rule:uuid}', [RecurringController::class, 'destroy'])->name('recurring.destroy');
