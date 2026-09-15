@@ -3,6 +3,7 @@
 use App\Enums\TokenAbility;
 use App\Http\Controllers\Api\V1\ActivityController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\BorrowingController;
 use App\Http\Controllers\Api\V1\BrandingController;
 use App\Http\Controllers\Api\V1\BudgetController;
 use App\Http\Controllers\Api\V1\CategoryController;
@@ -182,6 +183,29 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
                 ->name('savings.entries.update');
             Route::delete('savings/entries/{entry:uuid}', [SavingsController::class, 'destroyEntry'])
                 ->name('savings.entries.destroy');
+        });
+
+        /*
+         * Borrowing. Literal segments ('summary', 'lenders') before the uuid
+         * route, or they bind as one and 404. Repayments are written under
+         * their borrowing and gated by the same write ability: a repayment is
+         * an update of the borrowing, and BorrowingPolicy rules on it as one.
+         */
+        Route::middleware('abilities:'.TokenAbility::BorrowingsRead->value)->group(function () {
+            Route::get('borrowings/summary', [BorrowingController::class, 'summary'])->name('borrowings.summary');
+            Route::get('borrowings/lenders', [BorrowingController::class, 'lenders'])->name('borrowings.lenders');
+            Route::get('borrowings', [BorrowingController::class, 'index'])->name('borrowings.index');
+            Route::get('borrowings/{borrowing:uuid}', [BorrowingController::class, 'show'])->name('borrowings.show');
+        });
+
+        Route::middleware('abilities:'.TokenAbility::BorrowingsWrite->value)->group(function () {
+            Route::post('borrowings', [BorrowingController::class, 'store'])->name('borrowings.store');
+            Route::patch('borrowings/{borrowing:uuid}', [BorrowingController::class, 'update'])->name('borrowings.update');
+            Route::delete('borrowings/{borrowing:uuid}', [BorrowingController::class, 'destroy'])->name('borrowings.destroy');
+            Route::post('borrowings/{borrowing:uuid}/repayments', [BorrowingController::class, 'storeRepayment'])
+                ->name('borrowings.repayments.store');
+            Route::delete('borrowings/{borrowing:uuid}/repayments/{repayment:uuid}', [BorrowingController::class, 'destroyRepayment'])
+                ->name('borrowings.repayments.destroy');
         });
 
         // Your own activity log needs no ability: it is a record of what this

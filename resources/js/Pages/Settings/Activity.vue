@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
-import { ArrowRight, Flag, FolderOpen, HandCoins, History, PiggyBank, Receipt, Repeat } from 'lucide-vue-next';
+import { ArrowRight, Flag, FolderOpen, HandCoins, Handshake, History, PiggyBank, Receipt, Repeat, Undo2 } from 'lucide-vue-next';
 import SettingsLayout from '@/Layouts/SettingsLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
 import { CARD, MUTED, SEGMENT, SEGMENT_OFF, SEGMENT_ON } from '@/lib/appStyles';
@@ -25,6 +25,8 @@ const ICONS = {
     category: FolderOpen,
     savings_plan: Flag,
     savings_entry: Repeat,
+    borrowing: Handshake,
+    borrowing_repayment: Undo2,
 };
 
 const iconFor = (subject) => ICONS[subject] ?? History;

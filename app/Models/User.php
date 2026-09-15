@@ -140,6 +140,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'incomes.index' => Permission::IncomesView,
         'budgets.index' => Permission::BudgetsView,
         'savings.index' => Permission::SavingsView,
+        'borrowings.index' => Permission::BorrowingsView,
         'reports.index' => Permission::ReportsView,
         'categories.index' => Permission::CategoriesView,
     ];
@@ -256,5 +257,19 @@ class User extends Authenticatable implements MustVerifyEmail
     public function savingsEntries(): HasMany
     {
         return $this->hasMany(SavingsEntry::class);
+    }
+
+    public function borrowings(): HasMany
+    {
+        return $this->hasMany(Borrowing::class);
+    }
+
+    /**
+     * Every repayment across all of this person's borrowings. Writes go
+     * through a borrowing's repayments(), which is what sets user_id.
+     */
+    public function borrowingRepayments(): HasMany
+    {
+        return $this->hasMany(BorrowingRepayment::class);
     }
 }

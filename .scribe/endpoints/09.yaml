@@ -1,29 +1,27 @@
-name: 'Admin · Users'
+name: Budgets
 description: |-
 
-  The user-management desk over the API — the same rules the web screen
-  enforces: UserPolicy decides per row, UserRequest validates, and roles are
-  assigned explicitly rather than mass-assigned. Needs `users:read` /
-  `users:write`, which only an account with the users.* permissions can hold.
+  A budget is one `(category, month)` slot. **Omit `category_uuid` for the
+  overall budget** covering every category.
 endpoints:
   -
     custom: []
     httpMethods:
       - GET
-    uri: api/v1/admin/users
+    uri: api/v1/budgets
     metadata:
       custom: []
-      groupName: 'Admin · Users'
+      groupName: Budgets
       groupDescription: |-
 
-        The user-management desk over the API — the same rules the web screen
-        enforces: UserPolicy decides per row, UserRequest validates, and roles are
-        assigned explicitly rather than mass-assigned. Needs `users:read` /
-        `users:write`, which only an account with the users.* permissions can hold.
+        A budget is one `(category, month)` slot. **Omit `category_uuid` for the
+        overall budget** covering every category.
       subgroup: ''
       subgroupDescription: ''
-      title: 'List users'
-      description: ''
+      title: 'List budgets'
+      description: |-
+        The stored budgets themselves. For spent-vs-budget figures use the
+        summary endpoint — that is what the Budgets screen renders.
       authenticated: true
       deprecated: false
     headers:
@@ -33,23 +31,93 @@ endpoints:
     urlParameters: []
     cleanUrlParameters: []
     queryParameters:
-      page:
+      month:
         custom: []
-        name: page
-        description: ''
+        name: month
+        description: 'Restrict to one month, as YYYY-MM.'
         required: false
-        example: 1
-        type: integer
+        example: 2026-07
+        type: string
         enumValues: []
         exampleWasSpecified: true
         nullable: false
         deprecated: false
     cleanQueryParameters:
-      page: 1
+      month: 2026-07
     bodyParameters: []
     cleanBodyParameters: []
     fileParameters: []
-    responses: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"data": [{"uuid": "0198b...", "amount": "250.00", "month": "2026-07", "category": {"uuid": "0198a...", "name": "Food", "color": "amber", "icon": "utensils"}, "created_at": "2026-07-16T10:00:00+00:00", "updated_at": "2026-07-16T10:00:00+00:00"}]}'
+        headers: []
+        description: ''
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/budgets/summary
+    metadata:
+      custom: []
+      groupName: Budgets
+      groupDescription: |-
+
+        A budget is one `(category, month)` slot. **Omit `category_uuid` for the
+        overall budget** covering every category.
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Spend vs budget'
+      description: |-
+        Spend against budget for one month, per category and overall — the same
+        service the web Dashboard and Budgets page use, so the three can never
+        disagree.
+
+        `status` is `ok` | `warning` (>=80%) | `over` (>100%) | `none` (no budget
+        set). `budget: null` means no budget, which is different from `"0.00"`.
+        `bar_percent` is capped at 100 so a progress bar cannot overflow its
+        track; `percent` keeps the truth.
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters:
+      month:
+        custom: []
+        name: month
+        description: 'YYYY-MM. Anything malformed falls back to the current month rather than erroring.'
+        required: false
+        example: 2026-07
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+    cleanQueryParameters:
+      month: 2026-07
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"data": {"month": "2026-07", "overall": {"budget_uuid": "0198b...", "spent": "106.00", "budget": "100.00", "remaining": "-6.00", "percent": 106, "bar_percent": 100, "status": "over"}, "categories": [{"uuid": "0198a...", "name": "Food", "color": "amber", "icon": "utensils", "budget_uuid": "0198b...", "spent": "106.00", "budget": "100.00", "remaining": "-6.00", "percent": 106, "bar_percent": 100, "status": "over"}]}}'
+        headers: []
+        description: ''
     responseFields: []
     auth:
       - headers
@@ -62,19 +130,17 @@ endpoints:
     custom: []
     httpMethods:
       - DELETE
-    uri: 'api/v1/admin/users/{uuid}'
+    uri: 'api/v1/budgets/{uuid}'
     metadata:
       custom: []
-      groupName: 'Admin · Users'
+      groupName: Budgets
       groupDescription: |-
 
-        The user-management desk over the API — the same rules the web screen
-        enforces: UserPolicy decides per row, UserRequest validates, and roles are
-        assigned explicitly rather than mass-assigned. Needs `users:read` /
-        `users:write`, which only an account with the users.* permissions can hold.
+        A budget is one `(category, month)` slot. **Omit `category_uuid` for the
+        overall budget** covering every category.
       subgroup: ''
       subgroupDescription: ''
-      title: 'Delete a user'
+      title: 'Delete a budget'
       description: ''
       authenticated: true
       deprecated: false
@@ -88,14 +154,26 @@ endpoints:
         name: uuid
         description: ''
         required: true
-        example: 019f74c9-73cc-726c-b4e4-bb526ac54924
+        example: a24a2b8a-aced-4373-9aa8-5b60f747228a
         type: string
         enumValues: []
         exampleWasSpecified: false
         nullable: false
         deprecated: false
+      budget:
+        custom: []
+        name: budget
+        description: 'The budget UUID.'
+        required: true
+        example: 0198b1c2-d3e4-7f5a-8b9c-0d1e2f3a4b5c
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
     cleanUrlParameters:
-      uuid: 019f74c9-73cc-726c-b4e4-bb526ac54924
+      uuid: a24a2b8a-aced-4373-9aa8-5b60f747228a
+      budget: 0198b1c2-d3e4-7f5a-8b9c-0d1e2f3a4b5c
     queryParameters: []
     cleanQueryParameters: []
     bodyParameters: []
@@ -108,6 +186,12 @@ endpoints:
         content: '{}'
         headers: []
         description: deleted
+      -
+        custom: []
+        status: 403
+        content: '{"message": "This action is unauthorized."}'
+        headers: []
+        description: "someone else's budget"
     responseFields: []
     auth:
       - headers

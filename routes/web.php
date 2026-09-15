@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\BorrowingController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
@@ -70,6 +71,21 @@ Route::middleware('auth')->group(function () {
     Route::get('/savings/entries/{entry}/edit', [SavingsController::class, 'editEntry'])->name('savings.entries.edit');
     Route::patch('/savings/entries/{entry}', [SavingsController::class, 'updateEntry'])->name('savings.entries.update');
     Route::delete('/savings/entries/{entry}', [SavingsController::class, 'destroyEntry'])->name('savings.entries.destroy');
+
+    /*
+     * Borrowing: money owed to a friend, family or a bank, with a ledger of
+     * repayments. The list, a page per borrowing, and the same own-screen
+     * forms as Income. A repayment is recorded from the borrowing's page and
+     * authorised as an update of it, so it needs no policy of its own.
+     */
+    Route::resource('borrowings', BorrowingController::class)
+        ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
+    Route::get('/borrowings/{borrowing}/repayments/create', [BorrowingController::class, 'createRepayment'])
+        ->name('borrowings.repayments.create');
+    Route::post('/borrowings/{borrowing}/repayments', [BorrowingController::class, 'storeRepayment'])
+        ->name('borrowings.repayments.store');
+    Route::delete('/borrowings/{borrowing}/repayments/{repayment}', [BorrowingController::class, 'destroyRepayment'])
+        ->name('borrowings.repayments.destroy');
 
     /*
      * Settings. The route names stay as they were (profile.edit, password.update)

@@ -65,7 +65,7 @@ A mobile token cannot write categories even when its owner is an admin; an admin
 token with `categories:write` still fails for a non-admin user. Abilities:
 `expenses:read`, `expenses:write`, `categories:read`, `categories:write`,
 `budgets:read`, `budgets:write`, `incomes:read`, `incomes:write`,
-`savings:read`, `savings:write`,
+`savings:read`, `savings:write`, `borrowings:read`, `borrowings:write`,
 `dashboard:read`, `profile:write`.
 
 A fresh token carries every ability the user's permissions justify and nothing
@@ -493,6 +493,130 @@ first.
 
 Someone else's plan or entry is a `403` unless the caller holds
 `savings.manage_all`.
+
+## Borrowing
+
+Money borrowed from someone — a friend, family, a bank — with a ledger of
+repayments against it. Behind `borrowings:read` / `borrowings:write`. Own rows
+only, like income; `borrowings.manage_all` only lets an admin reach a single
+row by UUID.
+
+Nothing about what is *still owed* is stored: `remaining` is always `amount −
+repaid`, derived from the ledger on every read, so it cannot drift. A borrowing
+is `settled` once that reaches zero, and `overdue` while it has not and
+`due_on` has passed. A repayment is capped at `remaining`, checked under a row
+lock, and an edit cannot take `amount` below what is already repaid.
+
+`lender_type` is one of `friend`, `family`, `bank`, `employer`, `other`. The
+lender's *name* is free text beside it.
+
+### `GET /api/v1/borrowings`
+
+Paginated. Still-owed rows first, then newest borrowed.
+
+| Query | Meaning |
+|---|---|
+| `filter[lender]` | partial match on the name |
+| `filter[type]` | one lender type |
+| `status` | `open` (still owed), `settled` (paid back), or `all` (default) |
+| `sort` | `borrowed_on`, `amount`, `due_on`, `lender`; `-` reverses |
+| `per_page` | default 50, clamped to 100 |
+
+```json
+{
+  "data": [{
+    "uuid": "0198f...",
+    "lender": "Mom",
+    "lender_type": "family",
+    "amount": "200.00",
+    "repaid": "50.00",
+    "remaining": "150.00",
+    "percent_repaid": 25,
+    "settled": false,
+    "overdue": false,
+    "borrowed_on": "2026-09-01",
+    "due_on": "2026-12-01",
+    "note": null,
+    "repayments_count": 1,
+    "created_at": "2026-09-01T10:00:00+00:00",
+    "updated_at": "2026-09-01T10:00:00+00:00"
+  }],
+  "links": { "…": "…" }, "meta": { "…": "…" }
+}
+```
+
+### `GET /api/v1/borrowings/summary`
+
+All time, not a month — a debt does not belong to one. `by_lender_type` lists
+only kinds with something outstanding, largest first.
+
+```json
+{
+  "data": {
+    "outstanding": "350.00",
+    "borrowed": "600.00",
+    "repaid": "250.00",
+    "open_count": 2,
+    "settled_count": 1,
+    "overdue_count": 1,
+    "by_lender_type": [
+      { "lender_type": "family", "label": "Family", "outstanding": "200.00", "count": 1 },
+      { "lender_type": "friend", "label": "Friend", "outstanding": "150.00", "count": 1 }
+    ]
+  }
+}
+```
+
+### `GET /api/v1/borrowings/lenders`
+
+The names this account has used, most frequent first, and the fixed lender
+types with their labels in the app locale — everything a form needs.
+
+```json
+{ "data": { "lenders": ["Mom", "Sokha"], "types": [{ "value": "friend", "label": "Friend" }, "…"] } }
+```
+
+### `POST /api/v1/borrowings` → `201`
+
+```bash
+curl -X POST https://spendlog.test/api/v1/borrowings \
+  -H "Authorization: Bearer $TOKEN" -H "Accept: application/json" \
+  -d lender=Mom -d lender_type=family -d amount=200 \
+  -d borrowed_on=2026-09-01 -d due_on=2026-12-01
+```
+
+| Field | Rule |
+|---|---|
+| `lender` | required, max 255 |
+| `lender_type` | required: one of the five types |
+| `amount` | required, min 0.01; `currency` `USD` (default) or `KHR`, converted on the way in |
+| `borrowed_on` | required, not in the future |
+| `due_on` | optional, not before `borrowed_on` |
+| `note` | optional, max 500 |
+
+### `GET|PATCH|DELETE /api/v1/borrowings/{uuid}`
+
+`GET` includes `repayments`, newest first. `PATCH` takes the full shape and is
+a `422` on `amount` when it would drop below what is repaid. `DELETE` returns
+`204` and takes the repayments with it. Someone else's borrowing is a `403`
+unless the caller holds `borrowings.manage_all`.
+
+### `POST /api/v1/borrowings/{uuid}/repayments` → `201`
+
+```bash
+curl -X POST https://spendlog.test/api/v1/borrowings/0198f.../repayments \
+  -H "Authorization: Bearer $TOKEN" -H "Accept: application/json" \
+  -d amount=50 -d paid_on=2026-09-10
+```
+
+`amount` (with the same `currency` handling) is capped at `remaining` — more is
+a `422` on `amount`. `paid_on` cannot be in the future or before `borrowed_on`.
+Authorised as an *update of the borrowing*: a repayment changes what it owes,
+so `borrowings.update` (or `manage_all`) is what it needs.
+
+### `DELETE /api/v1/borrowings/{uuid}/repayments/{uuid}` → `204`
+
+A repayment under a borrowing it does not belong to is a `404`, not a `403`.
 
 ## Recurring
 

@@ -62,6 +62,7 @@ class LandingPageTest extends TestCase
         $user->revokePermissionTo(Permission::IncomesView->value);
         $user->revokePermissionTo(Permission::BudgetsView->value);
         $user->revokePermissionTo(Permission::SavingsView->value);
+        $user->revokePermissionTo(Permission::BorrowingsView->value);
 
         $this->assertSame('reports.index', $user->fresh()->homeRoute());
     }
@@ -76,6 +77,7 @@ class LandingPageTest extends TestCase
             Permission::IncomesView,
             Permission::BudgetsView,
             Permission::SavingsView,
+            Permission::BorrowingsView,
             Permission::ReportsView,
             Permission::CategoriesView,
         ] as $permission) {

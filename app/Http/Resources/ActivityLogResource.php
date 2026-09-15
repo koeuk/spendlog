@@ -20,7 +20,8 @@ class ActivityLogResource extends JsonResource
             'uuid' => $this->uuid,
             'action' => $this->action,
             // "expense", "income", "budget", "category", "savings_plan",
-            // "savings_entry" — the kind, not the class.
+            // "savings_entry", "borrowing", "borrowing_repayment" — the kind,
+            // not the class.
             'subject' => $this->subjectKind(),
             'label' => $this->subject_label,
             'changes' => $this->changes,

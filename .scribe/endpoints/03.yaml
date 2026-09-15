@@ -1,33 +1,38 @@
-name: Reports
-description: ''
+name: 'Admin · Settings'
+description: |-
+
+  The settings the web keeps under Settings → Spending, Appearance and
+  Colours: the KHR/USD exchange rate, the default entry currency, the
+  dashboard guidance copy, the app name and marks, and the palette. Admin
+  only, like the pages they mirror.
 endpoints:
   -
     custom: []
     httpMethods:
       - GET
-    uri: api/v1/reports
+    uri: api/v1/settings/money
     metadata:
       custom: []
-      groupName: Reports
-      groupDescription: ''
+      groupName: 'Admin · Settings'
+      groupDescription: |-
+
+        The settings the web keeps under Settings → Spending, Appearance and
+        Colours: the KHR/USD exchange rate, the default entry currency, the
+        dashboard guidance copy, the app name and marks, and the palette. Admin
+        only, like the pages they mirror.
       subgroup: ''
       subgroupDescription: ''
-      title: 'Spending report'
+      title: 'Money settings'
       description: |-
-        Where the money actually went over a period, and how that compares to the
-        period before. The dashboard answers "how am I doing right now"; this
-        answers "what happened".
+        The two figures a client needs to *enter* money, readable by any
+        signed-in account: the rate a riel amount converts at, and which
+        currency the amount fields start on.
 
-        Every figure comes from the same SpendingTrend / SpendingReport services
-        the web Reports page and its PDF export use, so the two clients cannot
-        disagree about the same period. Money is a string here, as everywhere in
-        this API; `share`, `percent` and `change_percent` are numbers.
-
-        `change_percent` is `null` rather than `0` when there is nothing to
-        compare against — a fabricated "+100%" would read as a measurement.
-        While the current period is still running, `previous_is_partial` is true
-        and `previous` holds only the same elapsed stretch of the period before,
-        so a month in progress is not compared against a whole one.
+        Not admin-only, though only an admin may change them. Without the rate
+        a client cannot show what "៛" it is about to send, so switching an
+        amount field to riel had to clear it rather than convert — a client
+        that cannot read the rate can only guess, and guessing at money is
+        worse than asking again.
       authenticated: true
       deprecated: false
     headers:
@@ -36,56 +41,8 @@ endpoints:
       Accept: application/json
     urlParameters: []
     cleanUrlParameters: []
-    queryParameters:
-      period:
-        custom: []
-        name: period
-        description: 'One of `week`, `month`, `year`, `all`. Anything else falls back to `month`.'
-        required: false
-        example: month
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-      at:
-        custom: []
-        name: at
-        description: 'The period to report on — `YYYY-MM-DD` for a week, `YYYY-MM` for a month, `YYYY` for a year. Ignored for `all`. Defaults to the current period.'
-        required: false
-        example: 2026-08
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-      page:
-        custom: []
-        name: page
-        description: 'Which page of the expense list.'
-        required: false
-        example: 1
-        type: integer
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-      per_page:
-        custom: []
-        name: per_page
-        description: 'Rows per page — one of 20, 50, 100, 150, 200.'
-        required: false
-        example: 20
-        type: integer
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-    cleanQueryParameters:
-      period: month
-      at: 2026-08
-      page: 1
-      per_page: 20
+    queryParameters: []
+    cleanQueryParameters: []
     bodyParameters: []
     cleanBodyParameters: []
     fileParameters: []
@@ -93,15 +50,197 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data": {"granularity": "month", "anchor": "2026-08", "options": [{"value": "2026-08", "label": "August 2026"}], "series": {"label": "August 2026", "total": "648.34", "buckets": [{"key": "2026-08-01", "label": "1", "caption": "Sat 1 Aug", "value": "0.00", "is_current": false, "is_future": false}]}, "breakdown": [{"uuid": "0198a...", "name": "Food", "color": "amber", "icon": "utensils", "total": "23.00", "count": 4, "average": "5.75", "share": 3.5}], "stats": {"total": "648.34", "count": 8, "daily_average": "38.14", "previous": "0.00", "change_percent": null, "previous_label": "July 2026", "previous_is_partial": true}, "expenses": {"data": [], "meta": {"current_page": 1, "last_page": 1, "total": 0}, "links": {"next": null, "prev": null}}}}'
+        content: '{"data": {"khr_per_usd": 4100, "default_currency": "USD"}}'
         headers: []
         description: ''
-      -
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/admin/settings/spending
+    metadata:
+      custom: []
+      groupName: 'Admin · Settings'
+      groupDescription: |-
+
+        The settings the web keeps under Settings → Spending, Appearance and
+        Colours: the KHR/USD exchange rate, the default entry currency, the
+        dashboard guidance copy, the app name and marks, and the palette. Admin
+        only, like the pages they mirror.
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Get spending settings'
+      description: ''
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/admin/settings/branding
+    metadata:
+      custom: []
+      groupName: 'Admin · Settings'
+      groupDescription: |-
+
+        The settings the web keeps under Settings → Spending, Appearance and
+        Colours: the KHR/USD exchange rate, the default entry currency, the
+        dashboard guidance copy, the app name and marks, and the palette. Admin
+        only, like the pages they mirror.
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Get branding'
+      description: |-
+        The app name, the footer's copyright holder, and the logo and favicon
+        as absolute URLs (or null when unset).
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/admin/settings/colors
+    metadata:
+      custom: []
+      groupName: 'Admin · Settings'
+      groupDescription: |-
+
+        The settings the web keeps under Settings → Spending, Appearance and
+        Colours: the KHR/USD exchange rate, the default entry currency, the
+        dashboard guidance copy, the app name and marks, and the palette. Admin
+        only, like the pages they mirror.
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Get colours'
+      description: |-
+        The button and background colours, with the presets the web page offers
+        so a client can draw the same swatches.
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - PUT
+    uri: api/v1/admin/settings/colors
+    metadata:
+      custom: []
+      groupName: 'Admin · Settings'
+      groupDescription: |-
+
+        The settings the web keeps under Settings → Spending, Appearance and
+        Colours: the KHR/USD exchange rate, the default entry currency, the
+        dashboard guidance copy, the app name and marks, and the palette. Admin
+        only, like the pages they mirror.
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Update colours'
+      description: ''
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      button_color:
         custom: []
-        status: 403
-        content: '{"message": "Invalid ability provided."}'
-        headers: []
-        description: 'token lacks reports:read'
+        name: button_color
+        description: 'Any #rrggbb that can carry a readable label.'
+        required: true
+        example: '#2f6f43'
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      body_color:
+        custom: []
+        name: body_color
+        description: 'One of the body presets.'
+        required: true
+        example: '#ffffff'
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+    cleanBodyParameters:
+      button_color: '#2f6f43'
+      body_color: '#ffffff'
+    fileParameters: []
+    responses: []
     responseFields: []
     auth:
       - headers

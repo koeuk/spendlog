@@ -28,6 +28,8 @@ enum TokenAbility: string
     case IncomesWrite = 'incomes:write';
     case SavingsRead = 'savings:read';
     case SavingsWrite = 'savings:write';
+    case BorrowingsRead = 'borrowings:read';
+    case BorrowingsWrite = 'borrowings:write';
     // Recurring rules deliberately have no ability of their own — a rule is a
     // deferred expense or income and can create nothing its holder could not
     // create by hand, so the row kind's pair above already scopes it. See the
@@ -91,6 +93,12 @@ enum TokenAbility: string
                 Permission::SavingsCreate,
                 Permission::SavingsUpdate,
                 Permission::SavingsDelete,
+            ],
+            self::BorrowingsRead => [Permission::BorrowingsView],
+            self::BorrowingsWrite => [
+                Permission::BorrowingsCreate,
+                Permission::BorrowingsUpdate,
+                Permission::BorrowingsDelete,
             ],
             self::DashboardRead => [Permission::DashboardView],
             self::ReportsRead => [Permission::ReportsView],

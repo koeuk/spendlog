@@ -1,0 +1,128 @@
+name: Profile
+description: |-
+
+  The account's own details. Requires the `profile:write` ability — which is
+  **not** in a default token unless the account holds the profile permissions.
+  The photo endpoints are the exception: open to any signed-in account.
+endpoints:
+  -
+    custom: []
+    httpMethods:
+      - DELETE
+    uri: api/v1/profile/avatar
+    metadata:
+      custom: []
+      groupName: Profile
+      groupDescription: |-
+
+        The account's own details. Requires the `profile:write` ability — which is
+        **not** in a default token unless the account holds the profile permissions.
+        The photo endpoints are the exception: open to any signed-in account.
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Remove the profile photo'
+      description: |-
+        Deletes the file and clears the path. Idempotent: an account with no
+        photo gets the same 200 back.
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"data": {"uuid": "0198a...", "name": "Koeuk", "avatar_url": null}}'
+        headers: []
+        description: ''
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - PUT
+    uri: api/v1/password
+    metadata:
+      custom: []
+      groupName: Profile
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Change the password'
+      description: |-
+        No current-password check, mirroring the web form — accounts here are
+        created by an admin for a small known group, and the `profile:write`
+        ability plus the gate already bound who can reach this.
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      password:
+        custom: []
+        name: password
+        description: 'The new password.'
+        required: true
+        example: a-much-better-one
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      password_confirmation:
+        custom: []
+        name: password_confirmation
+        description: ''
+        required: true
+        example: a-much-better-one
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+    cleanBodyParameters:
+      password: a-much-better-one
+      password_confirmation: a-much-better-one
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"message": "Password changed."}'
+        headers: []
+        description: ''
+      -
+        custom: []
+        status: 403
+        content: '{"message": "This action is unauthorized."}'
+        headers: []
+        description: 'token lacks profile:write, or user lacks the permission'
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null

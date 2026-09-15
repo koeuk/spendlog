@@ -1,47 +1,82 @@
-name: Endpoints
+name: Dashboard
 description: ''
 endpoints:
   -
     custom: []
     httpMethods:
       - GET
-    uri: 'api/v1/reports/export/{format}'
+    uri: api/v1/dashboard
     metadata:
       custom: []
-      groupName: Endpoints
+      groupName: Dashboard
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: |-
-        The same report as a file. Reads through the same period resolution as
-        index(), so a download can never disagree with the screen it came from.
-      description: 'Not paginated: a file is exactly where you want every row.'
+      title: 'Home screen'
+      description: |-
+        Everything a home screen needs in one call, rather than four round trips:
+        today's total, this month's summary, the by-category breakdown ranked by
+        spend with each category's share of the month, and the 8 most recent
+        expenses.
+
+        `breakdown` is empty when nothing was spent this month — the shares would
+        be meaningless.
+
+        `income`, `balance` and `savings` follow `budget_month`: what came in
+        that month, that minus what was spent in it, and what was put aside
+        against the month's savings plan. `balance` can be negative.
+        `savings.total_saved` is the exception — savings carry over between
+        months, so it is the all-time balance.
       authenticated: true
       deprecated: false
     headers:
       Authorization: 'Bearer {YOUR_AUTH_TOKEN}'
       Content-Type: application/json
       Accept: application/json
-    urlParameters:
-      format:
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters:
+      budget_month:
         custom: []
-        name: format
-        description: ''
-        required: true
-        example: architecto
+        name: budget_month
+        description: "YYYY-MM. Which month's budgets `summary` reports. Defaults to the current month."
+        required: false
+        example: 2026-06
         type: string
         enumValues: []
-        exampleWasSpecified: false
+        exampleWasSpecified: true
         nullable: false
         deprecated: false
-    cleanUrlParameters:
-      format: architecto
-    queryParameters: []
-    cleanQueryParameters: []
+      breakdown_month:
+        custom: []
+        name: breakdown_month
+        description: 'YYYY-MM. Which month `breakdown` splits. Independent of budget_month.'
+        required: false
+        example: 2026-03
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+    cleanQueryParameters:
+      budget_month: 2026-06
+      breakdown_month: 2026-03
     bodyParameters: []
     cleanBodyParameters: []
     fileParameters: []
-    responses: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"data": {"today": {"date": "2026-07-16", "total": "12.50"}, "summary": {"month": "2026-07", "overall": {"spent": "75.00", "budget": "200.00", "remaining": "125.00", "percent": 38, "bar_percent": 38, "status": "ok"}, "categories": []}, "breakdown": [{"uuid": "0198a...", "name": "Food", "color": "amber", "icon": "utensils", "spent": "75.00", "share": 75}], "recent": [{"uuid": "0198f...", "item": "Coffee", "price": "4.50", "spent_on": "2026-07-16", "category": {"uuid": "0198a...", "name": "Food"}}], "income": {"month": "2026-07", "total": "1200.00"}, "balance": "1125.00", "savings": {"month": "2026-07", "planned": "100.00", "saved_this_month": "60.00", "percent": 60, "total_saved": "1240.00"}}}'
+        headers: []
+        description: ''
+      -
+        custom: []
+        status: 403
+        content: '{"message": "Invalid ability provided."}'
+        headers: []
+        description: 'token lacks dashboard:read'
     responseFields: []
     auth:
       - headers

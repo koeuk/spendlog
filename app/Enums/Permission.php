@@ -60,6 +60,13 @@ enum Permission: string
     case SavingsDelete = 'savings.delete';
     case SavingsManageAll = 'savings.manage_all';
 
+    // --- Borrowing --------------------------------------------------------
+    case BorrowingsView = 'borrowings.view';
+    case BorrowingsCreate = 'borrowings.create';
+    case BorrowingsUpdate = 'borrowings.update';
+    case BorrowingsDelete = 'borrowings.delete';
+    case BorrowingsManageAll = 'borrowings.manage_all';
+
     // --- Account ----------------------------------------------------------
     case ProfileUpdate = 'profile.update';
     case PasswordUpdate = 'password.update';
@@ -106,6 +113,12 @@ enum Permission: string
             self::SavingsUpdate => __('Edit own savings goals'),
             self::SavingsDelete => __('Delete own savings goals'),
             self::SavingsManageAll => __('Manage anyone’s savings goals'),
+
+            self::BorrowingsView => __('View own borrowing'),
+            self::BorrowingsCreate => __('Add borrowing'),
+            self::BorrowingsUpdate => __('Edit own borrowing'),
+            self::BorrowingsDelete => __('Delete own borrowing'),
+            self::BorrowingsManageAll => __('Edit and delete anyone’s borrowing'),
 
             self::ProfileUpdate => __('Change own name and email'),
             self::PasswordUpdate => __('Change own password'),
@@ -154,6 +167,12 @@ enum Permission: string
             self::SavingsDelete => __('Delete a goal and everything saved against it.'),
             self::SavingsManageAll => __('Not just their own.'),
 
+            self::BorrowingsView => __('Their own list of money borrowed and what is still owed.'),
+            self::BorrowingsCreate => __('Record money borrowed from a friend, family or a bank.'),
+            self::BorrowingsUpdate => __('Their own only, unless granted the one below. Includes recording repayments.'),
+            self::BorrowingsDelete => __('Their own only, unless granted the one below.'),
+            self::BorrowingsManageAll => __('Not just their own.'),
+
             self::ProfileUpdate => __('Revoke this where names and emails come from elsewhere.'),
             self::PasswordUpdate => __('Revoke this where passwords are managed centrally.'),
 
@@ -185,6 +204,9 @@ enum Permission: string
 
             self::SavingsView, self::SavingsCreate, self::SavingsUpdate,
             self::SavingsDelete, self::SavingsManageAll => __('Savings'),
+
+            self::BorrowingsView, self::BorrowingsCreate, self::BorrowingsUpdate,
+            self::BorrowingsDelete, self::BorrowingsManageAll => __('Borrowing'),
 
             self::ProfileUpdate, self::PasswordUpdate => __('Account'),
 
@@ -244,6 +266,11 @@ enum Permission: string
             self::SavingsCreate->value,
             self::SavingsUpdate->value,
             self::SavingsDelete->value,
+
+            self::BorrowingsView->value,
+            self::BorrowingsCreate->value,
+            self::BorrowingsUpdate->value,
+            self::BorrowingsDelete->value,
 
             self::ProfileUpdate->value,
             self::PasswordUpdate->value,
