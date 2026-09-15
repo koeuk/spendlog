@@ -97,6 +97,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/profile', [SettingsController::class, 'profile'])->name('profile.edit');
         Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
         Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+        // The photo has its own pair rather than riding on profile.update: it
+        // is a multipart upload that lands the moment a file is picked, not a
+        // field saved with the rest of the form.
+        Route::post('/profile/avatar', [ProfileController::class, 'storeAvatar'])->name('profile.avatar.store');
+        Route::delete('/profile/avatar', [ProfileController::class, 'destroyAvatar'])->name('profile.avatar.destroy');
 
         Route::get('/password', [SettingsController::class, 'password'])->name('password.edit');
 

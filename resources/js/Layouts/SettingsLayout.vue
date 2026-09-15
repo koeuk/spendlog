@@ -18,7 +18,7 @@ let lastMarker = null;
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
-import { CircleHelp, FileText, HandCoins, History, Palette, ShieldCheck, SwatchBook, UserRound, Users } from 'lucide-vue-next';
+import { ArrowLeft, CircleHelp, FileText, HandCoins, History, Palette, ShieldCheck, SwatchBook, UserRound, Users } from 'lucide-vue-next';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { CARD, EYEBROW, MUTED } from '@/lib/appStyles';
 import { trans } from '@/lib/i18n';
@@ -257,14 +257,37 @@ watch(
     <!-- No brand bar on a phone. Settings is somewhere you go to change one
          thing and leave, and the bar's own contents — the workspace switcher,
          the burger — are the least of what you came for. The More tab that got
-         you here still holds everything the burger did. -->
-    <AuthenticatedLayout hide-nav-on-mobile>
+         you here still holds everything the burger did.
+
+         No module sidebar on a desk either. Settings has its own nav down the
+         left, and the module's pages beside it were two sidebars arguing over
+         a panel narrower than a phone in landscape. With it gone the settings
+         nav takes the left edge and the panel takes the width; the arrow by
+         the heading is the way back out. -->
+    <AuthenticatedLayout hide-nav-on-mobile hide-sidebar>
         <template #header>
             <div>
                 <p :class="EYEBROW">{{ __('Account') }}</p>
-                <h1 class="mt-1 text-3xl font-extrabold tracking-[-0.03em] sm:text-4xl">
-                    {{ __('Settings') }}
-                </h1>
+                <div class="mt-1 flex items-center gap-3">
+                    <!-- Same control as FormScreenLayout's back button, for
+                         the same reason: with the sidebar gone the only other
+                         way out is the account menu, and a page you can only
+                         leave through a dropdown is a page you feel stuck on.
+                         The dashboard, like the brand link — the module's front
+                         door, not wherever you happened to come from. -->
+                    <Link
+                        :href="route('dashboard')"
+                        :aria-label="trans('Back to dashboard')"
+                        :title="trans('Back to dashboard')"
+                        class="grid size-10 shrink-0 place-items-center rounded-full border border-border bg-card/70 text-foreground transition hover:bg-muted"
+                    >
+                        <ArrowLeft class="size-5" aria-hidden="true" />
+                    </Link>
+
+                    <h1 class="text-3xl font-extrabold tracking-[-0.03em] sm:text-4xl">
+                        {{ __('Settings') }}
+                    </h1>
+                </div>
             </div>
         </template>
 

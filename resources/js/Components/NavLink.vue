@@ -13,6 +13,10 @@ const props = defineProps({
 });
 
 /**
+ * One row of the desktop sidebar: an icon and its label, the full width of
+ * the column, so the whole row is the target and the pill behind it has a
+ * rectangle to fill.
+ *
  * The active pill itself is not drawn here — one shared element in the layout
  * slides between links, which it cannot do if each link paints its own. This
  * only colours the label, and `relative z-10` keeps it above the sliding pill.
@@ -30,8 +34,8 @@ const props = defineProps({
  */
 const classes = computed(() =>
     props.active
-        ? 'relative z-10 inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors duration-300'
-        : 'relative z-10 inline-flex items-center rounded-full px-4 py-2 text-sm font-medium text-neutral-500 transition-colors duration-300 hover:text-neutral-900 dark:text-white dark:hover:text-white',
+        ? 'relative z-10 flex w-full items-center gap-3 rounded-full px-3.5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors duration-300'
+        : 'relative z-10 flex w-full items-center gap-3 rounded-full px-3.5 py-2.5 text-sm font-medium text-neutral-500 transition-colors duration-300 hover:text-neutral-900 dark:text-white dark:hover:text-white',
 );
 </script>
 

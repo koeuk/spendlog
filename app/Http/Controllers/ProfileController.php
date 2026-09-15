@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ProfileAvatarRequest;
 use App\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -32,6 +33,31 @@ class ProfileController extends Controller
         $request->user()->save();
 
         return Redirect::route('profile.edit');
+    }
+
+    /**
+     * Replace the profile photo.
+     *
+     * No updateProfile gate, unlike update() above: the photo is open to any
+     * signed-in account, the same rule as the API's profile/avatar endpoints,
+     * so the two doors agree on who may change it.
+     */
+    public function storeAvatar(ProfileAvatarRequest $request): RedirectResponse
+    {
+        $request->user()->storeAvatar($request->file('avatar'));
+
+        return Redirect::route('profile.edit')->with('success', __('Photo updated.'));
+    }
+
+    /**
+     * Remove the profile photo. Idempotent — an account with no photo lands
+     * back on the page all the same.
+     */
+    public function destroyAvatar(Request $request): RedirectResponse
+    {
+        $request->user()->removeAvatar();
+
+        return Redirect::route('profile.edit')->with('success', __('Photo removed.'));
     }
 
     /**

@@ -15,12 +15,14 @@ import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useWindowScroll } from '@vueuse/core';
 import AmbientBackdrop from '@/Components/AmbientBackdrop.vue';
 import AppFooter from '@/Components/AppFooter.vue';
+import BrandMark from '@/Components/BrandMark.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import LocaleSwitcher from '@/Components/LocaleSwitcher.vue';
 import ThemeToggle from '@/Components/ThemeToggle.vue';
+import UserAvatar from '@/Components/UserAvatar.vue';
 import { Toaster } from '@/Components/ui/sonner';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/Components/ui/sheet';
 import { useFlashToasts } from '@/composables/useFlashToasts';
@@ -55,11 +57,24 @@ import { Link, usePage } from '@inertiajs/vue3';
  * More sheet at the other end of the screen. What the bar costs there is the
  * top 80px of a screen the user opened to read something specific.
  *
- * Phones only. From md: up the tab bar is gone and the burger is the only way
- * through, so the bar stays whatever this says.
+ * Phones only. From md: up the tab bar is gone and the bar holds the account
+ * menu, so it stays whatever this says.
  */
 defineProps({
     hideNavOnMobile: { type: Boolean, default: false },
+    /**
+     * Drop the desktop sidebar, for a page that brings a nav of its own.
+     *
+     * Settings has its own column of pages down the left; beside the module's
+     * sidebar that is two sidebars arguing, and the panel they leave between
+     * them is narrower than a phone in landscape. With it gone the settings
+     * nav takes the left edge and the panel takes the width. The brand comes
+     * back onto the bar, since the sidebar was where it lived, and the page
+     * supplies its own way back (SettingsLayout's arrow by the heading).
+     *
+     * Desks only, by construction: below md the sidebar is never shown.
+     */
+    hideSidebar: { type: Boolean, default: false },
 });
 
 /*
@@ -78,8 +93,8 @@ const scrolled = computed(() => scrollY.value > 8);
  *
  * Phones only, and the tab bar is why: it holds every page in the module at the
  * bottom of the screen, so a hidden bar costs a swipe on the workspace pill and
- * nothing at all on navigation. From md: up the bar *is* the navigation — there
- * is no tab bar there — so it stays put.
+ * nothing at all on navigation. From md: up the pages are in the sidebar and the
+ * bar holds the account menu; neither goes anywhere.
  *
  * Reading the direction rather than the position: a bar that hides below a
  * fixed offset and never returns makes the user scroll to the top of a long
@@ -114,7 +129,6 @@ const page = usePage();
 const branding = computed(
     () => page.props.branding ?? { name: 'SpendLog', logo: null, plain_background: false },
 );
-const brandInitial = computed(() => (branding.value.name || 'S').charAt(0).toUpperCase());
 
 useFlashToasts();
 
@@ -159,8 +173,8 @@ const MODULES = [
         // Always available. Every link inside is still permission-filtered, so a
         // user with nothing here simply gets an empty nav, not a broken app.
         permission: null,
-        // The icons are for the phone tab bar only — the desktop nav stays text,
-        // where there is room for the word and an icon beside it would be noise.
+        // The icons sit beside the labels in the desktop sidebar and over them
+        // on the phone tab bar.
         links: [
             { label: 'Dashboard', route: 'dashboard', active: 'dashboard', permission: 'dashboard.view', icon: LayoutDashboard },
             { label: 'Categories', route: 'categories.index', active: 'categories.*', permission: 'categories.view', icon: Shapes },
@@ -191,8 +205,8 @@ const links = computed(() => activeModule.value.links.filter((link) => can(link.
 /*
  * The phone tab bar keeps four pages and hands the rest to a More sheet.
  *
- * Desktop is untouched — it renders `links` whole, where there is room for the
- * lot. The bar is the constrained surface: at 430px five tabs plus the account
+ * The sidebar renders `links` whole — a column has room for the lot. The bar
+ * is the constrained surface: at 430px five tabs plus the account
  * menu already truncate their labels, and Khmer runs longer than English, so the
  * fifth slot was the first to break. Four is what fits without truncating in
  * either locale.
@@ -231,12 +245,15 @@ const moreActive = computed(
  * The sliding nav pill.
  *
  * Measured from the DOM rather than computed from the links, because the pill
- * has to track the rendered label — which changes width with the locale and the
+ * has to track the rendered row — which changes height with the locale and the
  * font, neither of which we can know up front.
+ *
+ * Both axes, though the sidebar is a column: the rows are measured rather than
+ * assumed, so a nav laid out any other way would still be tracked correctly.
  *
  * Module scope, deliberately: every page wraps this layout in its own template,
  * so Inertia tears the nav down and rebuilds it on each visit. A ref would reset
- * and the pill would simply appear at the new tab. Holding the last position
+ * and the pill would simply appear at the new link. Holding the last position
  * outside the component lets the fresh nav start where the old one ended and
  * animate from there — the slide survives the remount.
  *
@@ -244,27 +261,34 @@ const moreActive = computed(
  * working; it just stops being load-bearing.
  */
 const navRef = ref(null);
-const pill = ref({ left: 0, width: 0 });
+const pill = ref({ x: 0, y: 0, w: 0, h: 0 });
 // Off for the first frame, so the pill appears in place instead of flying in
-// from the left edge on a cold load.
+// from the top on a cold load.
 const pillAnimates = ref(false);
 
 const pillStyle = computed(() => ({
-    transform: `translateX(${pill.value.left}px)`,
-    width: `${pill.value.width}px`,
+    transform: `translate(${pill.value.x}px, ${pill.value.y}px)`,
+    width: `${pill.value.w}px`,
+    height: `${pill.value.h}px`,
     // Width 0 means no link matched (e.g. Settings) — fade out rather than
-    // leaving a zero-width sliver parked at the first tab.
-    opacity: pill.value.width > 0 ? 1 : 0,
+    // leaving a zero-width sliver parked at the first link.
+    opacity: pill.value.w > 0 ? 1 : 0,
 }));
 
 function activePillBox() {
     const active = navRef.value?.querySelector('[aria-current="page"]');
 
-    // Width 0 = no tab matches this route (Settings, say). Keep the last left so
-    // the pill fades out in place rather than sliding to the first tab first.
+    // Width 0 = no link matches this route (Settings, say). Keep the last
+    // position so the pill fades out in place rather than sliding to the first
+    // link first.
     return active
-        ? { left: active.offsetLeft, width: active.offsetWidth }
-        : { left: pill.value.left, width: 0 };
+        ? {
+              x: active.offsetLeft,
+              y: active.offsetTop,
+              w: active.offsetWidth,
+              h: active.offsetHeight,
+          }
+        : { ...pill.value, w: 0 };
 }
 
 function measurePill() {
@@ -275,10 +299,17 @@ function measurePill() {
 let observer;
 
 onMounted(() => {
-    const target = activePillBox();
-    const moved = lastPill && lastPill.left !== target.left;
+    // No nav to measure on a page that hides the sidebar. lastPill is left as
+    // it was, so the trip back still slides from the link you left by.
+    if (!navRef.value) {
+        return;
+    }
 
-    if (moved && target.width > 0) {
+    const target = activePillBox();
+    // Both axes, for the same reason both are measured.
+    const moved = lastPill && (lastPill.x !== target.x || lastPill.y !== target.y);
+
+    if (moved && target.w > 0) {
         // Start where the previous page's nav left off, unanimated...
         pillAnimates.value = false;
         pill.value = lastPill;
@@ -325,303 +356,370 @@ watch(() => page.url, () => (showMoreSheet.value = false));
              the stock wash. -->
         <AmbientBackdrop :tint="branding.plain_background ? branding.body_color : null" />
 
-        <!-- flex column at full viewport height so the footer can be pushed to
-             the bottom on short pages (main grows) rather than floating mid-page. -->
-        <!-- pb clears the fixed tab bar on a phone, so the footer and the last
-             card are scrollable to rather than sitting under the glass. Back to
-             the plain gutter from md: up, where there is no bar to clear. -->
+        <!--
+            A row from md: up — the sidebar beside the page column — and just
+            the column on a phone, where the sidebar is hidden and the tab bar
+            at the bottom carries the pages instead.
+
+            Wider than the phone's max-w-6xl by the sidebar and its gap, so on
+            a big screen the cards keep the width they had before the sidebar
+            took a column off the left. On a screen too narrow for that the
+            column comes out of the page, which is what a sidebar costs.
+
+            min-h-screen so the page column can push the footer to the bottom
+            on short pages (main grows) rather than leaving it mid-page.
+
+            pb clears the fixed tab bar on a phone, so the footer and the last
+            card are scrollable to rather than sitting under the glass. Back to
+            the plain gutter from md: up, where there is no bar to clear.
+        -->
         <div
-            class="mx-auto flex min-h-screen max-w-6xl flex-col px-3 pb-[calc(6.5rem+env(safe-area-inset-bottom))] md:pb-10 lg:px-4"
+            class="mx-auto flex min-h-screen max-w-6xl px-3 pb-[calc(6.5rem+env(safe-area-inset-bottom))] md:max-w-[88rem] md:gap-6 md:pb-10 lg:gap-8 lg:px-4"
         >
             <!--
-                The bar floats on the page rather than spanning it edge to edge,
-                echoing the panel geometry of the auth screens.
+                The desktop sidebar.
 
-                The wrapper is what sticks, not the <nav>: it cancels the
-                container's gutter with -mx/px so the glass can reach the panel
-                edges while the nav's contents stay on the same grid as the
-                cards below. Nothing here changes size on scroll — only colour,
-                border, shadow and blur animate, so the page never reflows and
-                the links never shift under the pointer.
+                The module's pages one under the other, with the brand at the
+                head. Sticky at the top edge and the height of the viewport, so
+                the pages stay reachable however far down a list you are — the
+                job the bar's row of links did before they moved here.
+
+                No panel behind it: the links float on the wash the way the
+                settings sub-nav does, and the pill is the only fill. self-start
+                keeps the row from stretching it to the page's full height,
+                which is what stops a sticky element from ever sticking.
+
+                Hidden below md, where the tab bar under the thumb holds the
+                same pages and a column down the side would take a third of a
+                phone. Not rendered at all when the page hides it — see the
+                prop — so there is no nav to measure and no pill to place.
             -->
-            <!-- The whole sticky block goes, not the <nav> inside it: left
-                 standing with nothing to hold, the wrapper still draws its
-                 scrolled border as a hairline across the top of the page. -->
-            <div
-                class="sticky top-0 z-40 -mx-3 px-3 transition-[background-color,border-color,box-shadow,backdrop-filter,transform] duration-300 ease-out motion-reduce:transition-none lg:-mx-4 lg:px-4"
-                :class="[
-                    hideNavOnMobile ? 'max-md:hidden' : '',
-                    barHidden ? 'max-md:-translate-y-full' : '',
-                    scrolled
-                        ? 'rounded-b-[28px] border-b border-neutral-200/70 bg-white/70 shadow-[0_8px_24px_-12px_rgba(15,23,42,0.15)] backdrop-blur-xl backdrop-saturate-150 dark:border-white/10 dark:bg-neutral-900/60 dark:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.6)]'
-                        : 'border-b border-transparent',
-                ]"
+            <aside
+                v-if="!hideSidebar"
+                class="sticky top-0 hidden h-svh w-52 shrink-0 flex-col self-start md:flex"
             >
-            <!--
-                Tighter gaps below sm. At 320px the row measured 353px wide and
-                pushed the burger off the edge — the wordmark, the workspace pill,
-                the locale pair, the theme toggle and the burger are each defended
-                by a comment of their own, so the space comes out of the spacing
-                rather than out of a control. Back to the roomier gaps from sm: up.
-            -->
-            <nav class="flex h-20 items-center justify-between gap-2 sm:gap-4">
-                <div class="flex min-w-0 items-center gap-2 sm:gap-6">
-                    <Link
-                        :href="route(activeModule.home)"
-                        class="flex shrink-0 items-center gap-2 text-sm font-bold tracking-tight"
+                <!-- h-20 lines the brand up with the bar across the gap, so
+                     the two read as one header row split by the sidebar's
+                     edge. px-3.5 matches the links, so the mark and their
+                     icons share a left edge. -->
+                <Link
+                    :href="route(activeModule.home)"
+                    class="flex h-20 shrink-0 items-center gap-2 px-3.5 text-sm font-bold tracking-tight"
+                >
+                    <BrandMark />
+                    <span class="min-w-0 truncate">{{ branding.name }}</span>
+                </Link>
+
+                <!--
+                    pt-2 to match the page header beside it, so the first link
+                    and the eyebrow share a top edge.
+
+                    Scrolls itself, so a module that outgrows a short window is
+                    still all reachable — the sidebar is pinned, so scrolling
+                    the page would never bring the tail into view. The -mx/px
+                    pair gives the links' focus rings room inside the scroller,
+                    which would otherwise clip them at the column's edges.
+                -->
+                <nav
+                    ref="navRef"
+                    :aria-label="__('Primary')"
+                    class="relative -mx-1 flex flex-1 flex-col gap-1 overflow-y-auto px-1 pb-6 pt-2"
+                >
+                    <!-- One pill for the whole nav, slid to the active link.
+                         aria-hidden: it is decoration, and the link already
+                         carries aria-current="page". -->
+                    <span
+                        aria-hidden="true"
+                        class="pointer-events-none absolute left-0 top-0 rounded-full bg-primary will-change-transform motion-reduce:transition-none"
+                        :class="pillAnimates ? 'transition-[transform,width,height,opacity] duration-300 ease-out' : ''"
+                        :style="pillStyle"
+                    />
+                    <NavLink
+                        v-for="link in links"
+                        :key="link.route"
+                        :href="route(link.route)"
+                        :active="route().current(link.active)"
                     >
-                        <!-- An uploaded logo replaces the lettermark; without one
-                             we fall back to the app name's initial. -->
-                        <img
-                            v-if="branding.logo"
-                            :src="branding.logo"
-                            :alt="branding.name"
-                            class="size-7 shrink-0 rounded-lg object-contain"
-                        />
-                        <!-- The mark wears the brand colour: it stands in for the
-                             logo, so it is the one thing that should obviously be
-                             the admin's colour. Theme-aware by default, like every
-                             other use of the token. -->
-                        <span
-                            v-else
-                            class="bg-primary text-primary-foreground grid size-7 place-items-center rounded-lg text-[13px] font-extrabold"
+                        <component :is="link.icon" class="size-4 shrink-0" aria-hidden="true" />
+                        {{ __(link.label) }}
+                    </NavLink>
+                </nav>
+            </aside>
+
+            <!-- The page column: bar, header, content, footer. min-w-0 so a
+                 wide table inside scrolls itself instead of pushing the column
+                 out past the sidebar. -->
+            <div class="flex min-w-0 flex-1 flex-col">
+                <!--
+                    The bar floats on the page rather than spanning it edge to edge,
+                    echoing the panel geometry of the auth screens.
+
+                    The wrapper is what sticks, not the <nav>. On a phone it cancels
+                    the container's gutter with -mx/px so the glass can reach the
+                    panel edges while the nav's contents stay on the same grid as
+                    the cards below. From md: up it sits in the page column beside
+                    the sidebar and keeps to the column's own edges instead, so the
+                    glass lines up with the cards rather than reaching under the
+                    sidebar — unless the sidebar is hidden, when the column is the
+                    whole panel and the glass reaches its edges at every width.
+                    Nothing here changes size on scroll — only colour, border,
+                    shadow and blur animate, so the page never reflows and the
+                    controls never shift under the pointer.
+                -->
+                <!-- The whole sticky block goes, not the <nav> inside it: left
+                     standing with nothing to hold, the wrapper still draws its
+                     scrolled border as a hairline across the top of the page. -->
+                <div
+                    class="sticky top-0 z-40 -mx-3 px-3 transition-[background-color,border-color,box-shadow,backdrop-filter,transform] duration-300 ease-out motion-reduce:transition-none"
+                    :class="[
+                        hideSidebar ? 'lg:-mx-4 lg:px-4' : 'md:mx-0 md:px-0',
+                        hideNavOnMobile ? 'max-md:hidden' : '',
+                        barHidden ? 'max-md:-translate-y-full' : '',
+                        scrolled
+                            ? 'rounded-b-[28px] border-b border-neutral-200/70 bg-white/70 shadow-[0_8px_24px_-12px_rgba(15,23,42,0.15)] backdrop-blur-xl backdrop-saturate-150 dark:border-white/10 dark:bg-neutral-900/60 dark:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.6)]'
+                            : 'border-b border-transparent',
+                    ]"
+                >
+                <!--
+                    Tighter gaps below sm. At 320px the row measured 353px wide and
+                    pushed the burger off the edge — the wordmark, the workspace pill,
+                    the locale pair, the theme toggle and the burger are each defended
+                    by a comment of their own, so the space comes out of the spacing
+                    rather than out of a control. Back to the roomier gaps from sm: up.
+                -->
+                <nav class="flex h-20 items-center justify-between gap-2 sm:gap-4">
+                    <div class="flex min-w-0 items-center gap-2 sm:gap-6">
+                        <!-- Phones only while the sidebar is there: from md: up
+                             the brand heads the sidebar, and a second copy at the
+                             top of the page column would put the same mark twice
+                             on one screen. With the sidebar hidden this is the
+                             only mark, so it stays at every width. -->
+                        <Link
+                            :href="route(activeModule.home)"
+                            class="flex shrink-0 items-center gap-2 text-sm font-bold tracking-tight"
+                            :class="hideSidebar ? '' : 'md:hidden'"
                         >
-                            {{ brandInitial }}
-                        </span>
-                        <span class="hidden sm:inline">{{ branding.name }}</span>
-                    </Link>
+                            <BrandMark />
+                            <span class="hidden sm:inline">{{ branding.name }}</span>
+                        </Link>
 
-                    <!--
-                        The workspace switcher.
+                        <!--
+                            The workspace switcher.
 
-                        Renders only for accounts that hold more than one module,
-                        which is the minority — so for most people the header is
-                        exactly as it was. Sits beside the wordmark rather than in
-                        the user dropdown because switching workspace is a
-                        navigation act, not an account setting, and burying it
-                        would put three clicks between someone and their log.
-                    -->
-                    <Dropdown v-if="showSwitcher" align="left" width="48">
-                        <template #trigger>
-                            <button
-                                type="button"
-                                class="inline-flex items-center gap-1.5 rounded-full border border-border bg-card/70 py-1.5 pe-2 ps-3 text-xs font-semibold text-foreground transition hover:bg-muted"
-                            >
-                                <component
-                                    :is="activeModule.icon"
-                                    class="size-3.5 shrink-0"
-                                    aria-hidden="true"
-                                />
-                                <!-- Named at every width. Hidden below sm this
-                                     was a bare icon and a chevron, which is the
-                                     one control on the bar that cannot afford to
-                                     be a guess: it says which workspace you are
-                                     in, and the wordmark beside it is already
-                                     down to its lettermark on a phone. The
-                                     labels are one short word, so they fit at
-                                     320px. -->
-                                <span>{{ __(activeModule.label) }}</span>
-                                <ChevronDown class="size-3.5 text-neutral-400" />
-                            </button>
-                        </template>
-
-                        <template #content>
-                            <DropdownLink
-                                v-for="module in availableModules"
-                                :key="module.key"
-                                :href="route(module.home)"
-                            >
-                                <span class="flex items-center gap-2">
-                                    <component
-                                        :is="module.icon"
-                                        class="size-4 shrink-0"
-                                        aria-hidden="true"
-                                    />
-                                    {{ __(module.label) }}
-                                    <!-- Marks where you already are, so the menu
-                                         answers "which workspace is this?" as
-                                         well as offering the other one. -->
-                                    <Check
-                                        v-if="module.key === activeModule.key"
-                                        class="ms-auto size-4 shrink-0"
-                                        aria-hidden="true"
-                                    />
-                                </span>
-                            </DropdownLink>
-                        </template>
-                    </Dropdown>
-
-                    <div ref="navRef" class="relative hidden items-center gap-1 md:flex">
-                        <!-- One pill for the whole nav, slid to the active link.
-                             aria-hidden: it is decoration, and the link already
-                             carries aria-current="page". -->
-                        <span
-                            aria-hidden="true"
-                            class="pointer-events-none absolute inset-y-0 left-0 rounded-full bg-primary will-change-transform motion-reduce:transition-none"
-                            :class="pillAnimates ? 'transition-[transform,width,opacity] duration-300 ease-out' : ''"
-                            :style="pillStyle"
-                        />
-                        <NavLink
-                            v-for="link in links"
-                            :key="link.route"
-                            :href="route(link.route)"
-                            :active="route().current(link.active)"
-                        >
-                            {{ __(link.label) }}
-                        </NavLink>
-                    </div>
-                </div>
-
-                <div class="flex items-center gap-2">
-                    <!-- On the bar at every width. These were desktop-only while
-                         the burger was here: two permanent slots for switches
-                         that get picked once was a poor trade against a 430px
-                         bar already carrying the wordmark, the workspace pill
-                         and the burger. With the burger gone the count is the
-                         same as it was, the menu that held them is gone with it,
-                         and a one-tap switch beats the same switch three taps
-                         into a sheet. -->
-                    <div class="flex items-center gap-2">
-                        <LocaleSwitcher />
-                        <ThemeToggle />
-                    </div>
-
-                    <div class="hidden md:block">
-                        <Dropdown align="right" width="48">
+                            Renders only for accounts that hold more than one module,
+                            which is the minority — so for most people the header is
+                            exactly as it was. Sits beside the wordmark rather than in
+                            the user dropdown because switching workspace is a
+                            navigation act, not an account setting, and burying it
+                            would put three clicks between someone and their log.
+                        -->
+                        <Dropdown v-if="showSwitcher" align="left" width="48">
                             <template #trigger>
                                 <button
                                     type="button"
-                                    class="inline-flex items-center gap-2 rounded-full py-1.5 pe-2 ps-3 text-sm font-semibold text-neutral-600 transition hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                                    class="inline-flex items-center gap-1.5 rounded-full border border-border bg-card/70 py-1.5 pe-2 ps-3 text-xs font-semibold text-foreground transition hover:bg-muted"
                                 >
-                                    {{ $page.props.auth.user.name }}
-
-                                    <span
-                                        v-if="$page.props.auth.is_admin"
-                                        class="rounded-full bg-neutral-900 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white dark:bg-neutral-100 dark:text-neutral-900"
-                                    >
-                                        {{ __('Admin') }}
-                                    </span>
-
-                                    <ChevronDown class="size-4 text-neutral-400" />
+                                    <component
+                                        :is="activeModule.icon"
+                                        class="size-3.5 shrink-0"
+                                        aria-hidden="true"
+                                    />
+                                    <!-- Named at every width. Hidden below sm this
+                                         was a bare icon and a chevron, which is the
+                                         one control on the bar that cannot afford to
+                                         be a guess: it says which workspace you are
+                                         in, and the wordmark beside it is already
+                                         down to its lettermark on a phone. The
+                                         labels are one short word, so they fit at
+                                         320px. -->
+                                    <span>{{ __(activeModule.label) }}</span>
+                                    <ChevronDown class="size-3.5 text-neutral-400" />
                                 </button>
                             </template>
 
                             <template #content>
-                                <DropdownLink :href="route('settings')">
-                                    {{ __('Settings') }}
-                                </DropdownLink>
-                                <DropdownLink :href="route('help')">
-                                    {{ __('Help') }}
-                                </DropdownLink>
-                                <DropdownLink :href="route('logout')" method="post" as="button">
-                                    {{ __('Log Out') }}
+                                <DropdownLink
+                                    v-for="module in availableModules"
+                                    :key="module.key"
+                                    :href="route(module.home)"
+                                >
+                                    <span class="flex items-center gap-2">
+                                        <component
+                                            :is="module.icon"
+                                            class="size-4 shrink-0"
+                                            aria-hidden="true"
+                                        />
+                                        {{ __(module.label) }}
+                                        <!-- Marks where you already are, so the menu
+                                             answers "which workspace is this?" as
+                                             well as offering the other one. -->
+                                        <Check
+                                            v-if="module.key === activeModule.key"
+                                            class="ms-auto size-4 shrink-0"
+                                            aria-hidden="true"
+                                        />
+                                    </span>
                                 </DropdownLink>
                             </template>
                         </Dropdown>
                     </div>
 
-                    <!-- No burger. It opened a panel holding the account block,
-                         Settings, Help, Log Out, locale and theme — the same
-                         list, item for item, that the More sheet raises from the
-                         bottom of the screen, and the tab bar below already
-                         carries the pages. Two controls onto one menu, one of
-                         them at the far corner from the thumb. -->
-                </div>
-            </nav>
+                    <div class="flex items-center gap-2">
+                        <!-- On the bar at every width. These were desktop-only while
+                             the burger was here: two permanent slots for switches
+                             that get picked once was a poor trade against a 430px
+                             bar already carrying the wordmark, the workspace pill
+                             and the burger. With the burger gone the count is the
+                             same as it was, the menu that held them is gone with it,
+                             and a one-tap switch beats the same switch three taps
+                             into a sheet. -->
+                        <div class="flex items-center gap-2">
+                            <LocaleSwitcher />
+                            <ThemeToggle />
+                        </div>
 
-            <!-- Inside the sticky block, so it travels with the nav instead of
-                 being left at the top of the page on the first scroll.
+                        <div class="hidden md:block">
+                            <Dropdown align="right" width="48">
+                                <template #trigger>
+                                    <button
+                                        type="button"
+                                        class="inline-flex items-center gap-2 rounded-full py-1.5 pe-2 ps-1.5 text-sm font-semibold text-neutral-600 transition hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                                    >
+                                        <!-- The face first, then the name. ps-1.5
+                                             rather than ps-3 so the disc sits in
+                                             the pill's own curve instead of
+                                             floating inside it. -->
+                                        <UserAvatar :user="$page.props.auth.user" class="size-7 text-xs" />
+                                        {{ $page.props.auth.user.name }}
 
-                 origin-top on the scale: growing from its own middle would have
-                 it push out of the nav's underside on the way in. -->
-            <Transition
-                enter-active-class="origin-top transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
-                enter-from-class="scale-95 opacity-0"
-                enter-to-class="scale-100 opacity-100"
-                leave-active-class="origin-top transition-[transform,opacity] duration-200 ease-[cubic-bezier(0.4,0,1,1)] motion-reduce:transition-none"
-                leave-from-class="scale-100 opacity-100"
-                leave-to-class="scale-95 opacity-0"
-            >
-                <div
-                    v-if="showOverBudget"
-                    role="alert"
-                    class="mb-3 flex items-center gap-4 rounded-2xl border border-red-500/20 bg-red-50/80 px-5 py-4 backdrop-blur-xl dark:border-red-500/25 dark:bg-red-950/50"
+                                        <span
+                                            v-if="$page.props.auth.is_admin"
+                                            class="rounded-full bg-neutral-900 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white dark:bg-neutral-100 dark:text-neutral-900"
+                                        >
+                                            {{ __('Admin') }}
+                                        </span>
+
+                                        <ChevronDown class="size-4 text-neutral-400" />
+                                    </button>
+                                </template>
+
+                                <template #content>
+                                    <DropdownLink :href="route('settings')">
+                                        {{ __('Settings') }}
+                                    </DropdownLink>
+                                    <DropdownLink :href="route('help')">
+                                        {{ __('Help') }}
+                                    </DropdownLink>
+                                    <DropdownLink :href="route('logout')" method="post" as="button">
+                                        {{ __('Log Out') }}
+                                    </DropdownLink>
+                                </template>
+                            </Dropdown>
+                        </div>
+
+                        <!-- No burger. It opened a panel holding the account block,
+                             Settings, Help, Log Out, locale and theme — the same
+                             list, item for item, that the More sheet raises from the
+                             bottom of the screen, and the tab bar below already
+                             carries the pages. Two controls onto one menu, one of
+                             them at the far corner from the thumb. -->
+                    </div>
+                </nav>
+
+                <!-- Inside the sticky block, so it travels with the nav instead of
+                     being left at the top of the page on the first scroll.
+
+                     origin-top on the scale: growing from its own middle would have
+                     it push out of the nav's underside on the way in. -->
+                <Transition
+                    enter-active-class="origin-top transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+                    enter-from-class="scale-95 opacity-0"
+                    enter-to-class="scale-100 opacity-100"
+                    leave-active-class="origin-top transition-[transform,opacity] duration-200 ease-[cubic-bezier(0.4,0,1,1)] motion-reduce:transition-none"
+                    leave-from-class="scale-100 opacity-100"
+                    leave-to-class="scale-95 opacity-0"
                 >
-                    <!-- The mark: a badge with a ring leaving it. Both layers are
-                         absolutely placed inside a fixed-size box so neither the
-                         breath nor the ring can change the row's height. -->
-                    <span class="relative grid size-10 shrink-0 place-items-center">
-                        <span
-                            class="alert-ring absolute inset-0 rounded-full bg-red-500/40"
-                            aria-hidden="true"
-                        />
-                        <span
-                            class="alert-breathe relative grid size-10 place-items-center rounded-full bg-red-500/15 dark:bg-red-500/20"
-                        >
-                            <TriangleAlert
-                                class="size-5 text-red-600 dark:text-red-400"
+                    <div
+                        v-if="showOverBudget"
+                        role="alert"
+                        class="mb-3 flex items-center gap-4 rounded-2xl border border-red-500/20 bg-red-50/80 px-5 py-4 backdrop-blur-xl dark:border-red-500/25 dark:bg-red-950/50"
+                    >
+                        <!-- The mark: a badge with a ring leaving it. Both layers are
+                             absolutely placed inside a fixed-size box so neither the
+                             breath nor the ring can change the row's height. -->
+                        <span class="relative grid size-10 shrink-0 place-items-center">
+                            <span
+                                class="alert-ring absolute inset-0 rounded-full bg-red-500/40"
                                 aria-hidden="true"
                             />
+                            <span
+                                class="alert-breathe relative grid size-10 place-items-center rounded-full bg-red-500/15 dark:bg-red-500/20"
+                            >
+                                <TriangleAlert
+                                    class="size-5 text-red-600 dark:text-red-400"
+                                    aria-hidden="true"
+                                />
+                            </span>
                         </span>
-                    </span>
 
-                    <div class="min-w-0 flex-1">
-                        <Link
-                            :href="route('budgets.index')"
-                            class="text-sm font-semibold text-red-900 hover:underline dark:text-red-200"
+                        <div class="min-w-0 flex-1">
+                            <Link
+                                :href="route('budgets.index')"
+                                class="text-sm font-semibold text-red-900 hover:underline dark:text-red-200"
+                            >
+                                {{ __('Over budget this month') }}
+                            </Link>
+                            <p class="mt-0.5 truncate text-xs text-red-700 dark:text-red-300">
+                                {{
+                                    __('You have spent :spent of your :budget overall budget — :over over.', {
+                                        spent: money.format(overBudget.spent),
+                                        budget: money.format(overBudget.budget),
+                                        over: money.format(Math.abs(overBudget.remaining)),
+                                    })
+                                }}
+                            </p>
+                            <!-- A nudge, not a number. Kept quieter than the figures
+                                 above and allowed to wrap, since it is a full sentence
+                                 and reads as a couple of lines in both locales. -->
+                            <p class="mt-2 text-xs italic leading-relaxed text-red-700/80 dark:text-red-300/80">
+                                {{ __("You work hard all month, yet spend everything in just a few days. When the money is gone, you blame your salary, your life, or your luck. But the truth is, the problem isn't a lack of money—the problem is spending without thinking.") }}
+                            </p>
+                        </div>
+
+                        <button
+                            type="button"
+                            class="grid size-8 shrink-0 place-items-center rounded-full text-red-600/70 transition hover:bg-red-500/10 hover:text-red-700 dark:text-red-400/70 dark:hover:text-red-300"
+                            :aria-label="__('Dismiss')"
+                            @click="dismissOverBudget"
                         >
-                            {{ __('Over budget this month') }}
-                        </Link>
-                        <p class="mt-0.5 truncate text-xs text-red-700 dark:text-red-300">
-                            {{
-                                __('You have spent :spent of your :budget overall budget — :over over.', {
-                                    spent: money.format(overBudget.spent),
-                                    budget: money.format(overBudget.budget),
-                                    over: money.format(Math.abs(overBudget.remaining)),
-                                })
-                            }}
-                        </p>
-                        <!-- A nudge, not a number. Kept quieter than the figures
-                             above and allowed to wrap, since it is a full sentence
-                             and reads as a couple of lines in both locales. -->
-                        <p class="mt-2 text-xs italic leading-relaxed text-red-700/80 dark:text-red-300/80">
-                            {{ __("You work hard all month, yet spend everything in just a few days. When the money is gone, you blame your salary, your life, or your luck. But the truth is, the problem isn't a lack of money—the problem is spending without thinking.") }}
-                        </p>
+                            <X class="size-4" />
+                        </button>
                     </div>
-
-                    <button
-                        type="button"
-                        class="grid size-8 shrink-0 place-items-center rounded-full text-red-600/70 transition hover:bg-red-500/10 hover:text-red-700 dark:text-red-400/70 dark:hover:text-red-300"
-                        :aria-label="__('Dismiss')"
-                        @click="dismissOverBudget"
-                    >
-                        <X class="size-4" />
-                    </button>
+                </Transition>
                 </div>
-            </Transition>
+                <!-- /sticky bar — the mobile menu lives inside it so an open menu
+                     scrolls with the bar rather than being left behind. -->
+
+                <!-- pt-2 assumes the bar above it. With the bar gone the heading
+                     starts against the top edge of the viewport, so the space the
+                     bar was providing has to come from here instead. -->
+                <header
+                    v-if="$slots.header"
+                    class="anim pb-6 pt-2"
+                    :class="hideNavOnMobile ? 'max-md:pt-6' : ''"
+                    style="--d: 40ms"
+                >
+                    <slot name="header" />
+                </header>
+
+                <!-- Grows to absorb the slack, so the footer lands at the bottom on a
+                     short page and is pushed down naturally on a tall one. -->
+                <main class="flex-1">
+                    <slot />
+                </main>
+
+                <AppFooter />
             </div>
-            <!-- /sticky bar — the mobile menu lives inside it so an open menu
-                 scrolls with the bar rather than being left behind. -->
-
-            <!-- pt-2 assumes the bar above it. With the bar gone the heading
-                 starts against the top edge of the viewport, so the space the
-                 bar was providing has to come from here instead. -->
-            <header
-                v-if="$slots.header"
-                class="anim pb-6 pt-2"
-                :class="hideNavOnMobile ? 'max-md:pt-6' : ''"
-                style="--d: 40ms"
-            >
-                <slot name="header" />
-            </header>
-
-            <!-- Grows to absorb the slack, so the footer lands at the bottom on a
-                 short page and is pushed down naturally on a tall one. -->
-            <main class="flex-1">
-                <slot />
-            </main>
-
-            <AppFooter />
         </div>
 
         <!--
@@ -637,7 +735,7 @@ watch(() => page.url, () => (showMoreSheet.value = false));
             leave the bar mid-page. The rounded glass slab matches the cards and
             the scrolled header, so it reads as part of the same surface.
 
-            Hidden from md: up, where the header nav already shows the same links
+            Hidden from md: up, where the sidebar already shows the same links
             and a second copy would be redundant.
         -->
         <nav
@@ -719,13 +817,18 @@ watch(() => page.url, () => (showMoreSheet.value = false));
                 side="bottom"
                 class="gap-0 rounded-t-[24px] p-0 pb-[max(1rem,env(safe-area-inset-bottom))] md:hidden"
             >
-                <div class="px-5 pb-2 pt-5">
-                    <SheetTitle class="text-sm font-semibold">
-                        {{ $page.props.auth.user.name }}
-                    </SheetTitle>
-                    <SheetDescription class="text-xs text-neutral-500 dark:text-neutral-400">
-                        {{ $page.props.auth.user.email }}
-                    </SheetDescription>
+                <div class="flex items-center gap-3 px-5 pb-2 pt-5">
+                    <UserAvatar :user="$page.props.auth.user" class="size-10 text-sm" />
+                    <!-- min-w-0 so a long email truncates instead of pushing
+                         the sheet wider than the screen. -->
+                    <div class="min-w-0">
+                        <SheetTitle class="truncate text-sm font-semibold">
+                            {{ $page.props.auth.user.name }}
+                        </SheetTitle>
+                        <SheetDescription class="truncate text-xs text-neutral-500 dark:text-neutral-400">
+                            {{ $page.props.auth.user.email }}
+                        </SheetDescription>
+                    </div>
                 </div>
 
                 <!-- Scrolls itself: with a long module and a short phone the
