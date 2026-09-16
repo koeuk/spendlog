@@ -19,7 +19,7 @@ class BorrowingFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
-            'lender' => fake()->randomElement(['Mom', 'Sokha', 'ABA Bank', 'Dara']),
+            'lender' => fake()->randomElement(['Mom', 'Sokha', 'ABA Bank', 'Dary']),
             'lender_type' => fake()->randomElement(LenderType::cases()),
             'amount' => fake()->randomFloat(2, 20, 2000),
             // Never in the future — BorrowingRequest rejects that, so a
