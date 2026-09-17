@@ -1,8 +1,8 @@
-FROM php:8.3-cli
+FROM php:8.4-cli
 
 WORKDIR /var/www/html
 
-# System dependencies
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -14,10 +14,10 @@ RUN apt-get update && apt-get install -y \
     libfreetype6-dev \
     libonig-dev \
     libxml2-dev \
-    nodejs \
-    npm \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install \
+    && docker-php-ext-configure gd \
+        --with-freetype \
+        --with-jpeg \
+    && docker-php-ext-install -j$(nproc) \
         pdo_mysql \
         mbstring \
         bcmath \
@@ -25,13 +25,20 @@ RUN apt-get update && apt-get install -y \
         pcntl \
         gd \
         zip \
+        xml \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Composer
+# Install Node.js 22
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs \
+    && npm --version \
+    && node --version
+
+# Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Copy application
+# Copy Laravel project
 COPY . .
 
 # Install PHP dependencies
@@ -41,16 +48,18 @@ RUN composer install \
     --prefer-dist \
     --optimize-autoloader
 
-# Install frontend dependencies and build Vue
+# Install Vue dependencies
 RUN npm install
+
+# Build Vue/Vite
 RUN npm run build
 
-# Laravel cache
+# Clear Laravel cache
 RUN php artisan config:clear
 
-# Create storage link if possible
+# Create storage link
 RUN php artisan storage:link || true
 
 EXPOSE 8080
 
-CMD php artisan serve --host=0.0.0.0 --port=${PORT}
+CMD ["sh", "-c", "php artisan serve --host=0.0.0.0 --port=${PORT}"]
