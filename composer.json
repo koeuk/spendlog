@@ -6,7 +6,7 @@
     "keywords": ["laravel", "framework"],
     "license": "MIT",
     "require": {
-        "php": "^8.3",
+        "php": "^8.4",
         "barryvdh/laravel-dompdf": "^3.1",
         "inertiajs/inertia-laravel": "^2.0",
         "laravel/framework": "^13.8",
@@ -23,7 +23,6 @@
         "fakerphp/faker": "^1.23",
         "knuckleswtf/scribe": "^5.11",
         "laravel/breeze": "^2.4",
-        "laravel/pail": "^1.2.5",
         "laravel/pao": "^1.0.6",
         "laravel/pint": "^1.27",
         "mockery/mockery": "^1.6",
