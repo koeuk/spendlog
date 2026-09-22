@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasUuidRouteKey;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -23,6 +24,25 @@ class ActivityLog extends Model
     public const UPDATED = 'updated';
 
     public const DELETED = 'deleted';
+
+    /**
+     * The kinds a client may filter by, mapped to the classes stored in
+     * `subject_type`. Every model that uses LogsActivity appears here; the
+     * keys are what subjectKind() emits, so a filter and a response row always
+     * speak the same word.
+     *
+     * @var array<string, class-string<Model>>
+     */
+    public const SUBJECTS = [
+        'expense' => Expense::class,
+        'income' => Income::class,
+        'budget' => Budget::class,
+        'category' => Category::class,
+        'savings_plan' => SavingsPlan::class,
+        'savings_entry' => SavingsEntry::class,
+        'borrowing' => Borrowing::class,
+        'borrowing_repayment' => BorrowingRepayment::class,
+    ];
 
     protected $fillable = [
         'user_id',
@@ -51,6 +71,24 @@ class ActivityLog extends Model
     public function subject(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    /**
+     * Narrow to one or more subject kinds, named the way the API names them.
+     *
+     * Unknown kinds are dropped rather than trusted into the query, so a
+     * client cannot ask about a class this log was never meant to expose.
+     *
+     * @param  array<int, string>  $kinds
+     */
+    public function scopeOfKind(Builder $query, array $kinds): Builder
+    {
+        $types = array_values(array_intersect_key(
+            self::SUBJECTS,
+            array_flip($kinds),
+        ));
+
+        return $query->whereIn('subject_type', $types);
     }
 
     /**

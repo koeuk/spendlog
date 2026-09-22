@@ -8,6 +8,8 @@ use App\Models\ActivityLog;
 use App\Models\Category;
 use App\Models\Expense;
 use App\Models\Income;
+use App\Models\SavingsEntry;
+use App\Models\SavingsPlan;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -163,5 +165,55 @@ class ActivityLogTest extends TestCase
         Sanctum::actingAs($user);
 
         $this->getJson('/api/v1/activity?scope=all')->assertForbidden();
+    }
+
+    public function test_subject_narrows_the_log_to_the_kinds_asked_for(): void
+    {
+        $user = $this->user();
+        $this->actingAs($user);
+
+        Income::factory()->for($user)->create(['source' => 'Salary']);
+        SavingsPlan::factory()->for($user)->forMonth('2026-09')->create(['amount' => 100]);
+        SavingsEntry::factory()->for($user)->create(['amount' => 40, 'saved_on' => '2026-09-02']);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->getJson('/api/v1/activity?subject=savings_plan,savings_entry')
+            ->assertOk()
+            ->assertJsonCount(2, 'data');
+
+        $this->assertEqualsCanonicalizing(
+            ['savings_plan', 'savings_entry'],
+            array_column($response->json('data'), 'subject'),
+        );
+
+        $this->getJson('/api/v1/activity?subject=savings_plan')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.subject', 'savings_plan');
+    }
+
+    public function test_an_unknown_subject_is_a_422_rather_than_an_empty_list(): void
+    {
+        $user = $this->user();
+
+        Sanctum::actingAs($user);
+
+        $this->getJson('/api/v1/activity?subject=plans')
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('subject');
+    }
+
+    public function test_subject_cannot_reach_a_model_the_log_does_not_expose(): void
+    {
+        $user = $this->user();
+
+        Sanctum::actingAs($user);
+
+        // A class name, not a kind: the filter speaks the API's vocabulary
+        // only, so nothing outside ActivityLog::SUBJECTS is addressable.
+        $this->getJson('/api/v1/activity?subject='.urlencode(User::class))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('subject');
     }
 }

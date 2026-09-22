@@ -161,12 +161,13 @@ class SavingsTest extends TestCase
 
         $this->assertSame('2026-09', $response->json('data.month'));
         $this->assertSame('100.00', $response->json('data.planned'));
-        // 80 - 20, this month only.
-        $this->assertSame('60.00', $response->json('data.saved_this_month'));
-        $this->assertSame('40.00', $response->json('data.remaining'));
-        $this->assertSame(60, $response->json('data.percent'));
-        $this->assertSame(60, $response->json('data.percent_raw'));
-        $this->assertSame('ok', $response->json('data.status'));
+        // The month's deposits. The 20 taken back out is a movement of the
+        // balance, not a smaller contribution to the plan.
+        $this->assertSame('80.00', $response->json('data.saved_this_month'));
+        $this->assertSame('20.00', $response->json('data.remaining'));
+        $this->assertSame(80, $response->json('data.percent'));
+        $this->assertSame(80, $response->json('data.percent_raw'));
+        $this->assertSame('close', $response->json('data.status'));
         // 1180 + 80 - 20, every month.
         $this->assertSame('1240.00', $response->json('data.total_saved'));
         $this->assertSame(2, $response->json('data.entries_count'));
@@ -281,7 +282,8 @@ class SavingsTest extends TestCase
 
         $this->getJson('/api/v1/savings/summary?month=2026-09')
             ->assertOk()
-            ->assertJsonPath('data.saved_this_month', '100.00')
+            // The month put 150 aside; the balance is 100 after taking 50 out.
+            ->assertJsonPath('data.saved_this_month', '150.00')
             ->assertJsonPath('data.total_saved', '100.00');
     }
 
