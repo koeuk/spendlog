@@ -87,12 +87,11 @@ class SavingsPageTest extends TestCase
 
         $this->assertSame('2026-09', $props['month']);
         $this->assertEqualsWithDelta(100.0, $props['summary']['planned'], 0.001);
-        // The month's deposits; the 20 taken out moves the balance, not this.
-        $this->assertEqualsWithDelta(80.0, $props['summary']['saved_this_month'], 0.001);
+        $this->assertEqualsWithDelta(60.0, $props['summary']['saved_this_month'], 0.001);
         // All time, August included; the other account's money is not.
         $this->assertEqualsWithDelta(260.0, $props['summary']['total_saved'], 0.001);
-        $this->assertSame(80, $props['summary']['percent']);
-        $this->assertSame('close', $props['summary']['status']);
+        $this->assertSame(60, $props['summary']['percent']);
+        $this->assertSame('ok', $props['summary']['status']);
 
         // The month's ledger only, newest first.
         $this->assertCount(2, $props['entries']);

@@ -161,16 +161,40 @@ class SavingsTest extends TestCase
 
         $this->assertSame('2026-09', $response->json('data.month'));
         $this->assertSame('100.00', $response->json('data.planned'));
-        // The month's deposits. The 20 taken back out is a movement of the
-        // balance, not a smaller contribution to the plan.
-        $this->assertSame('80.00', $response->json('data.saved_this_month'));
-        $this->assertSame('20.00', $response->json('data.remaining'));
-        $this->assertSame(80, $response->json('data.percent'));
-        $this->assertSame(80, $response->json('data.percent_raw'));
-        $this->assertSame('close', $response->json('data.status'));
+        // 80 - 20, this month only: a withdrawal walks the month back.
+        $this->assertSame('60.00', $response->json('data.saved_this_month'));
+        $this->assertSame('40.00', $response->json('data.remaining'));
+        $this->assertSame(60, $response->json('data.percent'));
+        $this->assertSame(60, $response->json('data.percent_raw'));
+        $this->assertSame('ok', $response->json('data.status'));
         // 1180 + 80 - 20, every month.
         $this->assertSame('1240.00', $response->json('data.total_saved'));
         $this->assertSame(2, $response->json('data.entries_count'));
+    }
+
+    public function test_a_month_that_gives_back_more_than_it_saved_floors_at_zero(): void
+    {
+        $user = User::factory()->create();
+        SavingsPlan::factory()->for($user)->forMonth('2026-09')->create(['amount' => 150]);
+        // Last month's money is what September takes back out.
+        SavingsEntry::factory()->for($user)->create(['amount' => 500, 'saved_on' => '2026-08-20']);
+        SavingsEntry::factory()->for($user)->create(['amount' => 10, 'saved_on' => '2026-09-02']);
+        SavingsEntry::factory()->for($user)->withdrawal(20)->create(['saved_on' => '2026-09-04']);
+
+        Sanctum::actingAs($user, [TokenAbility::SavingsRead->value]);
+
+        $this->getJson('/api/v1/savings/summary?month=2026-09')
+            ->assertOk()
+            // -10 on the month, reported as nothing saved rather than as a
+            // negative: the plan has no use for the sign.
+            ->assertJsonPath('data.saved_this_month', '0.00')
+            ->assertJsonPath('data.remaining', '150.00')
+            ->assertJsonPath('data.percent', 0)
+            ->assertJsonPath('data.percent_raw', 0)
+            ->assertJsonPath('data.status', 'ok')
+            // The balance is the one figure that still shows the withdrawal.
+            ->assertJsonPath('data.total_saved', '490.00')
+            ->assertJsonPath('data.entries_count', 2);
     }
 
     public function test_a_month_with_no_plan_reports_zeros_without_erroring(): void
@@ -282,8 +306,7 @@ class SavingsTest extends TestCase
 
         $this->getJson('/api/v1/savings/summary?month=2026-09')
             ->assertOk()
-            // The month put 150 aside; the balance is 100 after taking 50 out.
-            ->assertJsonPath('data.saved_this_month', '150.00')
+            ->assertJsonPath('data.saved_this_month', '100.00')
             ->assertJsonPath('data.total_saved', '100.00');
     }
 
