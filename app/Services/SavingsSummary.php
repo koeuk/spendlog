@@ -13,22 +13,21 @@ use Carbon\CarbonImmutable;
  * BudgetSummary, and shaped like it on purpose so the two cards on the
  * Dashboard cannot answer the same question differently.
  *
- * Two figures do the work: what went *into* savings this month, and the
- * all-time balance. The month's deposits are what the plan is measured
- * against; the balance is what a withdrawal is measured against, because
- * September's money is still there to take out in October.
+ * Two figures do the work: what stayed aside out of this month, and the
+ * all-time balance. The month's net is what the plan is measured against; the
+ * balance is what a withdrawal is measured against, because September's money
+ * is still there to take out in October.
  *
- * The plan asks "how much will you put aside this month", so only deposits
- * answer it. A withdrawal spends the balance rather than undoing the month's
- * saving, and it shows up in `total_saved` where it belongs — netting it off
- * the month would let one taken-out dollar erase a dollar genuinely put in.
+ * The plan asks "how much will you have put aside this month", so a
+ * withdrawal in the same month walks the answer back: deposit $100 against a
+ * $150 plan and take $80 of it out again, and $20 is what stayed.
  *
- * This was the net once, and briefly again. The net is the wrong measure here
- * for two reasons: a month that gave back more than it took in reported a
- * negative figure and a negative percentage, and money deposited and then
- * spent within the same month left no trace on the card at all. Both are
- * questions `total_saved` and the entry list answer. Changing this back means
- * changing what a savings plan means, so read that decision before moving it.
+ * Deposits alone was tried and rejected: a month drawn back down still read
+ * as fully saved, which is the opposite of what the card is for. The price of
+ * the net is that money deposited and then spent inside one month leaves the
+ * card at nothing, which is the honest answer to "how much did you put aside"
+ * even though it was briefly there. The entry list and `total_saved` are
+ * where that money is read. Moving this changes what a savings plan means.
  *
  * Deals in floats like BudgetSummary; the resources and controllers format
  * money to strings at the API boundary.
@@ -67,26 +66,26 @@ class SavingsSummary
     }
 
     /**
-     * What went aside in one month: the deposits, and only the deposits.
+     * What stayed aside out of one month: deposits less withdrawals.
      *
-     * Never negative — this is the month's contribution to savings, which is
-     * what the plan is set against. What came back out in the same month is a
-     * movement of the balance, not a smaller contribution, and it is visible
-     * in the entry list and in totalSaved() either way.
+     * Floored at zero. A month that gave back more than it put in has saved
+     * nothing, not a negative amount, and "-$10 saved, -7% of your plan" reads
+     * as a broken figure rather than an honest one. The withdrawals that took
+     * it there are still in the month's entry list, and totalSaved() still
+     * carries the real balance, so nothing is hidden by the floor — only the
+     * sign the plan has no use for.
      */
     public function savedInMonth(User $user, CarbonImmutable $month): float
     {
         $start = $month->startOfMonth();
 
+        // The column is signed, so one sum is the net: no type column to ask.
         $total = SavingsEntry::query()
             ->forUser($user->id)
             ->inMonth($start->toDateString())
-            // Positive rows only: the column is signed, so this is the
-            // deposits without needing a type column to ask.
-            ->where('amount', '>', 0)
             ->sum('amount');
 
-        return round((float) $total, Currency::SCALE);
+        return max(0.0, round((float) $total, Currency::SCALE));
     }
 
     /**
@@ -108,8 +107,8 @@ class SavingsSummary
 
     /**
      * How much of the plan was met, uncapped — the truth, which the API sends
-     * as `percent_raw` and the status is read off. It can exceed 100; it can
-     * no longer go below 0, since savedInMonth() counts deposits only.
+     * as `percent_raw` and the status is read off. It can exceed 100; it never
+     * goes below 0, because savedInMonth() is floored there.
      */
     public function percentRaw(float $saved, float $planned): int
     {
@@ -171,8 +170,7 @@ class SavingsSummary
         return [
             'month' => $start->format('Y-m'),
             'planned' => $planned,
-            // Deposits only — see savedInMonth(). The key keeps its name: what
-            // was "saved this month" is what was put in this month.
+            // Deposits less withdrawals, floored at zero — see savedInMonth().
             'saved_this_month' => $saved,
             'remaining' => $this->remaining($saved, $planned),
             'percent' => $this->percent($saved, $planned),
