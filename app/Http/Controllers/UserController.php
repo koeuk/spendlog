@@ -80,7 +80,7 @@ class UserController extends Controller
         ]);
     }
 
-    public function create(Request $request): Response
+    public function create(): Response
     {
         Gate::authorize('create', User::class);
 
@@ -158,27 +158,18 @@ class UserController extends Controller
     {
         Gate::authorize('create', User::class);
 
-        DB::beginTransaction();
-
         try {
-            $user = new User($request->userAttributes());
-            $user->save();
+            $user = DB::transaction(function () use ($request) {
+                $user = new User($request->userAttributes());
+                $user->save();
 
-            // Assigned explicitly, never mass-assigned — otherwise the request
-            // body could hand out admin.
-            $user->applyRole(RoleName::from($request->validated('role')));
+                // Assigned explicitly, never mass-assigned — otherwise the
+                // request body could hand out admin.
+                $user->applyRole(RoleName::from($request->validated('role')));
 
-            DB::commit();
-
-            // Same verification mail the public register flow sends.
-            event(new Registered($user));
-
-            // Not back(): the form is its own page, so back() would land on
-            // the form that was just submitted.
-            return redirect()->route('users.index')->withSuccess(__('User created successfully.'));
-        } catch (\Exception $e) {
-            DB::rollback();
-
+                return $user;
+            });
+        } catch (\Throwable $e) {
             // getMessage() on a QueryException is the SQLSTATE, the whole
             // parameterised query and its bound values. That is a log entry,
             // not something to flash at whoever clicked the button.
@@ -186,6 +177,14 @@ class UserController extends Controller
 
             return back()->withError(__('Something went wrong. Please try again.'))->withInput();
         }
+
+        // Same verification mail the public register flow sends. Outside the
+        // transaction: the mail must not go out for a write that rolled back.
+        event(new Registered($user));
+
+        // Not back(): the form is its own page, so back() would land on
+        // the form that was just submitted.
+        return redirect()->route('users.index')->withSuccess(__('User created successfully.'));
     }
 
     public function update(UserRequest $request, User $user): RedirectResponse
@@ -208,39 +207,34 @@ class UserController extends Controller
             Gate::authorize('suspend', $user);
         }
 
-        DB::beginTransaction();
-
         try {
-            $user->fill($request->userAttributes());
+            DB::transaction(function () use ($request, $user, $role, $roleChanged) {
+                $user->fill($request->userAttributes());
 
-            // Re-verification is required when the address changes, matching the
-            // rule the user's own profile form follows.
-            if ($user->isDirty('email')) {
-                $user->email_verified_at = null;
-            }
+                // Re-verification is required when the address changes, matching
+                // the rule the user's own profile form follows.
+                if ($user->isDirty('email')) {
+                    $user->email_verified_at = null;
+                }
 
-            $user->save();
+                $user->save();
 
-            // The edit form can change status just as changeStatus() can, so it
-            // owes the same cleanup. Without this, suspending someone from this
-            // form left their tokens alive: the web session dies at the next
-            // request, but a phone would keep working.
-            if ($user->status->revokesAccess()) {
-                $user->tokens()->delete();
-            }
+                // The edit form can change status just as changeStatus() can, so
+                // it owes the same cleanup. Without this, suspending someone from
+                // this form left their tokens alive: the web session dies at the
+                // next request, but a phone would keep working.
+                if ($user->status->revokesAccess()) {
+                    $user->tokens()->delete();
+                }
 
-            if ($roleChanged) {
-                // Resets to the new role's defaults. Keeping the old set would
-                // leave an ex-admin holding admin permissions with a user badge.
-                $user->applyRole(RoleName::from($role));
-            }
-
-            DB::commit();
-
-            return redirect()->route('users.index')->withSuccess(__('User updated successfully.'));
-        } catch (\Exception $e) {
-            DB::rollback();
-
+                if ($roleChanged) {
+                    // Resets to the new role's defaults. Keeping the old set
+                    // would leave an ex-admin holding admin permissions with a
+                    // user badge.
+                    $user->applyRole(RoleName::from($role));
+                }
+            });
+        } catch (\Throwable $e) {
             // getMessage() on a QueryException is the SQLSTATE, the whole
             // parameterised query and its bound values. That is a log entry,
             // not something to flash at whoever clicked the button.
@@ -248,6 +242,8 @@ class UserController extends Controller
 
             return back()->withError(__('Something went wrong. Please try again.'))->withInput();
         }
+
+        return redirect()->route('users.index')->withSuccess(__('User updated successfully.'));
     }
 
     /**
@@ -270,27 +266,18 @@ class UserController extends Controller
             return back();
         }
 
-        DB::beginTransaction();
-
         try {
-            $user->status = $status;
-            $user->save();
+            DB::transaction(function () use ($user, $status) {
+                $user->status = $status;
+                $user->save();
 
-            if ($status->revokesAccess()) {
-                // The web session dies via EnsureUserIsActive on their next
-                // request; API tokens have no such checkpoint, so they go now.
-                $user->tokens()->delete();
-            }
-
-            DB::commit();
-
-            return back()->withSuccess(__(':name is now :status.', [
-                'name' => $user->name,
-                'status' => mb_strtolower($status->label()),
-            ]));
-        } catch (\Exception $e) {
-            DB::rollback();
-
+                if ($status->revokesAccess()) {
+                    // The web session dies via EnsureUserIsActive on their next
+                    // request; API tokens have no such checkpoint, so they go now.
+                    $user->tokens()->delete();
+                }
+            });
+        } catch (\Throwable $e) {
             // getMessage() on a QueryException is the SQLSTATE, the whole
             // parameterised query and its bound values. That is a log entry,
             // not something to flash at whoever clicked the button.
@@ -298,6 +285,11 @@ class UserController extends Controller
 
             return back()->withError(__('Something went wrong. Please try again.'));
         }
+
+        return back()->withSuccess(__(':name is now :status.', [
+            'name' => $user->name,
+            'status' => mb_strtolower($status->label()),
+        ]));
     }
 
     /**
@@ -333,19 +325,11 @@ class UserController extends Controller
             'permissions.*' => [Rule::enum(PermissionEnum::class)],
         ]);
 
-        DB::beginTransaction();
-
         try {
             // Exactly what was ticked. Nothing is filtered out against the role:
             // roles grant nothing at run time, so this list IS their access.
-            $user->syncPermissions($validated['permissions']);
-
-            DB::commit();
-
-            return redirect()->route('users.index')->withSuccess(__('Permissions updated for :name.', ['name' => $user->name]));
-        } catch (\Exception $e) {
-            DB::rollback();
-
+            DB::transaction(fn () => $user->syncPermissions($validated['permissions']));
+        } catch (\Throwable $e) {
             // getMessage() on a QueryException is the SQLSTATE, the whole
             // parameterised query and its bound values. That is a log entry,
             // not something to flash at whoever clicked the button.
@@ -353,25 +337,19 @@ class UserController extends Controller
 
             return back()->withError(__('Something went wrong. Please try again.'));
         }
+
+        return redirect()->route('users.index')->withSuccess(__('Permissions updated for :name.', ['name' => $user->name]));
     }
 
     public function destroy(User $user): RedirectResponse
     {
         Gate::authorize('delete', $user);
 
-        DB::beginTransaction();
-
         try {
             // expenses/budgets cascade on the FK — deleting an account takes its
             // whole history with it, which is why the UI confirms with a count.
-            $user->delete();
-
-            DB::commit();
-
-            return back()->withSuccess(__('User deleted successfully.'));
-        } catch (\Exception $e) {
-            DB::rollback();
-
+            DB::transaction(fn () => $user->delete());
+        } catch (\Throwable $e) {
             // getMessage() on a QueryException is the SQLSTATE, the whole
             // parameterised query and its bound values. That is a log entry,
             // not something to flash at whoever clicked the button.
@@ -379,5 +357,7 @@ class UserController extends Controller
 
             return back()->withError(__('Something went wrong. Please try again.'));
         }
+
+        return back()->withSuccess(__('User deleted successfully.'));
     }
 }

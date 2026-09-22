@@ -51,23 +51,15 @@ class BudgetController extends Controller
 
         $attributes = $request->budgetAttributes();
 
-        DB::beginTransaction();
-
         try {
-            $request->user()->budgets()->updateOrCreate(
+            DB::transaction(fn () => $request->user()->budgets()->updateOrCreate(
                 [
                     'category_id' => $attributes['category_id'],
                     'month' => $attributes['month'],
                 ],
                 ['amount' => $attributes['amount']],
-            );
-
-            DB::commit();
-
-            return redirect()->back()->withSuccess(__('Budget saved successfully.'));
-        } catch (\Exception $e) {
-            DB::rollback();
-
+            ));
+        } catch (\Throwable $e) {
             // getMessage() on a QueryException is the SQLSTATE, the whole
             // parameterised query and its bound values. That is a log entry,
             // not something to flash at whoever clicked the button.
@@ -75,23 +67,17 @@ class BudgetController extends Controller
 
             return redirect()->back()->withError(__('Something went wrong. Please try again.'))->withInput();
         }
+
+        return redirect()->back()->withSuccess(__('Budget saved successfully.'));
     }
 
     public function destroy(Budget $budget): RedirectResponse
     {
         Gate::authorize('delete', $budget);
 
-        DB::beginTransaction();
-
         try {
-            $budget->delete();
-
-            DB::commit();
-
-            return redirect()->back()->withSuccess(__('Budget removed successfully.'));
-        } catch (\Exception $e) {
-            DB::rollback();
-
+            DB::transaction(fn () => $budget->delete());
+        } catch (\Throwable $e) {
             // getMessage() on a QueryException is the SQLSTATE, the whole
             // parameterised query and its bound values. That is a log entry,
             // not something to flash at whoever clicked the button.
@@ -99,10 +85,7 @@ class BudgetController extends Controller
 
             return redirect()->back()->withError(__('Something went wrong. Please try again.'));
         }
-    }
 
-    /**
-     * Accepts 'YYYY-MM' from the query string; anything else falls back to the
-     * current month rather than throwing.
-     */
+        return redirect()->back()->withSuccess(__('Budget removed successfully.'));
+    }
 }

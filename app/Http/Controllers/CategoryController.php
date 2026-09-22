@@ -125,19 +125,9 @@ class CategoryController extends Controller
         // losing the one message that says what to change.
         $this->guardNameIsFree($request->validated('name'));
 
-        DB::beginTransaction();
-
         try {
-            Category::create($this->attributes($request));
-
-            DB::commit();
-
-            return redirect()
-                ->route('categories.index')
-                ->withSuccess(__('Category created successfully.'));
-        } catch (\Exception $e) {
-            DB::rollback();
-
+            DB::transaction(fn () => Category::create($this->attributes($request)));
+        } catch (\Throwable $e) {
             // getMessage() on a QueryException is the SQLSTATE, the whole
             // parameterised query and its bound values. That is a log entry,
             // not something to flash at whoever clicked the button.
@@ -145,6 +135,10 @@ class CategoryController extends Controller
 
             return redirect()->back()->withError(__('Something went wrong. Please try again.'))->withInput();
         }
+
+        return redirect()
+            ->route('categories.index')
+            ->withSuccess(__('Category created successfully.'));
     }
 
     public function update(CategoryRequest $request, Category $category): RedirectResponse
@@ -154,19 +148,9 @@ class CategoryController extends Controller
         // See store(): outside the try so its message survives.
         $this->guardNameIsFree($request->validated('name'), $category);
 
-        DB::beginTransaction();
-
         try {
-            $category->update($this->attributes($request));
-
-            DB::commit();
-
-            return redirect()
-                ->route('categories.index')
-                ->withSuccess(__('Category updated successfully.'));
-        } catch (\Exception $e) {
-            DB::rollback();
-
+            DB::transaction(fn () => $category->update($this->attributes($request)));
+        } catch (\Throwable $e) {
             // getMessage() on a QueryException is the SQLSTATE, the whole
             // parameterised query and its bound values. That is a log entry,
             // not something to flash at whoever clicked the button.
@@ -174,31 +158,26 @@ class CategoryController extends Controller
 
             return redirect()->back()->withError(__('Something went wrong. Please try again.'))->withInput();
         }
+
+        return redirect()
+            ->route('categories.index')
+            ->withSuccess(__('Category updated successfully.'));
     }
 
     public function destroy(Category $category): RedirectResponse
     {
         Gate::authorize('delete', $category);
 
-        DB::beginTransaction();
-
         try {
-            $category->delete();
-
-            DB::commit();
-
-            return redirect()->back()->withSuccess(__('Category deleted successfully.'));
-        } catch (QueryException $e) {
-            DB::rollback();
-
+            DB::transaction(fn () => $category->delete());
+        } catch (QueryException) {
             // The expenses/budgets foreign keys restrict on delete — show the
-            // reason rather than the raw SQL error.
+            // reason rather than the raw SQL error. Caught ahead of the general
+            // arm below, which would otherwise swallow it.
             return redirect()->back()->withError(
                 __('":name" is still in use and cannot be deleted.', ['name' => $category->name])
             );
-        } catch (\Exception $e) {
-            DB::rollback();
-
+        } catch (\Throwable $e) {
             // getMessage() on a QueryException is the SQLSTATE, the whole
             // parameterised query and its bound values. That is a log entry,
             // not something to flash at whoever clicked the button.
@@ -206,6 +185,8 @@ class CategoryController extends Controller
 
             return redirect()->back()->withError(__('Something went wrong. Please try again.'));
         }
+
+        return redirect()->back()->withSuccess(__('Category deleted successfully.'));
     }
 
     /**
