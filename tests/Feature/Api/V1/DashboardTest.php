@@ -121,8 +121,10 @@ class DashboardTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.savings.month', '2026-07')
             ->assertJsonPath('data.savings.planned', '100.00')
-            ->assertJsonPath('data.savings.saved_this_month', '60.00')
-            ->assertJsonPath('data.savings.percent', 60)
+            // 80 against a plan of 100 left 20 of headroom, and the 20
+            // withdrawn came out of that rather than out of the deposit.
+            ->assertJsonPath('data.savings.saved_this_month', '80.00')
+            ->assertJsonPath('data.savings.percent', 80)
             // All time, not the month: savings carry over.
             ->assertJsonPath('data.savings.total_saved', '1240.00');
 

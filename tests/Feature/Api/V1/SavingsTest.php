@@ -161,61 +161,73 @@ class SavingsTest extends TestCase
 
         $this->assertSame('2026-09', $response->json('data.month'));
         $this->assertSame('100.00', $response->json('data.planned'));
-        // 80 - 20, this month only: a withdrawal walks the month back.
-        $this->assertSame('60.00', $response->json('data.saved_this_month'));
-        $this->assertSame('40.00', $response->json('data.remaining'));
-        $this->assertSame(60, $response->json('data.percent'));
-        $this->assertSame(60, $response->json('data.percent_raw'));
-        $this->assertSame('ok', $response->json('data.status'));
+        // 80 deposited against a plan of 100, so 20 of headroom was left and
+        // the 20 withdrawn came out of that rather than out of the deposit.
+        $this->assertSame('80.00', $response->json('data.saved_this_month'));
+        $this->assertSame('20.00', $response->json('data.remaining'));
+        $this->assertSame(80, $response->json('data.percent'));
+        $this->assertSame(80, $response->json('data.percent_raw'));
+        $this->assertSame('close', $response->json('data.status'));
         // 1180 + 80 - 20, every month.
         $this->assertSame('1240.00', $response->json('data.total_saved'));
         $this->assertSame(2, $response->json('data.entries_count'));
     }
 
-    public function test_a_month_that_gives_back_more_than_it_saved_floors_at_zero(): void
+    /**
+     * A withdrawal spends the month's headroom before it touches the deposits.
+     *
+     * @return array<string, array{float, float, float, string, int}>
+     */
+    public static function headroomCases(): array
     {
-        $user = User::factory()->create();
-        SavingsPlan::factory()->for($user)->forMonth('2026-09')->create(['amount' => 150]);
-        // Last month's money is what September takes back out.
-        SavingsEntry::factory()->for($user)->create(['amount' => 500, 'saved_on' => '2026-08-20']);
-        SavingsEntry::factory()->for($user)->create(['amount' => 10, 'saved_on' => '2026-09-02']);
-        SavingsEntry::factory()->for($user)->withdrawal(20)->create(['saved_on' => '2026-09-04']);
-
-        Sanctum::actingAs($user, [TokenAbility::SavingsRead->value]);
-
-        $this->getJson('/api/v1/savings/summary?month=2026-09')
-            ->assertOk()
-            // -10 on the month, reported as nothing saved rather than as a
-            // negative: the plan has no use for the sign.
-            ->assertJsonPath('data.saved_this_month', '0.00')
-            ->assertJsonPath('data.remaining', '150.00')
-            ->assertJsonPath('data.percent', 0)
-            ->assertJsonPath('data.percent_raw', 0)
-            ->assertJsonPath('data.status', 'ok')
-            // The balance is the one figure that still shows the withdrawal.
-            ->assertJsonPath('data.total_saved', '490.00')
-            ->assertJsonPath('data.entries_count', 2);
+        return [
+            // [plan, deposited, withdrawn, saved, percent]
+            'nothing taken out leaves the deposits alone' => [150, 100, 0, '100.00', 67],
+            'a withdrawal inside the headroom costs nothing' => [150, 100, 50, '100.00', 67],
+            'past the headroom it starts biting the deposits' => [150, 100, 80, '70.00', 47],
+            'a plan met in full has no headroom to spend' => [150, 150, 35, '115.00', 77],
+            'a small month keeps what little it put in' => [150, 10, 20, '10.00', 7],
+            'more out than in, and the month saved nothing' => [150, 10, 200, '0.00', 0],
+            // No plan, no headroom: the withdrawal bites in full and this is
+            // the plain net, the only reading a month without a target has.
+            'no plan falls back to the net' => [0, 100, 80, '20.00', 0],
+        ];
     }
 
-    public function test_a_withdrawal_walks_back_the_month_it_was_taken_from(): void
-    {
+    #[DataProvider('headroomCases')]
+    public function test_a_withdrawal_spends_the_months_headroom_first(
+        float $plan,
+        float $deposited,
+        float $withdrawn,
+        string $saved,
+        int $percent,
+    ): void {
         $user = User::factory()->create();
-        SavingsPlan::factory()->for($user)->forMonth('2026-09')->create(['amount' => 150]);
-        SavingsEntry::factory()->for($user)->create(['amount' => 100, 'saved_on' => '2026-09-22']);
-        SavingsEntry::factory()->for($user)->withdrawal(80)->create(['saved_on' => '2026-09-22']);
+
+        if ($plan > 0) {
+            SavingsPlan::factory()->for($user)->forMonth('2026-09')->create(['amount' => $plan]);
+        }
+
+        // Enough behind it that the withdrawal is always affordable; the
+        // balance is a separate question from the month's progress.
+        SavingsEntry::factory()->for($user)->create(['amount' => 1000, 'saved_on' => '2026-08-01']);
+
+        if ($deposited > 0) {
+            SavingsEntry::factory()->for($user)->create(['amount' => $deposited, 'saved_on' => '2026-09-10']);
+        }
+
+        if ($withdrawn > 0) {
+            SavingsEntry::factory()->for($user)->withdrawal($withdrawn)->create(['saved_on' => '2026-09-11']);
+        }
 
         Sanctum::actingAs($user, [TokenAbility::SavingsRead->value]);
 
         $this->getJson('/api/v1/savings/summary?month=2026-09')
             ->assertOk()
-            // 100 in and 80 straight back out leaves 20 aside, not 100.
-            ->assertJsonPath('data.saved_this_month', '20.00')
-            ->assertJsonPath('data.remaining', '130.00')
-            ->assertJsonPath('data.percent', 13)
-            ->assertJsonPath('data.percent_raw', 13)
-            ->assertJsonPath('data.status', 'ok')
-            ->assertJsonPath('data.total_saved', '20.00')
-            ->assertJsonPath('data.entries_count', 2);
+            ->assertJsonPath('data.saved_this_month', $saved)
+            ->assertJsonPath('data.percent', $percent)
+            // Untouched by the rule: the balance is every entry, all time.
+            ->assertJsonPath('data.total_saved', number_format(1000 + $deposited - $withdrawn, 2, '.', ''));
     }
 
     public function test_a_month_with_no_plan_reports_zeros_without_erroring(): void

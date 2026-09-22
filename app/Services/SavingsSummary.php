@@ -13,21 +13,27 @@ use Carbon\CarbonImmutable;
  * BudgetSummary, and shaped like it on purpose so the two cards on the
  * Dashboard cannot answer the same question differently.
  *
- * Two figures do the work: what stayed aside out of this month, and the
- * all-time balance. The month's net is what the plan is measured against; the
- * balance is what a withdrawal is measured against, because September's money
- * is still there to take out in October.
+ * Two figures do the work: how the month went against its plan, and the
+ * all-time balance. The balance is what a withdrawal is checked against,
+ * because September's money is still there to take out in October.
  *
- * The plan asks "how much will you have put aside this month", so a
- * withdrawal in the same month walks the answer back: deposit $100 against a
- * $150 plan and take $80 of it out again, and $20 is what stayed.
+ * A withdrawal spends the month's *headroom* first — the part of the plan the
+ * deposits have not covered yet — and only bites the deposits once that is
+ * gone. Deposit $100 against a $150 plan and $50 of headroom is left, so
+ * taking $80 out spends that $50 and then $30 of the deposit: $70 saved.
+ * Take only $50 out and the deposit is untouched: $100 saved.
  *
- * Deposits alone was tried and rejected: a month drawn back down still read
- * as fully saved, which is the opposite of what the card is for. The price of
- * the net is that money deposited and then spent inside one month leaves the
- * card at nothing, which is the honest answer to "how much did you put aside"
- * even though it was briefly there. The entry list and `total_saved` are
- * where that money is read. Moving this changes what a savings plan means.
+ * The two simpler rules were both tried and both rejected. Deposits alone let
+ * a month drawn right back down still read as fully saved. The plain net made
+ * every withdrawal bite the deposit immediately, so a $150 plan with $100 in
+ * and $80 out read $20 — as though the $50 never asked for was money lost.
+ * Headroom is what is left once you say that a withdrawal first cancels the
+ * saving you had not done yet.
+ *
+ * With no plan there is no headroom, so this degrades to the plain net, which
+ * is the only thing "how did the month go" can mean without a target.
+ *
+ * Moving this changes what a savings plan means. It is not arithmetic.
  *
  * Deals in floats like BudgetSummary; the resources and controllers format
  * money to strings at the API boundary.
@@ -65,27 +71,62 @@ class SavingsSummary
         return round((float) $amount, Currency::SCALE);
     }
 
+    /** Everything paid into savings in one month. Never negative. */
+    public function depositedInMonth(User $user, CarbonImmutable $month): float
+    {
+        return $this->sumInMonth($user, $month, deposits: true);
+    }
+
     /**
-     * What stayed aside out of one month: deposits less withdrawals.
-     *
-     * Floored at zero. A month that gave back more than it put in has saved
-     * nothing, not a negative amount, and "-$10 saved, -7% of your plan" reads
-     * as a broken figure rather than an honest one. The withdrawals that took
-     * it there are still in the month's entry list, and totalSaved() still
-     * carries the real balance, so nothing is hidden by the floor — only the
-     * sign the plan has no use for.
+     * Everything taken back out in one month, as a positive magnitude — the
+     * column stores withdrawals negative, and a caller asking "how much came
+     * out" wants a number it can subtract.
      */
-    public function savedInMonth(User $user, CarbonImmutable $month): float
+    public function withdrawnInMonth(User $user, CarbonImmutable $month): float
+    {
+        return abs($this->sumInMonth($user, $month, deposits: false));
+    }
+
+    /**
+     * How much of the month's plan is standing, after what came back out.
+     *
+     * A withdrawal spends the headroom — the part of the plan not yet covered
+     * by deposits — before it touches the deposits themselves. See the class
+     * docblock for why, and for what happens with no plan.
+     *
+     * Floored at zero. A month drawn further down than it ever put in has
+     * saved nothing, not a negative amount, and "-$10 saved, -7% of your plan"
+     * reads as a broken figure rather than an honest one. Nothing is hidden by
+     * the floor: the withdrawals are in the month's entry list and
+     * totalSaved() carries the real balance.
+     */
+    public function savedInMonth(User $user, CarbonImmutable $month, float $planned = 0.0): float
+    {
+        $deposited = $this->depositedInMonth($user, $month);
+        $withdrawn = $this->withdrawnInMonth($user, $month);
+
+        // Saving that was planned but never done. A withdrawal cancels this
+        // before it undoes anything actually put aside; with no plan, or a
+        // plan already covered, there is none and the withdrawal bites in full.
+        $headroom = max(0.0, $planned - $deposited);
+
+        $bite = max(0.0, $withdrawn - $headroom);
+
+        return max(0.0, round($deposited - $bite, Currency::SCALE));
+    }
+
+    /** One side of the month's ledger; the column's sign is the only filter. */
+    private function sumInMonth(User $user, CarbonImmutable $month, bool $deposits): float
     {
         $start = $month->startOfMonth();
 
-        // The column is signed, so one sum is the net: no type column to ask.
         $total = SavingsEntry::query()
             ->forUser($user->id)
             ->inMonth($start->toDateString())
+            ->where('amount', $deposits ? '>' : '<', 0)
             ->sum('amount');
 
-        return max(0.0, round((float) $total, Currency::SCALE));
+        return round((float) $total, Currency::SCALE);
     }
 
     /**
@@ -164,13 +205,13 @@ class SavingsSummary
         $start = $month->startOfMonth();
 
         $planned = $this->plannedFor($user, $start);
-        $saved = $this->savedInMonth($user, $start);
+        $saved = $this->savedInMonth($user, $start, $planned);
         $percentRaw = $this->percentRaw($saved, $planned);
 
         return [
             'month' => $start->format('Y-m'),
             'planned' => $planned,
-            // Deposits less withdrawals, floored at zero — see savedInMonth().
+            // The plan standing after withdrawals — see savedInMonth().
             'saved_this_month' => $saved,
             'remaining' => $this->remaining($saved, $planned),
             'percent' => $this->percent($saved, $planned),
