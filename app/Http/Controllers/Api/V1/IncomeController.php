@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\IncomeRequest;
 use App\Http\Resources\IncomeResource;
 use App\Models\Income;
+use App\Models\IncomeSource;
 use App\Support\CalendarOptions;
 use App\Support\Concerns\ClampsApiPageSize;
 use App\Support\Concerns\FormatsMoney;
@@ -79,13 +80,28 @@ class IncomeController extends Controller
     {
         Gate::authorize('viewAny', Income::class);
 
-        $sources = Income::query()
+        /*
+         * The catalogue, not the income.
+         *
+         * Read off the income rows until sources became something that could
+         * be managed; reading them still would mean a name removed from the
+         * catalogue came straight back the moment anything refreshed, and a
+         * name added before its first use never appeared at all.
+         *
+         * Busiest first, counted on the string an income actually carries.
+         */
+        $uses = Income::query()
             ->forUser($request->user()->id)
-            ->groupBy('source')
-            ->selectRaw('source, COUNT(*) as uses')
+            ->whereColumn('incomes.source', 'income_sources.name')
+            ->selectRaw('COUNT(*)');
+
+        $sources = IncomeSource::query()
+            ->forUser($request->user()->id)
+            ->select('name')
+            ->selectSub($uses, 'uses')
             ->orderByDesc('uses')
-            ->orderBy('source')
-            ->pluck('source')
+            ->orderBy('name')
+            ->pluck('name')
             ->all();
 
         return response()->json(['data' => $sources]);
@@ -171,9 +187,16 @@ class IncomeController extends Controller
 
         // Created through the relationship so user_id comes from the token's
         // owner and is never mass-assignable from the payload.
-        $income = DB::transaction(
-            fn () => $request->user()->incomes()->create($request->incomeAttributes())
-        );
+        $income = DB::transaction(function () use ($request) {
+            $income = $request->user()->incomes()->create($request->incomeAttributes());
+
+            // Typing a name straight into the form still teaches it to the
+            // picker, so the catalogue is something to tidy rather than to
+            // fill in before the app is usable.
+            IncomeSource::remember($income->user_id, $income->source);
+
+            return $income;
+        });
 
         return (new IncomeResource($income))
             ->response()
@@ -201,7 +224,11 @@ class IncomeController extends Controller
     {
         Gate::authorize('update', $income);
 
-        DB::transaction(fn () => $income->update($request->incomeAttributes()));
+        DB::transaction(function () use ($request, $income) {
+            $income->update($request->incomeAttributes());
+
+            IncomeSource::remember($income->user_id, $income->source);
+        });
 
         return new IncomeResource($income);
     }

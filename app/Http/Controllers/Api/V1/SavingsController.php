@@ -7,6 +7,7 @@ use App\Http\Requests\SavingsEntryRequest;
 use App\Http\Requests\SavingsPlanRequest;
 use App\Http\Resources\SavingsEntryResource;
 use App\Http\Resources\SavingsPlanResource;
+use App\Models\IncomeSource;
 use App\Models\SavingsEntry;
 use App\Models\SavingsPlan;
 use App\Models\User;
@@ -207,7 +208,13 @@ class SavingsController extends Controller
         $entry = DB::transaction(function () use ($request, $user) {
             $this->guardWithdrawal($request, $user);
 
-            return $user->savingsEntries()->create($request->entryAttributes());
+            $entry = $user->savingsEntries()->create($request->entryAttributes());
+
+            // The deposit form offers the income sources, so a name typed
+            // there joins the catalogue as it would from the income form.
+            IncomeSource::remember($user->id, $entry->source);
+
+            return $entry;
         });
 
         return (new SavingsEntryResource($entry))
@@ -240,6 +247,8 @@ class SavingsController extends Controller
             $this->guardWithdrawal($request, $entry->user, (float) $entry->amount);
 
             $entry->update($request->entryAttributes());
+
+            IncomeSource::remember($entry->user_id, $entry->source);
         });
 
         return new SavingsEntryResource($entry);

@@ -6,6 +6,7 @@ use App\Enums\Permission;
 use App\Enums\TokenAbility;
 use App\Models\AppSetting;
 use App\Models\Income;
+use App\Models\IncomeSource;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -63,12 +64,23 @@ class IncomeTest extends TestCase
         $this->assertArrayNotHasKey('id', $response->json('data.0'));
     }
 
-    public function test_sources_lists_the_callers_sources_most_used_first(): void
+    public function test_sources_lists_the_callers_catalogue_most_used_first(): void
     {
         $user = User::factory()->create();
+
+        // The catalogue is what is offered; the income only orders it. Both
+        // are seeded here because a factory writes rows straight to the table
+        // and so teaches the catalogue nothing — only the API does that.
+        foreach (['Freelance', 'Salary', 'Bonus'] as $name) {
+            IncomeSource::factory()->for($user)->named($name)->create();
+        }
+
         Income::factory()->for($user)->count(2)->create(['source' => 'Freelance']);
         Income::factory()->for($user)->count(3)->create(['source' => 'Salary']);
         Income::factory()->for($user)->create(['source' => 'Bonus']);
+
+        // Another account's names are not offered here, however busy they are.
+        IncomeSource::factory()->named('Theirs')->create();
         Income::factory()->create(['source' => 'Theirs']);
 
         Sanctum::actingAs($user, [TokenAbility::IncomesRead->value]);

@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\ExpenseController;
 use App\Http\Controllers\Api\V1\FaqAdminController;
 use App\Http\Controllers\Api\V1\IncomeController;
+use App\Http\Controllers\Api\V1\IncomeSourceController;
 use App\Http\Controllers\Api\V1\PasswordController;
 use App\Http\Controllers\Api\V1\PasswordResetController;
 use App\Http\Controllers\Api\V1\ProfileController;
@@ -124,6 +125,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::get('incomes', [IncomeController::class, 'index'])->name('incomes.index');
             Route::get('incomes/summary', [IncomeController::class, 'summary'])->name('incomes.summary');
             Route::get('incomes/sources', [IncomeController::class, 'sources'])->name('incomes.sources');
+            // The same names, as rows that can be managed. Under the income
+            // abilities, because a source is the name on an income.
+            Route::get('income-sources', [IncomeSourceController::class, 'index'])->name('income-sources.index');
             Route::get('incomes/{income:uuid}', [IncomeController::class, 'show'])->name('incomes.show');
         });
 
@@ -131,6 +135,10 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::post('incomes', [IncomeController::class, 'store'])->name('incomes.store');
             Route::patch('incomes/{income:uuid}', [IncomeController::class, 'update'])->name('incomes.update');
             Route::delete('incomes/{income:uuid}', [IncomeController::class, 'destroy'])->name('incomes.destroy');
+
+            Route::post('income-sources', [IncomeSourceController::class, 'store'])->name('income-sources.store');
+            Route::patch('income-sources/{source:uuid}', [IncomeSourceController::class, 'update'])->name('income-sources.update');
+            Route::delete('income-sources/{source:uuid}', [IncomeSourceController::class, 'destroy'])->name('income-sources.destroy');
         });
 
         /*

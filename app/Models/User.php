@@ -242,6 +242,12 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Income::class);
     }
 
+    /** The names this account is offered when it logs income. */
+    public function incomeSources(): HasMany
+    {
+        return $this->hasMany(IncomeSource::class);
+    }
+
     /** The monthly "put this much aside" rows, one per month at most. */
     public function savingsPlans(): HasMany
     {

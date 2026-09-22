@@ -36,6 +36,7 @@ class ActivityLog extends Model
     public const SUBJECTS = [
         'expense' => Expense::class,
         'income' => Income::class,
+        'income_source' => IncomeSource::class,
         'budget' => Budget::class,
         'category' => Category::class,
         'savings_plan' => SavingsPlan::class,
