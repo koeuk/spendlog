@@ -13,6 +13,9 @@ return new class extends Migration
             $table->uuid('uuid')->unique();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('category_id')->constrained()->restrictOnDelete();
+            // The rule that wrote this row, when one did. Nulling on delete so
+            // removing a rule keeps the history it wrote.
+            $table->foreignId('recurring_rule_id')->nullable()->constrained()->nullOnDelete();
             // Translatable JSON — {"en": "Lunch", "km": "…"} — like categories.name.
             // Resolved and searched per-locale via App\Support\TranslatableQuery.
             $table->json('item');
@@ -31,6 +34,9 @@ return new class extends Migration
 
             // Drives the daily-grouped list and the dashboard's per-period totals.
             $table->index(['user_id', 'spent_on']);
+            // What makes a recurring run idempotent — one row per rule per day,
+            // whatever else happens.
+            $table->unique(['recurring_rule_id', 'spent_on']);
         });
     }
 

@@ -12,6 +12,9 @@ return new class extends Migration
             $table->id();
             $table->uuid('uuid')->unique();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            // The rule that wrote this row, when one did. Nulling on delete so
+            // removing a rule keeps the history it wrote.
+            $table->foreignId('recurring_rule_id')->nullable()->constrained()->nullOnDelete();
             // Free text — "Salary", "Freelance", "Gift". Deliberately not a
             // shared catalogue like categories: where money comes from is
             // personal, and the summary groups on the string as typed.
@@ -26,6 +29,9 @@ return new class extends Migration
 
             // Drives the date-sorted list and the monthly summary.
             $table->index(['user_id', 'received_on']);
+            // What makes a recurring run idempotent — one row per rule per day,
+            // whatever else happens.
+            $table->unique(['recurring_rule_id', 'received_on']);
         });
     }
 
