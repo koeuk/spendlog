@@ -3,7 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Enums\Currency;
-use App\Models\AppSetting;
+use App\Http\Requests\Concerns\ConvertsEnteredCurrency;
 use App\Models\Borrowing;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -17,6 +17,8 @@ use Illuminate\Validation\Rule;
  */
 class BorrowingRepaymentRequest extends FormRequest
 {
+    use ConvertsEnteredCurrency;
+
     /**
      * Authorization is handled by BorrowingPolicy via the controller: a
      * repayment is an update of its borrowing.
@@ -55,12 +57,6 @@ class BorrowingRepaymentRequest extends FormRequest
     }
 
     /** The entered amount in USD. */
-    public function usdAmount(): float
-    {
-        $currency = Currency::tryFrom((string) $this->input('currency')) ?? Currency::Usd;
-
-        return $currency->toUsd((float) $this->validated('amount'), AppSetting::current()->khrPerUsd());
-    }
 
     /**
      * The validated input as the ledger stores it.

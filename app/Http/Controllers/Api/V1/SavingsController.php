@@ -12,6 +12,7 @@ use App\Models\SavingsPlan;
 use App\Models\User;
 use App\Services\SavingsSummary;
 use App\Support\CalendarOptions;
+use App\Support\Concerns\FormatsMoney;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -32,6 +33,8 @@ use Illuminate\Validation\ValidationException;
  */
 class SavingsController extends Controller
 {
+    use FormatsMoney;
+
     public function __construct(private readonly SavingsSummary $summary) {}
 
     /**
@@ -283,10 +286,5 @@ class SavingsController extends Controller
                 'amount' => __('You cannot withdraw more than is saved.'),
             ]);
         }
-    }
-
-    private function money(float $amount): string
-    {
-        return number_format($amount, 2, '.', '');
     }
 }

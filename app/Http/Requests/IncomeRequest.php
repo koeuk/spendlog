@@ -3,12 +3,14 @@
 namespace App\Http\Requests;
 
 use App\Enums\Currency;
-use App\Models\AppSetting;
+use App\Http\Requests\Concerns\ConvertsEnteredCurrency;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class IncomeRequest extends FormRequest
 {
+    use ConvertsEnteredCurrency;
+
     /**
      * Authorization is handled by IncomePolicy via the controller.
      */
@@ -46,11 +48,7 @@ class IncomeRequest extends FormRequest
     {
         $data = $this->validated();
 
-        // Every stored amount is USD — see App\Enums\Currency. The currency is
-        // a property of what was typed, not of the income, so it is consumed
-        // here rather than persisted. Same as ExpenseRequest.
-        $currency = Currency::tryFrom((string) $this->input('currency')) ?? Currency::Usd;
-        $data['amount'] = $currency->toUsd((float) $data['amount'], AppSetting::current()->khrPerUsd());
+        $data['amount'] = $this->usdAmount();
         unset($data['currency']);
 
         // 'nullable' leaves an omitted note absent rather than null; make it

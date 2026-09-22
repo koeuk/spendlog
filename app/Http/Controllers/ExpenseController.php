@@ -9,6 +9,7 @@ use App\Models\Expense;
 use App\Models\User;
 use App\Support\CalendarOptions;
 use App\Support\Concerns\PaginatesLists;
+use App\Support\Concerns\ValidatesDateFilters;
 use App\Support\TranslatableQuery;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
@@ -22,7 +23,7 @@ use Spatie\QueryBuilder\QueryBuilder;
 
 class ExpenseController extends Controller
 {
-    use PaginatesLists;
+    use PaginatesLists, ValidatesDateFilters;
 
     public function index(Request $request): Response
     {
@@ -156,23 +157,10 @@ class ExpenseController extends Controller
             Gate::authorize('create', Category::class);
         }
 
-        DB::beginTransaction();
-
         try {
             // Created through the relationship so user_id is never mass-assignable.
-            $request->user()->expenses()->create($request->expenseAttributes());
-
-            DB::commit();
-
-            // Not back(): the form is its own page now, so back() would land on
-            // the form that was just submitted. The index is where saving means
-            // to go, and returnQuery puts it back on the month it came from.
-            return redirect()
-                ->route('expenses.index', $this->returnQuery($request))
-                ->withSuccess(__('Expense added successfully.'));
-        } catch (\Exception $e) {
-            DB::rollback();
-
+            DB::transaction(fn () => $request->user()->expenses()->create($request->expenseAttributes()));
+        } catch (\Throwable $e) {
             // getMessage() on a QueryException is the SQLSTATE, the whole
             // parameterised query and its bound values. That is a log entry,
             // not something to flash at whoever clicked the button.
@@ -180,6 +168,13 @@ class ExpenseController extends Controller
 
             return redirect()->back()->withError(__('Something went wrong. Please try again.'))->withInput();
         }
+
+        // Not back(): the form is its own page now, so back() would land on
+        // the form that was just submitted. The index is where saving means
+        // to go, and returnQuery puts it back on the month it came from.
+        return redirect()
+            ->route('expenses.index', $this->returnQuery($request))
+            ->withSuccess(__('Expense added successfully.'));
     }
 
     public function update(ExpenseRequest $request, Expense $expense): RedirectResponse
@@ -190,19 +185,9 @@ class ExpenseController extends Controller
             Gate::authorize('create', Category::class);
         }
 
-        DB::beginTransaction();
-
         try {
-            $expense->update($request->expenseAttributes());
-
-            DB::commit();
-
-            return redirect()
-                ->route('expenses.index', $this->returnQuery($request))
-                ->withSuccess(__('Expense updated successfully.'));
-        } catch (\Exception $e) {
-            DB::rollback();
-
+            DB::transaction(fn () => $expense->update($request->expenseAttributes()));
+        } catch (\Throwable $e) {
             // getMessage() on a QueryException is the SQLSTATE, the whole
             // parameterised query and its bound values. That is a log entry,
             // not something to flash at whoever clicked the button.
@@ -210,23 +195,19 @@ class ExpenseController extends Controller
 
             return redirect()->back()->withError(__('Something went wrong. Please try again.'))->withInput();
         }
+
+        return redirect()
+            ->route('expenses.index', $this->returnQuery($request))
+            ->withSuccess(__('Expense updated successfully.'));
     }
 
     public function destroy(Expense $expense): RedirectResponse
     {
         Gate::authorize('delete', $expense);
 
-        DB::beginTransaction();
-
         try {
-            $expense->delete();
-
-            DB::commit();
-
-            return redirect()->back()->withSuccess(__('Expense deleted successfully.'));
-        } catch (\Exception $e) {
-            DB::rollback();
-
+            DB::transaction(fn () => $expense->delete());
+        } catch (\Throwable $e) {
             // getMessage() on a QueryException is the SQLSTATE, the whole
             // parameterised query and its bound values. That is a log entry,
             // not something to flash at whoever clicked the button.
@@ -234,6 +215,8 @@ class ExpenseController extends Controller
 
             return redirect()->back()->withError(__('Something went wrong. Please try again.'));
         }
+
+        return redirect()->back()->withSuccess(__('Expense deleted successfully.'));
     }
 
     /**
@@ -259,44 +242,21 @@ class ExpenseController extends Controller
     }
 
     /**
-     * Where the index was when the form was opened, so saving returns to the
-     * same month and scope rather than to an unfiltered list.
+     * Where the index was when the form was opened. The month and year come
+     * from ValidatesDateFilters; scope and user are this page's own, since it
+     * is the only list with an Everyone view.
      *
-     * Whitelisted by key and revalidated, never echoed: this round-trips through
-     * a form field, and handing user input to a redirect is how open redirects
-     * happen. Only these four keys survive, and each is checked by the same
-     * helpers the index itself uses.
+     * @return array<string, string>
      */
     private function returnQuery(Request $request): array
     {
-        // GET create/edit carry it in the query string; the save that follows
-        // posts it back in the body. Same four keys either way.
-        $source = is_array($request->input('return_query'))
-            ? $request->input('return_query')
-            : $request->query();
+        $source = $this->returnQuerySource($request);
 
         return array_filter([
-            'month' => $this->validMonth($source['month'] ?? null),
-            'year' => $this->validYear($source['year'] ?? null),
+            ...$this->dateReturnQuery($request),
             'scope' => ($source['scope'] ?? null) === 'all' ? 'all' : '',
             'user' => (string) ($source['user'] ?? ''),
         ], fn (string $value) => $value !== '');
-    }
-
-    /** '01'–'12', or '' for "every month". */
-    private function validMonth(mixed $value): string
-    {
-        $value = (string) $value;
-
-        return preg_match('/^(0[1-9]|1[0-2])$/', $value) === 1 ? $value : '';
-    }
-
-    /** A four-digit year, or '' for "every year". */
-    private function validYear(mixed $value): string
-    {
-        $value = (string) $value;
-
-        return preg_match('/^\d{4}$/', $value) === 1 ? $value : '';
     }
 
     /**

@@ -4,15 +4,17 @@ namespace App\Http\Requests;
 
 use App\Enums\CategoryColor;
 use App\Enums\Currency;
-use App\Models\AppSetting;
+use App\Http\Requests\Concerns\ConvertsEnteredCurrency;
+use App\Http\Requests\Concerns\ResolvesCategoryUuid;
 use App\Models\Category;
 use App\Support\TranslatableInput;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 
 class ExpenseRequest extends FormRequest
 {
+    use ConvertsEnteredCurrency, ResolvesCategoryUuid;
+
     /**
      * Authorization is handled by ExpensePolicy via the controller.
      */
@@ -55,17 +57,21 @@ class ExpenseRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:255',
-                // Case-insensitive: "coffee" must not create a second Coffee.
+                /*
+                 * Case-insensitive: "coffee" must not create a second Coffee.
+                 *
+                 * Through Category::named(), which is the one place that decides
+                 * what "the same name" means — and checks every locale, not just
+                 * English. This rule used to compare the "en" key alone, so a
+                 * category named only in Khmer was invisible to it and got a
+                 * second row beside itself.
+                 */
                 function (string $attribute, mixed $value, \Closure $fail) {
                     if (blank($value)) {
                         return;
                     }
 
-                    $exists = Category::query()
-                        ->whereRaw('LOWER(JSON_UNQUOTE(JSON_EXTRACT(name, "$.en"))) = ?', [mb_strtolower(trim($value))])
-                        ->exists();
-
-                    if ($exists) {
+                    if (Category::query()->named($value)->exists()) {
                         $fail(__('A category called ":name" already exists — pick it from the list.', ['name' => trim($value)]));
                     }
                 },
@@ -101,14 +107,10 @@ class ExpenseRequest extends FormRequest
     {
         $data = $this->validated();
 
-        $data['category_id'] = $this->resolveCategoryId();
+        $data['category_id'] = $this->categoryId();
         unset($data['category_uuid'], $data['new_category']);
 
-        // Every stored price is USD — see App\Enums\Currency. The currency is a
-        // property of what was typed, not of the expense, so it is consumed here
-        // rather than persisted.
-        $currency = Currency::tryFrom((string) $this->input('currency')) ?? Currency::Usd;
-        $data['price'] = $currency->toUsd((float) $data['price'], AppSetting::current()->khrPerUsd());
+        $data['price'] = $this->usdAmount('price');
         unset($data['currency']);
 
         // Written under the fallback locale — the column is still translatable
@@ -121,44 +123,26 @@ class ExpenseRequest extends FormRequest
     /**
      * An inline name creates the category; otherwise the picked uuid is resolved.
      *
-     * The lookup is case-insensitive, matching CategoryRequest's uniqueness rule,
-     * so "coffee" finds "Coffee" instead of creating a second row beside it.
+     * The lookup goes through Category::named(), the same scope the Categories
+     * page uses to refuse a duplicate — so "coffee" finds "Coffee", and a
+     * Khmer-only name is found too. It used to compare the "en" key by hand
+     * here, which is how the inline picker and the Categories page came to
+     * disagree and split one real category into two rows.
      *
      * Two people naming the same category at the same instant can still both
      * insert: there is no unique index on the name to make this atomic, and a
      * firstOrCreate would not add one. That is a narrow race with a visible,
-     * mergeable outcome — unlike the silent mismatch this method used to have
-     * with the Categories page, which produced the same duplicate from ordinary
-     * sequential use.
+     * mergeable outcome.
      */
-    private function resolveCategoryId(): int
+    private function categoryId(): int
     {
         $name = trim((string) $this->input('new_category'));
 
         if (blank($name)) {
-            $id = Category::where('uuid', $this->validated('category_uuid'))->value('id');
-
-            /*
-             * The uuid passed `exists` a moment ago, but that was a separate
-             * query and the row can be gone by now. (int) null is 0, which is no
-             * category at all: the API surfaced that as a 500 from the foreign
-             * key where its own docblock promises a 422, and the web form turned
-             * it into a flash message built from the SQL error. BudgetRequest
-             * already guards its half of this; this is the sibling it was
-             * fixed without.
-             */
-            if ($id === null) {
-                throw ValidationException::withMessages([
-                    'category_uuid' => __('That category no longer exists.'),
-                ]);
-            }
-
-            return (int) $id;
+            return $this->resolveCategoryId($this->validated('category_uuid'));
         }
 
-        $existing = Category::query()
-            ->whereRaw('LOWER(JSON_UNQUOTE(JSON_EXTRACT(name, "$.en"))) = ?', [mb_strtolower($name)])
-            ->value('id');
+        $existing = Category::query()->named($name)->value('id');
 
         if ($existing) {
             return (int) $existing;

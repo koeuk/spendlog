@@ -8,6 +8,7 @@ use App\Http\Requests\ExpenseRequest;
 use App\Http\Resources\ExpenseResource;
 use App\Models\Category;
 use App\Models\Expense;
+use App\Support\Concerns\ClampsApiPageSize;
 use App\Support\TranslatableQuery;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,10 +28,7 @@ use Spatie\QueryBuilder\QueryBuilder;
  */
 class ExpenseController extends Controller
 {
-    /** Matches the web list; ?per_page can narrow it for a phone screen. */
-    private const PER_PAGE = 50;
-
-    private const MAX_PER_PAGE = 100;
+    use ClampsApiPageSize;
 
     /**
      * List expenses
@@ -219,13 +217,5 @@ class ExpenseController extends Controller
         if (filled($request->input('new_category'))) {
             Gate::authorize('create', Category::class);
         }
-    }
-
-    private function perPage(Request $request): int
-    {
-        $requested = (int) $request->query('per_page', self::PER_PAGE);
-
-        // Clamped so a client cannot ask for the whole table in one call.
-        return max(1, min($requested, self::MAX_PER_PAGE));
     }
 }

@@ -13,6 +13,7 @@ use App\Services\CategoryBreakdown;
 use App\Services\RecurringRunner;
 use App\Services\SavingsSummary;
 use App\Support\CalendarOptions;
+use App\Support\Concerns\FormatsMoney;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
@@ -26,6 +27,8 @@ use Illuminate\Support\Facades\Gate;
  */
 class DashboardController extends Controller
 {
+    use FormatsMoney;
+
     /** How many expenses the "recent" list returns. */
     private const RECENT_LIMIT = 8;
 
@@ -131,15 +134,6 @@ class DashboardController extends Controller
             ->sum('amount');
     }
 
-    /**
-     * Money is a string across this API; sum() returns a float, so format it
-     * back to two decimals rather than leaking 12.5 for 12.50.
-     */
-    private function money(float $amount): string
-    {
-        return number_format($amount, 2, '.', '');
-    }
-
     private function todayTotal(User $user, CarbonImmutable $today): string
     {
         $total = Expense::query()
@@ -166,7 +160,7 @@ class DashboardController extends Controller
         return collect($this->breakdown->forMonth($user, $month))
             ->map(fn (array $row) => [
                 ...$row,
-                'spent' => number_format((float) $row['spent'], 2, '.', ''),
+                'spent' => $this->money($row['spent']),
             ])
             ->all();
     }

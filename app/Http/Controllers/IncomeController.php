@@ -74,7 +74,7 @@ class IncomeController extends Controller
 
         return Inertia::render('Incomes/Form', [
             'sources' => $this->sourceOptions($request),
-            'return_query' => $this->returnQuery($request),
+            'return_query' => $this->dateReturnQuery($request),
         ]);
     }
 
@@ -91,7 +91,7 @@ class IncomeController extends Controller
                 'note' => $income->note,
             ],
             'sources' => $this->sourceOptions($request),
-            'return_query' => $this->returnQuery($request),
+            'return_query' => $this->dateReturnQuery($request),
         ]);
     }
 
@@ -115,7 +115,7 @@ class IncomeController extends Controller
         // form that was just submitted. returnQuery puts the list back on the
         // month it came from.
         return redirect()
-            ->route('incomes.index', $this->returnQuery($request))
+            ->route('incomes.index', $this->dateReturnQuery($request))
             ->withSuccess(__('Income added successfully.'));
     }
 
@@ -132,7 +132,7 @@ class IncomeController extends Controller
         }
 
         return redirect()
-            ->route('incomes.index', $this->returnQuery($request))
+            ->route('incomes.index', $this->dateReturnQuery($request))
             ->withSuccess(__('Income updated successfully.'));
     }
 
@@ -149,26 +149,6 @@ class IncomeController extends Controller
         }
 
         return redirect()->back()->withSuccess(__('Income deleted successfully.'));
-    }
-
-    /**
-     * Where the list was when the form was opened, so saving returns to the
-     * same month rather than to an unfiltered list.
-     *
-     * Whitelisted by key and revalidated, never echoed — the same reasoning as
-     * ExpenseController::returnQuery(). Only month and year exist here: there
-     * is no scope or user filter on this page.
-     */
-    private function returnQuery(Request $request): array
-    {
-        $source = is_array($request->input('return_query'))
-            ? $request->input('return_query')
-            : $request->query();
-
-        return array_filter([
-            'month' => $this->validMonth($source['month'] ?? null),
-            'year' => $this->validYear($source['year'] ?? null),
-        ], fn (string $value) => $value !== '');
     }
 
     /**

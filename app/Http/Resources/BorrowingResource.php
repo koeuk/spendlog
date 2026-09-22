@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\Borrowing;
+use App\Support\Concerns\FormatsMoney;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -11,6 +12,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class BorrowingResource extends JsonResource
 {
+    use FormatsMoney;
+
     /**
      * @return array<string, mixed>
      */
@@ -39,10 +42,5 @@ class BorrowingResource extends JsonResource
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];
-    }
-
-    private function money(float $amount): string
-    {
-        return number_format($amount, 2, '.', '');
     }
 }

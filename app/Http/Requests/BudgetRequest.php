@@ -3,14 +3,15 @@
 namespace App\Http\Requests;
 
 use App\Enums\Currency;
-use App\Models\AppSetting;
-use App\Models\Category;
+use App\Http\Requests\Concerns\ConvertsEnteredCurrency;
+use App\Http\Requests\Concerns\ResolvesCategoryUuid;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 
 class BudgetRequest extends FormRequest
 {
+    use ConvertsEnteredCurrency, ResolvesCategoryUuid;
+
     /**
      * Budgets are always written against the authenticated user's own
      * relationship, so there is no cross-user target to authorize.
@@ -63,44 +64,7 @@ class BudgetRequest extends FormRequest
             // Budgets are compared against stored expense prices, which are
             // always USD — a riel budget left unconverted would read as ~4100x
             // its real size and never report as over. Same as ExpenseRequest.
-            'amount' => $this->enteredCurrency()
-                ->toUsd((float) $data['amount'], AppSetting::current()->khrPerUsd()),
+            'amount' => $this->usdAmount(),
         ];
-    }
-
-    /**
-     * What the submitted amount is denominated in.
-     *
-     * Read straight off the raw input rather than the validated data, because
-     * rules() needs it to build the amount rule and validation has not run yet.
-     * An absent or unrecognised value means USD, so callers predating the
-     * currency toggle keep working.
-     */
-    private function enteredCurrency(): Currency
-    {
-        return Currency::tryFrom((string) $this->input('currency')) ?? Currency::Usd;
-    }
-
-    /**
-     * The uuid passed `exists` a moment ago, but that was a separate query — the
-     * row can be gone by the time we look it up.
-     *
-     * Null is not a neutral failure here: it is this schema's encoding for the
-     * overall budget covering every category (see the rule above, BudgetSummary,
-     * and the category_key generated column). Letting a vanished category fall
-     * through to null would quietly rewrite "$250 for Food" as "$250 across
-     * everything" — no exception, no error, and a wrong number on the dashboard.
-     */
-    private function resolveCategoryId(string $categoryUuid): int
-    {
-        $id = Category::where('uuid', $categoryUuid)->value('id');
-
-        if ($id === null) {
-            throw ValidationException::withMessages([
-                'category_uuid' => __('That category no longer exists.'),
-            ]);
-        }
-
-        return $id;
     }
 }

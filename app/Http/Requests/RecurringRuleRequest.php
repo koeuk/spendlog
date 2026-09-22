@@ -5,15 +5,16 @@ namespace App\Http\Requests;
 use App\Enums\Currency;
 use App\Enums\RecurringFrequency;
 use App\Enums\RecurringKind;
-use App\Models\AppSetting;
-use App\Models\Category;
+use App\Http\Requests\Concerns\ConvertsEnteredCurrency;
+use App\Http\Requests\Concerns\ResolvesCategoryUuid;
 use App\Models\RecurringRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 
 class RecurringRuleRequest extends FormRequest
 {
+    use ConvertsEnteredCurrency, ResolvesCategoryUuid;
+
     /**
      * Authorization is handled by RecurringRulePolicy via the controller.
      */
@@ -88,14 +89,12 @@ class RecurringRuleRequest extends FormRequest
     {
         $data = $this->validated();
 
-        $data['category_id'] = $this->kind() === RecurringKind::Expense ? $this->resolveCategoryId() : null;
+        $data['category_id'] = $this->kind() === RecurringKind::Expense
+            ? $this->resolveCategoryId($this->validated('category_uuid'))
+            : null;
         unset($data['category_uuid']);
 
-        // Every stored amount is USD — see App\Enums\Currency. The currency is
-        // a property of what was typed, not of the rule, so it is consumed
-        // here rather than persisted. Same as ExpenseRequest.
-        $currency = Currency::tryFrom((string) $this->input('currency')) ?? Currency::Usd;
-        $data['amount'] = $currency->toUsd((float) $data['amount'], AppSetting::current()->khrPerUsd());
+        $data['amount'] = $this->usdAmount();
         unset($data['currency']);
 
         // 'nullable' leaves an omitted value absent rather than null; make
@@ -103,14 +102,12 @@ class RecurringRuleRequest extends FormRequest
         $data['ends_on'] = $data['ends_on'] ?? null;
         $data['note'] = $data['note'] ?? null;
 
-        // A new rule is on unless told otherwise; an existing one keeps its
-        // switch where it is when the field is left out.
         if ($this->existingRule() === null) {
+            // A new rule is on unless told otherwise.
             $data['active'] = $data['active'] ?? true;
-        }
-
-        // The kind is immutable, so an update has no business writing it.
-        if ($this->existingRule() !== null) {
+        } else {
+            // An existing one keeps its switch where it is when the field is
+            // left out, and its kind is immutable — so an update writes neither.
             unset($data['kind']);
         }
 
@@ -129,20 +126,5 @@ class RecurringRuleRequest extends FormRequest
         $rule = $this->route('rule');
 
         return $rule instanceof RecurringRule ? $rule : null;
-    }
-
-    private function resolveCategoryId(): int
-    {
-        $id = Category::where('uuid', $this->validated('category_uuid'))->value('id');
-
-        // The uuid passed `exists` a moment ago, but that was a separate
-        // query and the row can be gone by now — same guard as ExpenseRequest.
-        if ($id === null) {
-            throw ValidationException::withMessages([
-                'category_uuid' => __('That category no longer exists.'),
-            ]);
-        }
-
-        return (int) $id;
     }
 }

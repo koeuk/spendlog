@@ -9,6 +9,7 @@ use App\Models\Expense;
 use App\Models\User;
 use App\Services\SpendingReport;
 use App\Services\SpendingTrend;
+use App\Support\Concerns\FormatsMoney;
 use App\Support\Concerns\PaginatesLists;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
@@ -22,7 +23,7 @@ use Illuminate\Support\Facades\Gate;
  */
 class ReportController extends Controller
 {
-    use PaginatesLists;
+    use FormatsMoney, PaginatesLists;
 
     public function __construct(
         private readonly SpendingTrend $trend,
@@ -174,15 +175,5 @@ class ReportController extends Controller
                 'prev' => $paginator->previousPageUrl(),
             ],
         ];
-    }
-
-    /**
-     * Money is a string throughout this API — see the money note in docs/API.md.
-     * The services deal in floats, so every amount is formatted on the way out
-     * rather than leaking `12.5` for `12.50`.
-     */
-    private function money(float|int $amount): string
-    {
-        return number_format((float) $amount, 2, '.', '');
     }
 }

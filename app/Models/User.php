@@ -27,6 +27,9 @@ class User extends Authenticatable implements MustVerifyEmail
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, HasRoles, HasUuidRouteKey, Notifiable;
 
+    /** Where profile photos live on the 'public' disk. */
+    public const AVATAR_DIR = 'avatars';
+
     /**
      * The attributes that are mass assignable.
      *
@@ -70,8 +73,6 @@ class User extends Authenticatable implements MustVerifyEmail
      *
      * @return array<string, string>
      */
-    /** Where profile photos live on the 'public' disk. */
-    public const AVATAR_DIR = 'avatars';
 
     /**
      * Replace the profile photo with this upload, deleting the old file so

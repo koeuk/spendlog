@@ -77,6 +77,10 @@ class AppSetting extends Model
     /**
      * @return array<string, string>
      */
+    protected $hidden = [
+        'id',
+    ];
+
     protected function casts(): array
     {
         return [
@@ -118,10 +122,6 @@ class AppSetting extends Model
      *
      * @var array
      */
-    protected $hidden = [
-        'id',
-    ];
-
     protected static function booted(): void
     {
         // Covers update() and delete() alike, so no caller has to remember.

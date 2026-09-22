@@ -3,7 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Enums\Currency;
-use App\Models\AppSetting;
+use App\Http\Requests\Concerns\ConvertsEnteredCurrency;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -15,6 +15,8 @@ use Illuminate\Validation\Rule;
  */
 class SavingsPlanRequest extends FormRequest
 {
+    use ConvertsEnteredCurrency;
+
     /**
      * Plans are always written against the authenticated user's own
      * relationship, so there is no cross-user target to authorize.
@@ -55,14 +57,12 @@ class SavingsPlanRequest extends FormRequest
     {
         $data = $this->validated();
 
-        $currency = Currency::tryFrom((string) $this->input('currency')) ?? Currency::Usd;
-
         return [
             'month' => $data['month'].'-01',
             // Plans are compared against stored entry amounts, which are always
             // USD — a riel plan left unconverted would read as ~4100x its real
             // size and never be met. Same as BudgetRequest.
-            'amount' => $currency->toUsd((float) $data['amount'], AppSetting::current()->khrPerUsd()),
+            'amount' => $this->usdAmount(),
         ];
     }
 }

@@ -3,7 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Enums\Currency;
-use App\Models\AppSetting;
+use App\Http\Requests\Concerns\ConvertsEnteredCurrency;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -17,6 +17,8 @@ use Illuminate\Validation\Rule;
  */
 class SavingsEntryRequest extends FormRequest
 {
+    use ConvertsEnteredCurrency;
+
     public const DEPOSIT = 'deposit';
 
     public const WITHDRAW = 'withdraw';
@@ -60,12 +62,6 @@ class SavingsEntryRequest extends FormRequest
      * The entered amount in USD, always positive. The sign is applied by
      * entryAttributes() once the controller has confirmed it is affordable.
      */
-    public function usdAmount(): float
-    {
-        $currency = Currency::tryFrom((string) $this->input('currency')) ?? Currency::Usd;
-
-        return $currency->toUsd((float) $this->validated('amount'), AppSetting::current()->khrPerUsd());
-    }
 
     /**
      * The validated input as the ledger stores it: signed amount, no type.

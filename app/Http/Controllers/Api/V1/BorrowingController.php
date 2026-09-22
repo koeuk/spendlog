@@ -11,6 +11,8 @@ use App\Http\Resources\BorrowingResource;
 use App\Models\Borrowing;
 use App\Models\BorrowingRepayment;
 use App\Services\BorrowingSummary;
+use App\Support\Concerns\ClampsApiPageSize;
+use App\Support\Concerns\FormatsMoney;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -35,10 +37,7 @@ use Spatie\QueryBuilder\QueryBuilder;
  */
 class BorrowingController extends Controller
 {
-    /** Matches the expenses list; ?per_page can narrow it for a phone screen. */
-    private const PER_PAGE = 50;
-
-    private const MAX_PER_PAGE = 100;
+    use ClampsApiPageSize, FormatsMoney;
 
     public function __construct(private readonly BorrowingSummary $summary) {}
 
@@ -335,18 +334,5 @@ class BorrowingController extends Controller
         DB::transaction(fn () => $repayment->delete());
 
         return response()->json([], 204);
-    }
-
-    private function money(mixed $amount): string
-    {
-        return number_format((float) $amount, 2, '.', '');
-    }
-
-    private function perPage(Request $request): int
-    {
-        $requested = (int) $request->query('per_page', self::PER_PAGE);
-
-        // Clamped so a client cannot ask for the whole table in one call.
-        return max(1, min($requested, self::MAX_PER_PAGE));
     }
 }

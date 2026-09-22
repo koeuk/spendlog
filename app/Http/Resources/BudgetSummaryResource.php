@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Support\Concerns\FormatsMoney;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -18,6 +19,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class BudgetSummaryResource extends JsonResource
 {
+    use FormatsMoney;
+
     /**
      * The summary is a plain array, so the usual model-wrapping does not apply.
      */
@@ -53,10 +56,5 @@ class BudgetSummaryResource extends JsonResource
             'budget' => $this->money($row['budget']),
             'remaining' => $this->money($row['remaining']),
         ];
-    }
-
-    private function money(int|float|string|null $value): ?string
-    {
-        return $value === null ? null : number_format((float) $value, 2, '.', '');
     }
 }

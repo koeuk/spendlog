@@ -220,7 +220,7 @@ class BorrowingController extends Controller
      * The repayment screen. Adding a repayment changes what the borrowing
      * still owes, so it is authorised as an update of the borrowing.
      */
-    public function createRepayment(Request $request, Borrowing $borrowing): Response
+    public function createRepayment(Borrowing $borrowing): Response
     {
         Gate::authorize('update', $borrowing);
 
