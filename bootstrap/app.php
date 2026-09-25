@@ -20,6 +20,21 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        /*
+         * Railway (like any platform proxy) terminates TLS and forwards the
+         * request over plain HTTP, announcing the original scheme in
+         * X-Forwarded-Proto. Without trusting that header Laravel believes the
+         * request is insecure: url() and redirect() emit http://, the session
+         * cookie is never marked secure, and a browser on https gets a mixed
+         * scheme it may refuse.
+         *
+         * '*' rather than a list: the proxy is inside Railway's network and its
+         * address is neither fixed nor published, so there is nothing stable to
+         * name. The app is only reachable through that proxy, so there is no
+         * path by which an untrusted client sets these headers.
+         */
+        $middleware->trustProxies(at: '*');
+
         $middleware->web(append: [
             // Before HandleInertiaRequests: it shares the active locale and its
             // dictionary, so the locale must already be applied by then.
