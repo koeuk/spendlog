@@ -59,6 +59,26 @@ class AdminTest extends TestCase
             ->assertJsonStructure(['data' => [['uuid', 'name', 'email', 'role', 'status']]]);
     }
 
+    public function test_an_admin_can_search_users_by_name_or_email(): void
+    {
+        $admin = $this->admin();
+        $sokha = $this->user();
+        $sokha->update(['name' => 'Sokha Chan', 'email' => 'sokha@example.com']);
+        $dara = $this->user();
+        $dara->update(['name' => 'Dara Kim', 'email' => 'dara@example.com']);
+
+        Sanctum::actingAs($admin, [TokenAbility::UsersRead->value]);
+
+        $this->getJson('/api/v1/admin/users?search=sokha')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.uuid', $sokha->uuid);
+
+        $this->getJson('/api/v1/admin/users?search=dara@')
+            ->assertOk()
+            ->assertJsonPath('data.0.uuid', $dara->uuid);
+    }
+
     public function test_an_admin_sets_and_removes_a_users_photo(): void
     {
         Storage::fake('public');

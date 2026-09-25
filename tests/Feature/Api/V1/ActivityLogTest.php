@@ -216,4 +216,80 @@ class ActivityLogTest extends TestCase
             ->assertStatus(422)
             ->assertJsonValidationErrors('subject');
     }
+
+    // --------------------------------------------------- person and date
+
+    public function test_an_admin_can_narrow_everyones_activity_to_one_person(): void
+    {
+        $admin = $this->user(RoleName::Admin);
+        $one = $this->user();
+        $two = $this->user();
+
+        $this->actingAs($one);
+        Income::factory()->for($one)->create(['source' => 'One']);
+        $this->actingAs($two);
+        Income::factory()->for($two)->create(['source' => 'Two']);
+
+        Sanctum::actingAs($admin);
+
+        // Naming a person is enough; it implies scope=all.
+        $response = $this->getJson('/api/v1/activity?user='.$two->uuid)->assertOk()->assertJsonCount(1, 'data');
+
+        $this->assertSame($two->name, $response->json('data.0.user.name'));
+    }
+
+    public function test_a_regular_user_may_name_only_themselves(): void
+    {
+        $user = $this->user();
+        $other = $this->user();
+
+        $this->actingAs($user);
+        Income::factory()->for($user)->create(['source' => 'Mine']);
+
+        Sanctum::actingAs($user);
+
+        $this->getJson('/api/v1/activity?user='.$user->uuid)->assertOk()->assertJsonCount(1, 'data');
+        $this->getJson('/api/v1/activity?user='.$other->uuid)->assertForbidden();
+    }
+
+    public function test_an_unknown_person_is_a_422(): void
+    {
+        Sanctum::actingAs($this->user(RoleName::Admin));
+
+        $this->getJson('/api/v1/activity?user=not-a-uuid')
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['user']);
+    }
+
+    public function test_a_date_window_covers_whole_days_and_a_date_time_is_exact(): void
+    {
+        $user = $this->user();
+        $this->actingAs($user);
+
+        $this->travelTo(now()->setDate(2026, 9, 1)->setTime(9, 0));
+        Income::factory()->for($user)->create(['source' => 'First']);
+        $this->travelTo(now()->setDate(2026, 9, 10)->setTime(23, 30));
+        Income::factory()->for($user)->create(['source' => 'Tenth']);
+        $this->travelTo(now()->setDate(2026, 9, 20)->setTime(8, 0));
+        Income::factory()->for($user)->create(['source' => 'Twentieth']);
+
+        Sanctum::actingAs($user);
+
+        // "To the 10th" includes 23:30 on the 10th.
+        $response = $this->getJson('/api/v1/activity?from=2026-09-02&to=2026-09-10')->assertOk()->assertJsonCount(1, 'data');
+        $this->assertStringStartsWith('Tenth', $response->json('data.0.label'));
+
+        // A time narrows inside the day.
+        $this->getJson('/api/v1/activity?from=2026-09-10T12:00&to=2026-09-10T20:00')->assertOk()->assertJsonCount(0, 'data');
+        $this->getJson('/api/v1/activity?from=2026-09-10')->assertOk()->assertJsonCount(2, 'data');
+    }
+
+    public function test_an_end_before_the_start_is_a_422(): void
+    {
+        Sanctum::actingAs($this->user());
+
+        $this->getJson('/api/v1/activity?from=2026-09-10&to=2026-09-01')
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['to']);
+    }
 }

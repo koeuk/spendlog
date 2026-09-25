@@ -584,5 +584,7 @@
   "Your email address is unverified.": "Your email address is unverified.",
   "Your Google account did not share an email address.": "Your Google account did not share an email address.",
   "Your photo, name and email address.": "Your photo, name and email address.",
-  "© :year :name. All rights reserved.": "© :year :name. All rights reserved."
+  "© :year :name. All rights reserved.": "© :year :name. All rights reserved.",
+  "No such person.": "No such person.",
+  "The end cannot come before the start.": "The end cannot come before the start."
 }

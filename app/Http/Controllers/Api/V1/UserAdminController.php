@@ -31,14 +31,23 @@ class UserAdminController extends Controller
     /**
      * List users
      *
+     * @queryParam search string Narrows to names, usernames and emails containing this. Example: koeuk
      * @queryParam page integer Example: 1
      */
     public function index(Request $request): JsonResponse
     {
         Gate::authorize('viewAny', User::class);
 
+        $search = trim((string) $request->query('search'));
+
         $paginator = User::query()
             ->with('roles')
+            ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search) {
+                $like = '%'.addcslashes($search, '%_\\').'%';
+                $query->where('name', 'like', $like)
+                    ->orWhere('username', 'like', $like)
+                    ->orWhere('email', 'like', $like);
+            }))
             ->orderBy('name')
             ->paginate($this->perPage($request))
             ->withQueryString();
