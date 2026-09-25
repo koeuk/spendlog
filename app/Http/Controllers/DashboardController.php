@@ -8,6 +8,7 @@ use App\Models\Expense;
 use App\Models\User;
 use App\Services\BudgetSummary;
 use App\Services\CategoryBreakdown;
+use App\Services\RecurringRunner;
 use App\Services\SpendingTrend;
 use App\Support\CalendarOptions;
 use Carbon\CarbonImmutable;
@@ -25,6 +26,7 @@ class DashboardController extends Controller
         private readonly BudgetSummary $summary,
         private readonly SpendingTrend $trend,
         private readonly CategoryBreakdown $breakdown,
+        private readonly RecurringRunner $recurring,
     ) {}
 
     public function index(Request $request): Response
@@ -32,6 +34,16 @@ class DashboardController extends Controller
         Gate::authorize('viewDashboard');
 
         $user = $request->user();
+
+        // Anything a recurring rule owes this person is written first, so every
+        // total below includes today's rent whether or not the nightly command
+        // ran — which is what routes/console.php means by "the dashboard catches
+        // up too". The API dashboard has always done this; without it here the
+        // same account saw today's rent from its phone and not from the browser,
+        // and saw it nowhere at all wherever the scheduler is not running. One
+        // indexed read, and nothing at all when nothing is due.
+        $this->recurring->runDue($user);
+
         $today = CarbonImmutable::now();
 
         /*
