@@ -41,7 +41,7 @@ const rows = [
 
 <template>
     <div
-        class="relative hidden overflow-hidden rounded-[28px] bg-[#f1f7ef] lg:flex lg:flex-col lg:items-center lg:justify-center dark:bg-[#0f1a12]"
+        class="relative hidden overflow-hidden rounded-xl bg-[#f1f7ef] lg:flex lg:flex-col lg:items-center lg:justify-center dark:bg-[#0f1a12]"
     >
         <svg
             class="pointer-events-none absolute inset-0 size-full"

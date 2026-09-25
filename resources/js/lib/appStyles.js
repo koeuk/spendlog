@@ -1,6 +1,6 @@
 /**
  * The in-app counterpart to authStyles.js — same vocabulary as the login
- * screens (Plus Jakarta display face, neutral base, one green accent, 28px
+ * screens (Plus Jakarta display face, neutral base, one green accent, 12px
  * corners) so the app does not read as a different product after sign-in.
  *
  * Spelled out in full: Tailwind scans source text, so a class assembled at
@@ -66,7 +66,7 @@ export const CARD =
     // tinted page is just a washed-out patch of that tint. The tokens are derived
     // from the background, so the card sits a measured step off it in the same
     // hue — and still resolve to today's white and near-black by default.
-    `rounded-[28px] border border-border bg-card/70 backdrop-blur-xl backdrop-saturate-150 ${CARD_LIFT}`;
+    `rounded-xl border border-border bg-card/70 backdrop-blur-xl backdrop-saturate-150 ${CARD_LIFT}`;
 
 /**
  * The hero card — the admin's button colour at full strength, for the one figure
@@ -89,7 +89,7 @@ export const CARD =
  * deep green. Anything spelled out — a muted grey, a red delta — is unreadable
  * the moment the fill is dark.
  */
-export const CARD_TINT = 'rounded-[28px] bg-primary text-primary-foreground';
+export const CARD_TINT = 'rounded-xl bg-primary text-primary-foreground';
 
 /**
  * The muted and figure treatments, restated for a brand fill.
@@ -117,7 +117,7 @@ export const MUTED_ON_BRAND = 'text-primary-foreground/75';
  * for buttons: at 70% opacity behind text it is a solid red slab, not a wash.
  */
 export const CARD_ALERT =
-    'rounded-[28px] border border-red-500/20 bg-red-50/70 backdrop-blur-xl backdrop-saturate-150 ' +
+    'rounded-xl border border-red-500/20 bg-red-50/70 backdrop-blur-xl backdrop-saturate-150 ' +
     'dark:border-red-500/25 dark:bg-red-950/40';
 
 /**
@@ -144,7 +144,7 @@ export const CARD_ALERT =
  * respectively. --primary is already theme-aware, and nothing here is clickable.
  */
 export const CARD_BRAND =
-    'rounded-[28px] bg-primary text-primary-foreground';
+    'rounded-xl bg-primary text-primary-foreground';
 
 /**
  * A lighter pane for nested surfaces (modals, popovers) that sit above a card
@@ -152,7 +152,7 @@ export const CARD_BRAND =
  * costs a lot and muddies both.
  */
 export const CARD_SOLID =
-    'rounded-[28px] border border-border bg-popover';
+    'rounded-xl border border-border bg-popover';
 
 /**
  * The fill for the selected one of a set — the active nav tab, the chosen
@@ -192,11 +192,12 @@ export const FIGURE =
  * 640px the card is wide enough that the same button spanning it reads as a
  * stripe instead. The breakpoint is where the card stops being the screen.
  *
- * The 12px radius is softer than the button's own 6px default, so a corner
- * spanning the full width of a 28px card does not sit square against it. It
- * holds at every width rather than reverting from sm: up: settings buttons
- * changing shape at the breakpoint is a difference nobody asked for, and the
- * header actions (SETTINGS_ACTION) are the same radius at every width too.
+ * The 12px radius is softer than the button's own 6px default, and now equals
+ * the card's own corner, so a control spanning the full width of one lines up
+ * with it rather than sitting square against it. It holds at every width rather
+ * than reverting from sm: up: settings buttons changing shape at the breakpoint
+ * is a difference nobody asked for, and the header actions (SETTINGS_ACTION)
+ * are the same radius at every width too.
  *
  * h-12 rather than the size variant's own 44px phone floor: this is the action
  * the page exists for, and it is the one control on the card that should be

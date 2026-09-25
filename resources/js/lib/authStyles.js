@@ -38,4 +38,4 @@ export const AUTH_LINK =
 
 /** Success / status banner. */
 export const AUTH_BANNER =
-    'rounded-2xl bg-[#eaf5e6] px-4 py-3 text-sm font-medium text-[#2f6b3d] dark:bg-[#16281a] dark:text-[#8fd4a0]';
+    'rounded-xl bg-[#eaf5e6] px-4 py-3 text-sm font-medium text-[#2f6b3d] dark:bg-[#16281a] dark:text-[#8fd4a0]';
