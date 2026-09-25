@@ -85,7 +85,7 @@ const form = useForm({
 
         <div
             v-if="mustVerifyEmail && user.email_verified_at === null"
-            class="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
+            class="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
         >
             <p>
                 {{ __('Your email address is unverified.') }}

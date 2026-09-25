@@ -102,7 +102,7 @@ function submit() {
                     v-for="status in statuses"
                     :key="status.value"
                     type="button"
-                    class="flex w-full items-start gap-3 rounded-2xl border p-3 text-start transition"
+                    class="flex w-full items-start gap-3 rounded-xl border p-3 text-start transition"
                     :class="
                         chosen === status.value
                             ? 'border-neutral-900 bg-neutral-50 dark:border-neutral-100 dark:bg-neutral-800'
@@ -143,7 +143,7 @@ function submit() {
 
                 <div
                     v-if="willRevoke"
-                    class="flex items-start gap-2 rounded-2xl bg-amber-50 p-3 text-xs text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
+                    class="flex items-start gap-2 rounded-xl bg-amber-50 p-3 text-xs text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
                 >
                     <TriangleAlert class="mt-0.5 size-3.5 shrink-0" />
                     <p>

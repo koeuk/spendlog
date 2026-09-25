@@ -101,7 +101,7 @@ function submit() {
     >
         <form class="flex flex-1 flex-col" @submit.prevent="submit">
             <div
-                class="mb-5 flex items-start gap-2 rounded-2xl bg-neutral-50 p-3 text-xs dark:bg-neutral-800/60"
+                class="mb-5 flex items-start gap-2 rounded-xl bg-neutral-50 p-3 text-xs dark:bg-neutral-800/60"
                 :class="MUTED"
             >
                 <Info class="mt-0.5 size-3.5 shrink-0" />
@@ -141,7 +141,7 @@ function submit() {
                     :key="group"
                     :class="[
                         CARD_LIFT,
-                        'mb-4 break-inside-avoid rounded-2xl border border-border bg-card/40 p-4',
+                        'mb-4 break-inside-avoid rounded-xl border border-border bg-card/40 p-4',
                     ]"
                 >
                     <!--

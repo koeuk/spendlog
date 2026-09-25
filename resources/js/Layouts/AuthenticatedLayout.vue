@@ -642,7 +642,7 @@ watch(() => page.url, () => (showMoreSheet.value = false));
                     <div
                         v-if="showOverBudget"
                         role="alert"
-                        class="mb-3 flex items-center gap-4 rounded-2xl border border-red-500/20 bg-red-50/80 px-5 py-4 backdrop-blur-xl dark:border-red-500/25 dark:bg-red-950/50"
+                        class="mb-3 flex items-center gap-4 rounded-xl border border-red-500/20 bg-red-50/80 px-5 py-4 backdrop-blur-xl dark:border-red-500/25 dark:bg-red-950/50"
                     >
                         <!-- The mark: a badge with a ring leaving it. Both layers are
                              absolutely placed inside a fixed-size box so neither the
