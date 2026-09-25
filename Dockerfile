@@ -62,4 +62,17 @@ RUN php artisan storage:link || true
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "php artisan serve --host=0.0.0.0 --port=${PORT}"]
+# Two processes: the scheduler alongside the web server.
+#
+# Without the scheduler nothing ever runs spendlog:run-recurring, so a
+# recurring rule only became a real row when someone opened the dashboard —
+# and never at all for an account that does not log in. schedule:work is the
+# long-running form of schedule:run, so no crontab is needed in the image; it
+# needs pcntl, installed above.
+#
+# serve is exec'd so it becomes PID 1 and receives the container's signals,
+# and so the container's health follows the web server. The trade-off is that
+# a scheduler that dies is not restarted on its own — the platform's restart
+# policy only sees serve. Worth replacing with a real process manager, or a
+# platform cron hitting `php artisan schedule:run`, if that matters.
+CMD ["sh", "-c", "php artisan schedule:work >> /dev/stdout 2>&1 & exec php artisan serve --host=0.0.0.0 --port=${PORT}"]
