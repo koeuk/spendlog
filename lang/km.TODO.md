@@ -1,11 +1,15 @@
 # Khmer translation worklist
 
-215 strings reach the UI in English while the locale is `km`.
+213 strings reach the UI in English while the locale is `km`.
 They are now keys in `lang/en.json` and absent from `lang/km.json`, so the
 outstanding set is always `array_diff_key(en, km)` — this file is a snapshot.
 
 Add each to `lang/km.json`. Placeholders (`:name`, `:count`) must survive
 verbatim; `&quot;` is an HTML-escaped quote in a Vue confirm dialog.
+
+Dotted keys like `auth.failed` are deliberately absent: those resolve from the
+framework's own `lang/en/auth.php`, and a JSON entry of the same name shadows
+it — which is how a failed login briefly showed the literal "auth.failed".
 
 ## Backend: app/Enums/Permission.php (63)
 
@@ -98,7 +102,6 @@ verbatim; `&quot;` is an HTML-escaped quote in a Vue confirm dialog.
 
 ## Backend: app/Http/Controllers/Api/V1/AuthController.php (3)
 
-- `auth.failed`
 - `Logged out.`
 - `None of the requested abilities are available to this account.`
 
@@ -117,7 +120,6 @@ verbatim; `&quot;` is an HTML-escaped quote in a Vue confirm dialog.
 
 ## Backend: app/Http/Controllers/Auth/ConfirmablePasswordController.php (1)
 
-- `auth.password`
 
 ## Backend: app/Http/Controllers/FaqController.php (4)
 
