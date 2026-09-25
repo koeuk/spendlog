@@ -60,7 +60,7 @@ const rows = [
         </svg>
 
         <div class="relative flex flex-col items-center px-10">
-            <div class="w-[280px] rotate-[-3deg] rounded-3xl bg-white p-5 shadow-[0_18px_40px_-12px_rgba(31,64,38,0.18)] dark:bg-neutral-900 dark:shadow-[0_18px_40px_-12px_rgba(0,0,0,0.6)]">
+            <div class="w-[280px] rotate-[-3deg] rounded-xl bg-white p-5 shadow-[0_18px_40px_-12px_rgba(31,64,38,0.18)] dark:bg-neutral-900 dark:shadow-[0_18px_40px_-12px_rgba(0,0,0,0.6)]">
                 <div class="flex items-baseline justify-between">
                     <span class="text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-400 dark:text-neutral-500">
                         Today
@@ -82,7 +82,7 @@ const rows = [
                 </div>
             </div>
 
-            <div class="-mt-6 ml-40 flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-[0_14px_30px_-10px_rgba(31,64,38,0.22)] dark:bg-neutral-900 dark:shadow-[0_14px_30px_-10px_rgba(0,0,0,0.6)]">
+            <div class="-mt-6 ml-40 flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-[0_14px_30px_-10px_rgba(31,64,38,0.22)] dark:bg-neutral-900 dark:shadow-[0_14px_30px_-10px_rgba(0,0,0,0.6)]">
                 <div class="relative grid size-11 place-items-center">
                     <svg class="size-11 -rotate-90" viewBox="0 0 44 44" aria-hidden="true">
                         <circle cx="22" cy="22" r="18" fill="none" :stroke="isDark ? '#25352a' : '#e8f0e6'" stroke-width="5" />

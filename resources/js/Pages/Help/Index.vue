@@ -37,7 +37,7 @@ function toggle(uuid) {
                 <!-- Big on purpose: the one visual anchor for the page, same
                      size and tint as the About / Policy pages'. -->
                 <span
-                    class="grid size-14 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary"
+                    class="grid size-14 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"
                     aria-hidden="true"
                 >
                     <CircleHelp class="size-7" />

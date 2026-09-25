@@ -31,7 +31,7 @@ const icon = computed(
                 <!-- Big on purpose: the page is a wall of plain text, and this
                      is the one visual anchor saying which document you are on. -->
                 <span
-                    class="grid size-14 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary"
+                    class="grid size-14 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"
                     aria-hidden="true"
                 >
                     <component :is="icon" class="size-7" />

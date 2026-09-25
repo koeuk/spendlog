@@ -60,7 +60,7 @@ const brandInitial = computed(() => (branding.value.name || 'S').charAt(0).toUpp
 
             <div
                 v-if="$slots.icon"
-                class="anim mx-auto mt-8 grid size-14 place-items-center rounded-2xl bg-[#f1f7ef] dark:bg-[#16281a]"
+                class="anim mx-auto mt-8 grid size-14 place-items-center rounded-xl bg-[#f1f7ef] dark:bg-[#16281a]"
                 style="--d: 60ms"
             >
                 <slot name="icon" />

@@ -76,14 +76,14 @@ const brandInitial = computed(() => (branding.value.name || 'S').charAt(0).toUpp
                             v-if="branding.logo"
                             :src="branding.logo"
                             :alt="branding.name"
-                            class="size-7 shrink-0 rounded-lg object-contain max-lg:size-20 max-lg:rounded-3xl"
+                            class="size-7 shrink-0 rounded-lg object-contain max-lg:size-20 max-lg:rounded-xl"
                         />
                         <!-- On the phone the mark sits on the brand colour, so
                              it inverts: a primary-on-primary badge is invisible.
                              On the desk it is the usual filled badge. -->
                         <span
                             v-else
-                            class="grid size-7 place-items-center rounded-lg text-[13px] font-extrabold max-lg:size-20 max-lg:rounded-3xl max-lg:bg-white/15 max-lg:text-3xl lg:bg-primary lg:text-primary-foreground"
+                            class="grid size-7 place-items-center rounded-lg text-[13px] font-extrabold max-lg:size-20 max-lg:rounded-xl max-lg:bg-white/15 max-lg:text-3xl lg:bg-primary lg:text-primary-foreground"
                         >
                             {{ brandInitial }}
                         </span>
