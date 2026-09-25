@@ -143,7 +143,7 @@ const change = computed(() => {
                         stopping two-thirds across reads as an unfinished row.
                     -->
                     <div
-                        class="grid grid-cols-4 rounded-full border border-border bg-muted p-0.5 sm:order-last sm:flex sm:w-auto"
+                        class="grid grid-cols-4 rounded-xl border border-border bg-muted p-0.5 sm:order-last sm:flex sm:w-auto"
                         role="group"
                         :aria-label="__('Period')"
                     >
@@ -151,7 +151,7 @@ const change = computed(() => {
                             v-for="option in PERIODS"
                             :key="option.key"
                             type="button"
-                            class="rounded-full px-3 py-2 text-xs font-semibold transition-colors duration-200 sm:py-1.5"
+                            class="rounded-xl px-3 py-2 text-xs font-semibold transition-colors duration-200 sm:py-1.5"
                             :class="granularity === option.key ? ACTIVE : SEGMENT_OFF"
                             :aria-pressed="granularity === option.key"
                             @click="load(option.key)"

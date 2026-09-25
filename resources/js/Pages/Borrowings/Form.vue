@@ -115,7 +115,7 @@ function submit() {
                             :key="type.value"
                             type="button"
                             :aria-pressed="form.lender_type === type.value"
-                            class="rounded-full border px-3.5 py-1.5 text-sm font-semibold transition"
+                            class="rounded-xl border px-3.5 py-1.5 text-sm font-semibold transition"
                             :class="
                                 form.lender_type === type.value
                                     ? 'border-primary bg-primary text-primary-foreground'

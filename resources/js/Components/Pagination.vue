@@ -84,7 +84,7 @@ function setPerPage(size) {
                 :label="__('Per page')"
                 :searchable="false"
                 align="start"
-                trigger-class="h-8 w-[4.5rem] rounded-full border border-neutral-200 bg-white/70 px-2.5 text-xs font-semibold text-neutral-700 max-sm:h-11 dark:border-neutral-700 dark:bg-neutral-800/70 dark:text-neutral-200"
+                trigger-class="h-8 w-[4.5rem] rounded-xl border border-neutral-200 bg-white/70 px-2.5 text-xs font-semibold text-neutral-700 max-sm:h-11 dark:border-neutral-700 dark:bg-neutral-800/70 dark:text-neutral-200"
                 content-class="w-[6rem]"
                 @update:model-value="setPerPage"
             />

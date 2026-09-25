@@ -218,9 +218,14 @@ export const FORM_ACTION = 'w-full max-sm:h-12 rounded-xl sm:w-auto';
  */
 export const SETTINGS_ACTION = 'rounded-xl';
 
-/** Compact pill button, e.g. "Add expense" in a page header. */
+/**
+ * Compact action button, e.g. "Add expense" in a page header.
+ *
+ * The name is historical: this was a full-round pill until the app settled on
+ * one corner. Kept because renaming it touches every page header.
+ */
 export const PILL_ACTION =
-    'h-10 rounded-full px-4 text-sm font-semibold active:translate-y-0 active:scale-[0.99]';
+    'h-10 rounded-xl px-4 text-sm font-semibold active:translate-y-0 active:scale-[0.99]';
 
 /**
  * Widens a small icon button's hit area to 44px without resizing it.
@@ -241,15 +246,15 @@ export const TAP_TARGET =
     "after:-translate-x-1/2 after:-translate-y-1/2 after:content-['']";
 
 /**
- * A quiet outline pill for a secondary action beside a heading — the PDF and
+ * A quiet outline button for a secondary action beside a heading — the PDF and
  * Excel downloads on Reports.
  *
- * Sizeless: the page header uses a taller pill than the one tucked into the
+ * Sizeless: the page header uses a taller button than the one tucked into the
  * expenses card, so the caller adds its own height and padding.
  *
  * Hover fills with ACTIVE — the same --primary the selected nav tab and the
  * chosen period segment wear — and the fill rises from the bottom edge rather
- * than cross-fading in place, so the pill reads as filling up. A pill this small
+ * than cross-fading in place, so it reads as filling up. A control this small
  * cannot rely on an opacity step (70% to solid is a change you have to already
  * be looking for), and reusing the selected-state fill means the page has one
  * colour for "this one", whether it is chosen or merely under the pointer.
@@ -268,7 +273,7 @@ export const TAP_TARGET =
  * pass.
  */
 export const EXPORT_LINK =
-    'inline-flex items-center gap-1.5 rounded-full border border-border bg-card/70 ' +
+    'inline-flex items-center gap-1.5 rounded-xl border border-border bg-card/70 ' +
     'text-xs font-semibold text-foreground ' +
     // The fill is a background *image* — a flat primary-to-primary gradient — so
     // bg-card/70 stays underneath as the background *colour* and the two do not
@@ -280,8 +285,8 @@ export const EXPORT_LINK =
 
 /** A segmented control (Mine/Everyone, EN/KM). */
 export const SEGMENT =
-    'inline-flex rounded-full border border-border bg-muted p-0.5';
+    'inline-flex rounded-xl border border-border bg-muted p-0.5';
 
-export const SEGMENT_ON = `rounded-full ${ACTIVE}`;
+export const SEGMENT_ON = `rounded-xl ${ACTIVE}`;
 export const SEGMENT_OFF =
-    'rounded-full text-muted-foreground hover:text-foreground';
+    'rounded-xl text-muted-foreground hover:text-foreground';

@@ -101,7 +101,7 @@ function submit() {
                 <!-- The same pill control as the currency toggle, so the two
                      switches on this form read as one pattern. -->
                 <div
-                    class="inline-flex justify-self-start rounded-full border border-neutral-200 bg-white p-0.5 dark:border-neutral-700 dark:bg-neutral-800"
+                    class="inline-flex justify-self-start rounded-xl border border-neutral-200 bg-white p-0.5 dark:border-neutral-700 dark:bg-neutral-800"
                     role="group"
                 >
                     <button
@@ -109,7 +109,7 @@ function submit() {
                         :key="option.value"
                         type="button"
                         :aria-pressed="form.type === option.value"
-                        class="rounded-full px-3.5 py-1.5 text-sm font-semibold transition"
+                        class="rounded-xl px-3.5 py-1.5 text-sm font-semibold transition"
                         :class="
                             form.type === option.value
                                 ? 'bg-primary text-primary-foreground'

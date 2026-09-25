@@ -22,7 +22,7 @@ const CURRENCIES = [
     <!-- Same pill control as the language tabs, so the toggles in a dialog read
          as one pattern. -->
     <div
-        class="inline-flex rounded-full border border-neutral-200 bg-white p-0.5 dark:border-neutral-700 dark:bg-neutral-800"
+        class="inline-flex rounded-xl border border-neutral-200 bg-white p-0.5 dark:border-neutral-700 dark:bg-neutral-800"
         role="group"
         :aria-label="__('Currency')"
     >
@@ -31,7 +31,7 @@ const CURRENCIES = [
             :key="option.value"
             type="button"
             :aria-pressed="modelValue === option.value"
-            class="rounded-full px-2.5 py-1 text-xs font-semibold transition"
+            class="rounded-xl px-2.5 py-1 text-xs font-semibold transition"
             :class="
                 modelValue === option.value
                     ? 'bg-primary text-primary-foreground'

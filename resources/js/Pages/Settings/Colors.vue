@@ -190,7 +190,7 @@ const labelUnreadable = computed(
                          the fill, so a pale pick shows dark text here exactly as it
                          will once applied. -->
                     <span
-                        class="inline-flex h-9 items-center rounded-full px-4 text-sm font-semibold"
+                        class="inline-flex h-9 items-center rounded-xl px-4 text-sm font-semibold"
                         :style="{ backgroundColor: form.button_color, color: labelOn }"
                     >
                         {{ __('Preview') }}

@@ -38,7 +38,7 @@ defineProps({
             <Button
                 :as="Link"
                 :href="href"
-                class="pointer-events-auto h-12 rounded-full pe-5 ps-4 shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)]"
+                class="pointer-events-auto h-12 rounded-xl pe-5 ps-4 shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)]"
             >
                 <Plus class="size-5" aria-hidden="true" />
                 {{ label }}

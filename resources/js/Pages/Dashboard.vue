@@ -134,7 +134,7 @@ const breakdownYearOptions = computed(() =>
 // that only looks clickable once the pointer is already on it has to be found
 // before it can be used.
 const BUDGET_PICKER =
-    'h-7 rounded-full border border-border bg-card/70 px-2.5 text-xs font-semibold ' +
+    'h-7 rounded-xl border border-border bg-card/70 px-2.5 text-xs font-semibold ' +
     'transition-colors duration-200 hover:bg-muted';
 
 // Names the month that came up empty, so "nothing here" does not read as "you

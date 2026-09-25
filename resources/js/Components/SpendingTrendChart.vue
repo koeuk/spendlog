@@ -260,7 +260,7 @@ const tooltipTop = computed(() => {
                     class="flex w-full items-center justify-between gap-2 sm:ms-auto sm:w-auto sm:justify-start"
                 >
                     <div
-                        class="inline-flex rounded-full border border-neutral-200 bg-white/70 p-0.5 dark:border-neutral-700 dark:bg-neutral-800/70"
+                        class="inline-flex rounded-xl border border-neutral-200 bg-white/70 p-0.5 dark:border-neutral-700 dark:bg-neutral-800/70"
                         role="group"
                         :aria-label="__('Spending')"
                     >
@@ -268,7 +268,7 @@ const tooltipTop = computed(() => {
                             v-for="option in PERIODS"
                             :key="option.key"
                             type="button"
-                            class="rounded-full px-3 py-1 text-xs font-semibold transition-colors duration-200"
+                            class="rounded-xl px-3 py-1 text-xs font-semibold transition-colors duration-200"
                             :class="
                                 trend.granularity === option.key
                                     ? 'bg-primary text-primary-foreground'
@@ -282,7 +282,7 @@ const tooltipTop = computed(() => {
                     </div>
 
                     <div
-                        class="inline-flex rounded-full border border-neutral-200 bg-white/70 p-0.5 dark:border-neutral-700 dark:bg-neutral-800/70"
+                        class="inline-flex rounded-xl border border-neutral-200 bg-white/70 p-0.5 dark:border-neutral-700 dark:bg-neutral-800/70"
                         role="group"
                         :aria-label="__('View')"
                     >
@@ -290,7 +290,7 @@ const tooltipTop = computed(() => {
                             v-for="option in VIEWS"
                             :key="option.key"
                             type="button"
-                            class="grid size-7 place-items-center rounded-full transition-colors duration-200"
+                            class="grid size-7 place-items-center rounded-xl transition-colors duration-200"
                             :class="
                                 view === option.key
                                     ? 'bg-primary text-primary-foreground'

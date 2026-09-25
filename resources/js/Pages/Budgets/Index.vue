@@ -291,7 +291,7 @@ function clearBudget() {
                         preserve-scroll
                         :class="[
                             TAP_TARGET,
-                            'grid size-9 shrink-0 place-items-center rounded-full border border-neutral-200/80 bg-white/60 text-neutral-500 backdrop-blur-xl backdrop-saturate-150 transition hover:bg-neutral-100 hover:text-neutral-900 dark:border-white/10 dark:bg-neutral-900/50 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100',
+                            'grid size-9 shrink-0 place-items-center rounded-xl border border-neutral-200/80 bg-white/60 text-neutral-500 backdrop-blur-xl backdrop-saturate-150 transition hover:bg-neutral-100 hover:text-neutral-900 dark:border-white/10 dark:bg-neutral-900/50 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100',
                         ]"
                         :aria-label="__('Previous month')"
                     >
@@ -303,7 +303,7 @@ function clearBudget() {
                         :options="months"
                         :label="__('Month')"
                         :searchable="false"
-                        trigger-class="h-9 min-w-0 flex-1 rounded-full border border-neutral-200/80 bg-white/60 px-3.5 text-sm font-semibold backdrop-blur-xl backdrop-saturate-150 max-sm:h-11 sm:w-[7.5rem] sm:flex-none dark:border-white/10 dark:bg-neutral-900/50"
+                        trigger-class="h-9 min-w-0 flex-1 rounded-xl border border-neutral-200/80 bg-white/60 px-3.5 text-sm font-semibold backdrop-blur-xl backdrop-saturate-150 max-sm:h-11 sm:w-[7.5rem] sm:flex-none dark:border-white/10 dark:bg-neutral-900/50"
                         content-class="w-44"
                         align="start"
                         @update:model-value="goToMonth"
@@ -314,7 +314,7 @@ function clearBudget() {
                         :options="yearOptions"
                         :label="__('Year')"
                         :searchable="false"
-                        trigger-class="h-9 min-w-0 shrink rounded-full border border-neutral-200/80 bg-white/60 px-3.5 text-sm font-semibold tabular-nums backdrop-blur-xl backdrop-saturate-150 max-sm:h-11 sm:w-[5.5rem] sm:shrink-0 dark:border-white/10 dark:bg-neutral-900/50"
+                        trigger-class="h-9 min-w-0 shrink rounded-xl border border-neutral-200/80 bg-white/60 px-3.5 text-sm font-semibold tabular-nums backdrop-blur-xl backdrop-saturate-150 max-sm:h-11 sm:w-[5.5rem] sm:shrink-0 dark:border-white/10 dark:bg-neutral-900/50"
                         content-class="w-32"
                         align="start"
                         @update:model-value="goToYear"
@@ -325,7 +325,7 @@ function clearBudget() {
                         preserve-scroll
                         :class="[
                             TAP_TARGET,
-                            'grid size-9 shrink-0 place-items-center rounded-full border border-neutral-200/80 bg-white/60 text-neutral-500 backdrop-blur-xl backdrop-saturate-150 transition hover:bg-neutral-100 hover:text-neutral-900 dark:border-white/10 dark:bg-neutral-900/50 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100',
+                            'grid size-9 shrink-0 place-items-center rounded-xl border border-neutral-200/80 bg-white/60 text-neutral-500 backdrop-blur-xl backdrop-saturate-150 transition hover:bg-neutral-100 hover:text-neutral-900 dark:border-white/10 dark:bg-neutral-900/50 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100',
                         ]"
                         :aria-label="__('Next month')"
                     >
