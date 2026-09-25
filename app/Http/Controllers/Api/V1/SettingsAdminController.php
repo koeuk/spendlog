@@ -50,15 +50,17 @@ class SettingsAdminController extends Controller
      * that cannot read the rate can only guess, and guessing at money is
      * worse than asking again.
      *
+     * The currency is the account's own when it has chosen one (see
+     * Preferences), the admin's default otherwise — so a client that only
+     * reads this endpoint already starts each field where its user wants.
+     *
      * @response 200 {"data": {"khr_per_usd": 4100, "default_currency": "USD"}}
      */
-    public function money(): JsonResponse
+    public function money(Request $request): JsonResponse
     {
-        $settings = AppSetting::current();
-
         return response()->json(['data' => [
-            'khr_per_usd' => (float) $settings->khrPerUsd(),
-            'default_currency' => $settings->defaultCurrency()->value,
+            'khr_per_usd' => (float) AppSetting::current()->khrPerUsd(),
+            'default_currency' => $request->user()->defaultCurrency()->value,
         ]]);
     }
 

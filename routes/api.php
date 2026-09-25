@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\V1\IncomeController;
 use App\Http\Controllers\Api\V1\IncomeSourceController;
 use App\Http\Controllers\Api\V1\PasswordController;
 use App\Http\Controllers\Api\V1\PasswordResetController;
+use App\Http\Controllers\Api\V1\PreferenceController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\RecurringController;
 use App\Http\Controllers\Api\V1\ReportController;
@@ -225,6 +226,12 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         // to impersonate or lock anyone out, so a narrow token may still set it.
         Route::post('profile/avatar', [ProfileController::class, 'storeAvatar'])->name('profile.avatar.store');
         Route::delete('profile/avatar', [ProfileController::class, 'destroyAvatar'])->name('profile.avatar.destroy');
+
+        // One account's own currency and colours. Cosmetic like the photo, so
+        // open to every signed-in account with no ability: it changes how the
+        // app looks for this person, never what they can do.
+        Route::get('preferences', [PreferenceController::class, 'show'])->name('preferences.show');
+        Route::put('preferences', [PreferenceController::class, 'update'])->name('preferences.update');
 
         // The account's own details. Both routes share one ability; the
         // updateProfile / updatePassword gates still rule separately.

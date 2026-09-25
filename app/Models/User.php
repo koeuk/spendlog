@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Currency;
 use App\Enums\Permission;
 use App\Enums\RoleName;
 use App\Enums\UserStatus;
@@ -44,6 +45,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'google_id',
         'password',
         'status',
+        'preferred_currency',
+        'button_color',
+        'body_color',
     ];
 
     /**
@@ -110,6 +114,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'status' => UserStatus::class,
+            'preferred_currency' => Currency::class,
         ];
     }
 
@@ -188,6 +193,29 @@ class User extends Authenticatable implements MustVerifyEmail
      * admin role alone a super admin would come out *less* capable than an
      * admin: no docs, no admin UI, a narrower token. "Super" would be a lie.
      */
+    /**
+     * The currency this account's amount fields start on: its own choice, or
+     * the admin's default when it has made none.
+     */
+    public function defaultCurrency(): Currency
+    {
+        return $this->preferred_currency ?? AppSetting::current()->defaultCurrency();
+    }
+
+    /**
+     * The account's own choices, each null where it follows the app.
+     *
+     * @return array{currency: ?string, button_color: ?string, body_color: ?string}
+     */
+    public function preferences(): array
+    {
+        return [
+            'currency' => $this->preferred_currency?->value,
+            'button_color' => $this->button_color,
+            'body_color' => $this->body_color,
+        ];
+    }
+
     public function isAdmin(): bool
     {
         return $this->hasAnyRole([RoleName::Admin->value, RoleName::SuperAdmin->value]);

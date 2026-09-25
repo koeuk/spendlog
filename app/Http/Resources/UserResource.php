@@ -28,6 +28,9 @@ class UserResource extends JsonResource
             // Absolute, or null when the account has no photo.
             'avatar_url' => $this->avatar_url,
             'is_admin' => $this->isAdmin(),
+            // This account's own currency and colours, each null where it
+            // follows the app-wide value. See Preferences.
+            'preferences' => $this->preferences(),
             'email_verified_at' => $this->email_verified_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),
         ];

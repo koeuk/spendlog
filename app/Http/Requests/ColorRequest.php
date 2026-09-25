@@ -64,7 +64,7 @@ class ColorRequest extends FormRequest
      * guessed at: a saturated #d92626 seems like it belongs here and does not —
      * it labels at 4.73 and is allowed.
      */
-    private function labelIsReadable(): Closure
+    protected function labelIsReadable(): Closure
     {
         return function (string $attribute, mixed $value, Closure $fail) {
             // Malformed hex is the regex rule's job — do not report it twice.
