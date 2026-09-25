@@ -81,6 +81,14 @@ class ReportController extends Controller
      */
     public function export(Request $request, string $format): BinaryFileResponse|HttpResponse
     {
+        // The same gate index() asks. The export is the report as a file, so
+        // revoking reports.view has to close both — otherwise hiding the screen
+        // leaves the whole period's rows one URL away. The API route in front of
+        // this checks the token's reports:read ability, which is a different
+        // question: an ability says what the client may ask for, a permission
+        // says what its owner may see.
+        Gate::authorize('viewReports');
+
         abort_unless(in_array($format, ['pdf', 'xlsx', 'csv'], true), 404);
 
         $user = $request->user();
