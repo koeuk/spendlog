@@ -89,21 +89,13 @@ const form = useForm({
         >
             <p>
                 {{ __('Your email address is unverified.') }}
+                <!-- The code is typed on the verify page, which also resends it. -->
                 <Link
-                    :href="route('verification.send')"
-                    method="post"
-                    as="button"
+                    :href="route('verification.notice')"
                     class="font-semibold underline underline-offset-4 hover:no-underline"
                 >
-                    {{ __('Re-send the verification email.') }}
+                    {{ __('Verify it with a 6-digit code.') }}
                 </Link>
-            </p>
-
-            <p
-                v-if="status === 'verification-link-sent'"
-                class="mt-2 font-medium text-[#2f6b3d] dark:text-[#8fd4a0]"
-            >
-                {{ __('A new verification link has been sent to your email address.') }}
             </p>
         </div>
 

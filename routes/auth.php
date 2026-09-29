@@ -51,8 +51,11 @@ Route::middleware('auth')->group(function () {
     Route::get('verify-email', EmailVerificationPromptController::class)
         ->name('verification.notice');
 
-    Route::get('verify-email/{id}/{hash}', VerifyEmailController::class)
-        ->middleware(['signed', 'throttle:6,1'])
+    // The emailed six-digit code is typed on the notice page and posted here;
+    // there is no signed link any more. The per-code guess limit lives in
+    // EmailVerificationOtp on top of this throttle.
+    Route::post('verify-email', VerifyEmailController::class)
+        ->middleware('throttle:6,1')
         ->name('verification.verify');
 
     Route::post('email/verification-notification', [EmailVerificationNotificationController::class, 'store'])

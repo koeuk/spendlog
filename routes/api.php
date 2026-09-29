@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\BrandingController;
 use App\Http\Controllers\Api\V1\BudgetController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\DashboardController;
+use App\Http\Controllers\Api\V1\EmailVerificationController;
 use App\Http\Controllers\Api\V1\ExpenseController;
 use App\Http\Controllers\Api\V1\FaqAdminController;
 use App\Http\Controllers\Api\V1\IncomeController;
@@ -63,6 +64,16 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         // needed to *enter* money, not to administer it.
         Route::get('settings/money', [SettingsAdminController::class, 'money'])->name('settings.money');
         Route::post('logout', [AuthController::class, 'logout'])->name('logout');
+
+        // The six-digit code register mailed, and a resend. Throttled like
+        // login: guessing is the attack, and the per-code limits live in
+        // EmailVerificationOtp on top of this.
+        Route::post('email/verify', [EmailVerificationController::class, 'verify'])
+            ->middleware('throttle:api-login')
+            ->name('verification.verify');
+        Route::post('email/verification-notification', [EmailVerificationController::class, 'send'])
+            ->middleware('throttle:api-login')
+            ->name('verification.send');
 
         Route::get('dashboard', DashboardController::class)
             ->middleware('abilities:'.TokenAbility::DashboardRead->value)

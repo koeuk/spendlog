@@ -7,6 +7,8 @@ use App\Enums\Permission;
 use App\Enums\RoleName;
 use App\Enums\UserStatus;
 use App\Models\Concerns\HasUuidRouteKey;
+use App\Notifications\EmailVerificationOtpNotification;
+use App\Support\EmailVerificationOtp;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -106,6 +108,23 @@ class User extends Authenticatable implements MustVerifyEmail
 
         $this->avatar_path = null;
         $this->save();
+    }
+
+    /**
+     * Mail a six-digit code instead of Laravel's signed link. The Registered
+     * listener and every resend come through here, so web and API sign-ups
+     * get the same email.
+     *
+     * A null code means one went out under a minute ago and still stands, so
+     * nothing is sent — a double submit must not void the code in the inbox.
+     */
+    public function sendEmailVerificationNotification(): void
+    {
+        $code = EmailVerificationOtp::issue($this->email);
+
+        if ($code !== null) {
+            $this->notify(new EmailVerificationOtpNotification($code));
+        }
     }
 
     protected function casts(): array

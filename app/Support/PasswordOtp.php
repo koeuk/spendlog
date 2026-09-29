@@ -18,6 +18,15 @@ use Illuminate\Support\Facades\RateLimiter;
  */
 class PasswordOtp
 {
+    /**
+     * Where the hashed code lives, and the cache prefix of its guess counter.
+     * Constants so EmailVerificationOtp can reuse every rule here under its
+     * own table — a signup code must never be able to reset a password.
+     */
+    protected const TABLE = 'password_reset_tokens';
+
+    protected const KEY_PREFIX = 'password-otp';
+
     /** Long enough to fetch a code from an inbox, short enough to be stale by the same evening. */
     public const TTL_MINUTES = 10;
 
@@ -41,7 +50,7 @@ class PasswordOtp
      */
     public static function issue(string $email): ?string
     {
-        $existing = DB::table('password_reset_tokens')->where('email', $email)->first();
+        $existing = DB::table(static::TABLE)->where('email', $email)->first();
 
         if ($existing && Carbon::parse($existing->created_at)->addSeconds(self::RESEND_SECONDS)->isFuture()) {
             return null;
@@ -49,7 +58,7 @@ class PasswordOtp
 
         $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
-        DB::table('password_reset_tokens')->updateOrInsert(
+        DB::table(static::TABLE)->updateOrInsert(
             ['email' => $email],
             ['token' => Hash::make($code), 'created_at' => now()],
         );
@@ -74,7 +83,7 @@ class PasswordOtp
             return false;
         }
 
-        $row = DB::table('password_reset_tokens')->where('email', $email)->first();
+        $row = DB::table(static::TABLE)->where('email', $email)->first();
 
         if (! $row || Carbon::parse($row->created_at)->addMinutes(self::TTL_MINUTES)->isPast()) {
             return false;
@@ -97,12 +106,12 @@ class PasswordOtp
      */
     public static function consume(string $email): void
     {
-        DB::table('password_reset_tokens')->where('email', $email)->delete();
+        DB::table(static::TABLE)->where('email', $email)->delete();
         RateLimiter::clear(self::attemptsKey($email));
     }
 
-    private static function attemptsKey(string $email): string
+    protected static function attemptsKey(string $email): string
     {
-        return 'password-otp:'.mb_strtolower($email);
+        return static::KEY_PREFIX.':'.mb_strtolower($email);
     }
 }
