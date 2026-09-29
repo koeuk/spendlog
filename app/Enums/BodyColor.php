@@ -3,13 +3,13 @@
 namespace App\Enums;
 
 /**
- * The five offered page backgrounds.
+ * The page backgrounds the picker offers.
  *
  * Not a storage constraint — body_color accepts any hex, because the picker also
  * takes a custom value. These are the presets the UI offers, kept here so the
  * default in the migration and the swatches on the page cannot drift apart.
  *
- * All five are near-white on purpose. The page is a backdrop for glass cards
+ * All of them are near-white on purpose. The page is a backdrop for glass cards
  * that carry their own translucent fill; a saturated body colour would show
  * through every one of them and fight the category colours the charts depend on.
  */
@@ -21,6 +21,10 @@ enum BodyColor: string
     // whiteCards path in Palette, the Silver checks in AppSetting, and the
     // .solid-cards rule in app.css.
     case Silver = '#f4f5f7';
+    // Silver at a fifth of its strength over white: near enough to white to read
+    // as a white page, with just enough grey to keep it off pure white. Flat,
+    // like every background but White, so the cards on it lean on their rim.
+    case SilverSoft = '#fdfdfd';
     // The ambient-wash look: the soft green blobs are what White means. It is the
     // one background that keeps the wash — every other, Silver included, is flat.
     case White = '#ffffff';
@@ -38,6 +42,7 @@ enum BodyColor: string
     {
         return match ($this) {
             self::Silver => 'Silver',
+            self::SilverSoft => 'Silver 20%',
             self::White => 'White',
             self::Cream => 'Cream',
             self::Sand => 'Sand',
